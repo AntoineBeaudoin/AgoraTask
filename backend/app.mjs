@@ -1,7 +1,8 @@
 import express from "express";
-import {bd} from "./models/bd.mjs";
 import sequelize from "sequelize";
 import dotenv from "dotenv";
+import {bd} from "./models/bd.mjs";
+import { Compte } from "./models/compte.mjs";
 
 dotenv.config();
 
@@ -16,7 +17,7 @@ bd.authenticate()
     .then(() => {
         console.log("Connected to PostgreSQL");
 
-        return bd.sync();
+         return bd.sync({ force: true });
     })
     .then(() => {
         app.listen(port, () => {
