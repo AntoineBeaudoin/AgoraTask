@@ -7,6 +7,7 @@ import { RouterLink, RouterView } from 'vue-router'
     <nav>
       <RouterLink to="/">Home</RouterLink>
       <RouterLink to="/about">About</RouterLink>
+       <RouterLink to="/login">Login</RouterLink>
     </nav>
   </header>
 
@@ -14,5 +15,7 @@ import { RouterLink, RouterView } from 'vue-router'
 </template>
 
 <style scoped>
-
+img{
+  max-width: 90%;
+}
 </style>
