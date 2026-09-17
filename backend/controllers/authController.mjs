@@ -32,7 +32,7 @@ export async function createUser(req, res, next){
                 user: userResponse
             },
             path: `/api/account/register`,
-            timestamp: new Date().toIsoString()
+            timestamp: new Date().toISOString()
         })
     }
     catch(err){
