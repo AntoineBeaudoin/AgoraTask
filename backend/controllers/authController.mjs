@@ -19,7 +19,7 @@ export async function createUser(req, res, next){
 
         await user.save();
 
-        const userResponse = user.toObject();
+         const userResponse = user.get({ plain: true });
         delete userResponse.motDePasse;
         delete userResponse.role;
         delete userResponse.approuve;
@@ -60,7 +60,7 @@ export async function loginUser(req, res, next){
             throw error;
         }
 
-        const userResponse = user.toObject();
+        const userResponse = user.get({ plain: true });
 
         delete userResponse.motDePasse;
         
