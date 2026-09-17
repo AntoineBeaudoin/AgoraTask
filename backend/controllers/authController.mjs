@@ -39,3 +39,55 @@ export async function createUser(req, res, next){
         next(err);
     }   
 }
+
+export async function loginUser(req, res, next){
+    const {email, password} = req.body;
+    try{
+        
+        const user = await Compte.findOne({ where: { courriel: email } })
+
+        if(!user){
+            const error = new Error(`Courriel ou mot de passe invalide.`);
+            error.statusCode = 401;
+            throw error;
+        }
+
+        const isEqual = await bcrypt.compare(password, user.motDePasse);
+
+        if(!isEqual){
+            const error = new Error(`Courriel ou mot de passe invalide.`);
+            error.statusCode = 401;
+            throw error;
+        }
+
+        const userResponse = user.toObject();
+
+        delete userResponse.motDePasse;
+        
+        const token = jwt.sign({
+            email: user.courriel,
+            id: user.id,
+            role: user.role
+        },
+        process.env.JWT_SECRET,
+        {
+            expiresIn: "8h"
+        });
+
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+
+        res.status(200).json({
+            status: 200,
+            message: "Utilisateur authentifié avec succès",
+            data: {
+                user: userResponse,
+                token: token
+            },
+            path: `/api/account/login`,
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch(err){
+        next(err);
+    }
+}
