@@ -6,9 +6,36 @@ import bcrypt from "bcrypt";
 dotenv.config();
 
 export async function createUser(req, res, next){
-    const {nom,prenom,nomUtilisateur,courriel,mdp} = req.body;
+    const {nom,prenom,courriel,mdp} = req.body;
     try{
         let hashedPassword = await bcrypt.hash(mdp, 15);
-        let unUtilisateur = new
+        let user = Compte.build({
+            prenom: prenom,
+            nom: nom,
+            courriel: courriel,
+            motDePasse: hashedPassword,
+            approuve: false
+        });
+
+        await user.save();
+
+        const userResponse = user.toObject();
+        delete userResponse.motDePasse;
+        delete userResponse.role;
+        delete userResponse.approuve;
+
+        res.location(`/api/account/${user.id}`);
+        res.status(201).json({
+            status: 201,
+            message: "Utilisateur créé",
+            data: {
+                user: userResponse
+            },
+            path: `/api/account/register`,
+            timestamp: new Date().toIsoString()
+        })
     }
+    catch(err){
+        next(err);
+    }   
 }

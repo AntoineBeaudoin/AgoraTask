@@ -1,14 +1,15 @@
 import express from "express";
-import sequelize from "sequelize";
 import dotenv from "dotenv";
 import {bd} from "./models/bd.mjs";
-import { Compte } from "./models/compte.mjs";
+import authRoutes from "./routes/auth.mjs";
+
 
 dotenv.config();
 
 const app = express();
 
 app.use(express.json());
+app.use("/api/auth", authRoutes);
 
 const port = process.env.PORT || 3000;
 

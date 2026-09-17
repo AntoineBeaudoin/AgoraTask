@@ -8,11 +8,6 @@ const Compte = bd.define("Compte", {
     autoIncrement: true,
     allowNull: false 
   }, 
-  nomUtilisateur: { 
-    type: DataTypes.STRING(50), 
-    allowNull: false, 
-    unique: true 
-  }, 
    prenom: { 
     type: DataTypes.STRING(100), 
     allowNull: false,
@@ -47,10 +42,10 @@ const Compte = bd.define("Compte", {
     type: DataTypes.ENUM(
       "administrateur",
       "coordonnateur",
-      "employe_de_terrain"
+      "personnel_de_terrain"
     ),
     allowNull: false,
-    defaultValue: "employe_de_terrain"
+    defaultValue: "personnel_de_terrain"
   },
   approuve: {
     type: DataTypes.BOOLEAN,
