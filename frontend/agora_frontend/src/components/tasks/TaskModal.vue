@@ -1,54 +1,70 @@
 <template>
   <Teleport to="body">
-    <div v-if="modalStore.taskModalOpen" class="modal-overlay" @click.self="close">
-      <div class="task-modal">
-        <div class="modal-header">
-          <h2>
-            {{ isEditing ? 'Modifier une tâche' : 'Ajouter/Modifier une tâche' }}
-          </h2>
-          <button type="button" class="close-button" @click="close">×</button>
-        </div>
-        <form @submit.prevent="submit">
-          <div class="form-layout">
-            <div class="left-column">
-              <input v-model="title" class="input" type="text" placeholder="Titre de la tâche" required />
-              <textarea v-model="description" class="description" placeholder="Description de la tâche" />
+    <div v-if="modalStore.taskModalOpen" class="modal fade p-5 bd-example-modal-lg" @click.self="close" id="taskModal" tabindex="-1" role="dialog" aria-labelledby="taskModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content mt-3 ps-3 pe-3">
+            <div class="modal-header ps-0">
+              <h2 class="modal-title">{{ isEditing ? 'Modifier une tâche' : 'Ajouter/Modifier une tâche' }}</h2>
+              <button type="button" class="bg-transparent border-0 ms-auto p-3 btn btn-close" @click="close"></button>
             </div>
-            <div class="right-column">
-              <label class="field-label">Image(s) à ajouter</label>
-              <input type="file" multiple accept="image/*" @change="images = [...$event.target.files]" />
-              <div class="time-row">
-                <div>
-                  <label>Heure début</label>
-                  <input v-model="startTime" type="time" />
+            <form @submit.prevent="submit" novalidate class="mt-3">
+              <div class="form-layout row">
+                <div class="col-md-6">
+                  <div class="form-group mb-3">
+                    <input v-model="title" class="form-control" type="text" placeholder="Titre de la tâche" required />
+                    <span class="invalid-feedback">Entrez le titre de la tâche</span>
+                  </div>
+                  <div class="form-group mb-3">
+                    <input v-model="local" class="form-control" type="text" placeholder="Local de la tâche" required />
+                    <span class="invalid-feedback">Entrez le local de la tâche</span>
+                  </div>
+                  <div>
+                    <textarea v-model="description" class="form-control mb-3" placeholder="Description de la tâche" />
+                    <span class="invalid-feedback">Entrez la description de la tâche</span>
+                  </div>
                 </div>
-                <div>
-                  <label>Heure fin</label>
-                  <input v-model="endTime" type="time" />
+                <div class="col-md-6">
+                  <div class="form-group mb-3 d-flex align-items-center gap-2">
+                    <label class="form-label">Image(s) à ajouter</label>
+                    <input class="form-control w-75" type="file" multiple accept="image/*" @change="images = [...$event.target.files]" />
+                  </div>
+                  <div class="form-group mb-3 row">
+                    <div class="col-6 d-flex align-items-center gap-2">
+                      <label>Heure début: </label>
+                      <input v-model="startTime" type="time" class="form-control w-auto" />
+                    </div>
+                    <div class="col-6 d-flex align-items-center gap-2 border-start border-2 border-black">
+                      <label>Heure fin: </label>
+                      <input v-model="endTime" type="time" class="form-control w-auto" />
+                    </div>
+                  </div>
+                  <div class="form-group mb-3">
+                    <label>
+                      <input v-model="recurring" type="checkbox" class="form-check-input me-2" />
+                      <span>Tâche récurrente?</span>
+                    </label>
+                  </div>
+                  <select v-if="recurring" v-model="frequency" class="form-control mb-3">
+                    <option value="">Fréquence de la tâche</option>
+                    <option value="daily">Tous les jours</option>
+                    <option value="weekly">Toutes les semaines</option>
+                    <option value="monthly">Tous les mois</option>
+                  </select>
+                  <div class="form-group mb-3">
+                    <label>
+                      <input v-model="automaticAssignment" type="checkbox" class="form-check-input me-2" />
+                      <span>Assigner automatiquement?</span>
+                    </label>
+                  </div>
                 </div>
               </div>
-              <label class="checkbox-row">
-                <input v-model="recurring" type="checkbox" />
-                <span>Tâche récurrente?</span>
-              </label>
-              <select v-if="recurring" v-model="frequency" class="input">
-                <option value="">Fréquence de la tâche</option>
-                <option value="daily">Tous les jours</option>
-                <option value="weekly">Toutes les semaines</option>
-                <option value="monthly">Tous les mois</option>
-              </select>
-              <label class="checkbox-row">
-                <input v-model="automaticAssignment" type="checkbox" />
-                <span>Assigner automatiquement?</span>
-              </label>
-            </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-danger" @click="close">Annuler</button>
+                <button type="submit" class="btn btn-success">{{ isEditing ? 'Modifier' : 'Ajouter' }}</button>
+              </div>
+            </form>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="cancel-button" @click="close">Annuler</button>
-            <button type="submit" class="submit-button">{{ isEditing ? 'Modifier' : 'Ajouter' }}</button>
-          </div>
-        </form>
-      </div>
+        </div>
     </div>
   </Teleport>
 </template>
@@ -103,6 +119,7 @@ function resetForm() {
 }
 
 function close() {
+  resetForm();
   modalStore.closeTaskModal();
 }
 
@@ -126,7 +143,7 @@ async function submit() {
   } else {
     await taskStore.addTask(task);
   }
-  
+
   resetForm();
   close();
 }

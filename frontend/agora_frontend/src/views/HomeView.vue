@@ -4,7 +4,7 @@
 <template>
   <main>
     <h1>AgoraTask</h1>
-    <button @click="testPopup">Popup</button>
+    <button @click="testPopup" data-target="#taskModal">Popup</button>
     <TaskModal/>
   </main>
 </template>
