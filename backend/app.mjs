@@ -19,11 +19,39 @@ app.get("/test-create-user", async (req, res, next) => {
     nom: "Dembele",
     courriel: "moussa.test@gmail.com",
     mdp: "Test1234!",
+    role: "administrateur"
   };
+
+  await createUser(req, res, next);
+ 
+  console.log("JE SUIS LAAAAAA Request body:", req.body);  
+});
+app.get("/test-create-u2", async (req, res, next) => {
+  req.body = {
+    prenom: "Julien",
+    nom: "Morel",
+    courriel: "rebcoana@gmail.com",
+    mdp: "Test1234!",
+    role: "coordonnateur"
+  };
+
+  await createUser(req, res, next);
  
   console.log("JE SUIS LAAAAAA Request body:", req.body);
- 
+});
+app.get("/test-create-u3", async (req, res, next) => {
+
+  req.body = {
+    prenom: "Antoine",
+    nom: "Beaudoin",
+    courriel: "beauanto@icloud.com",
+    mdp: "Test1234!",
+    role: "personnel_de_terrain"
+  };
+
   await createUser(req, res, next);
+ 
+  console.log("JE SUIS LAAAAAA Request body:", req.body);
 });
 
 app.use("/", get404);
@@ -41,37 +69,20 @@ bd.authenticate()
     })
     .then(async () => {
 
-          await Compte.create({
-      prenom: "Admin",
-      nom: "Test",
-      courriel: "admin@test.com",
-      motDePasse: "Admin123!",
-      role: "administrateur",
-      approuve: true
-    });
-
-    await Compte.create({
-      prenom: "Coordo",
-      nom: "Test",
-      courriel: "coordo@test.com",
-      motDePasse: "Coordo123!",
-      role: "coordonnateur",
-      approuve: true
-    });
-
-    await Compte.create({
-      prenom: "Personnel",
-      nom: "Test",
-      courriel: "personnel@test.com",
-      motDePasse: "Personnel123!",
-      role: "personnel_de_terrain",
-      approuve: true
-    });
-
     console.log("Test accounts created");
         
-        app.listen(port, () => {
+        app.listen(port, async() => {
             console.log("Server running on port " + port);
+
+             try {
+                await fetch(`http://localhost:${port}/test-create-user`);
+                await fetch(`http://localhost:${port}/test-create-u2`);
+                await fetch(`http://localhost:${port}/test-create-u3`);
+
+                console.log("Test requests completed");
+            } catch (error) {
+                console.error("Test requests failed:", error);
+            }
         });
     })
     .catch(error => {
