@@ -4,9 +4,9 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const bd = new Sequelize(process.env.DATABASE_URL)
+const bd = new Sequelize(process.env.DATABASE_URL);
 
-const router = express.Router();
 
-export {bd, Sequelize}
-export default router;
+
+export {bd}
+export default bd;

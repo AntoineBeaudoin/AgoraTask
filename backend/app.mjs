@@ -1,13 +1,15 @@
 import express from "express";
-import {bd} from "./models/bd.mjs";
-import sequelize from "sequelize";
 import dotenv from "dotenv";
+import {bd} from "./models/bd.mjs";
+import authRoutes from "./routes/auth.mjs";
+
 
 dotenv.config();
 
 const app = express();
 
 app.use(express.json());
+app.use("/api/auth", authRoutes);
 
 const port = process.env.PORT || 3000;
 
@@ -16,7 +18,7 @@ bd.authenticate()
     .then(() => {
         console.log("Connected to PostgreSQL");
 
-        return bd.sync();
+         return bd.sync({ force: true });
     })
     .then(() => {
         app.listen(port, () => {
