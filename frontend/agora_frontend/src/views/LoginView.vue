@@ -33,11 +33,12 @@
 <script setup>
 import { ref } from 'vue';
 import { useAuthStore } from '@/stores/auth';
+import { storeToRefs } from 'pinia';
 
 const store = useAuthStore();
 const courriel = ref('');
 const mdp = ref('');
-const errorMessage = ref('');
+const errorMessage = storeToRefs(store);
 
 const courrielInvalide = ref(false);
 const mdpInvalide = ref(false);
@@ -62,7 +63,7 @@ const validateUser = () => {
 
 const loginUser = async () => {
   if (validateUser()) {
-    //effectuer le login
+    await store.loginUser(courriel, mdp);
   }
 }
 
