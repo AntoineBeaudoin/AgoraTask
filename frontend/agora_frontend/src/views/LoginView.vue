@@ -2,7 +2,7 @@
   <div class="container m-3 m-auto">
     <h2 class="text-center">Se connecter</h2>
 
-    <img src="../assets/images/user.jpg" alt="Image statique pour un compte utilisateur" class="w-50">
+    <img src="../assets/images/user.png" alt="Image statique pour un compte utilisateur" class="w-50">
 
     <form action="POST" novalidate @submit.prevent="loginUser" class="mx-auto d-block text-center">
         <div class="mb-3 text-start">
@@ -66,6 +66,7 @@ const loginUser = async () => {
   }
 }
 
+
 </script>
 
 <style scoped>
@@ -78,5 +79,10 @@ const loginUser = async () => {
 #lien-creation-compte:hover {
   color: rgb(0, 1, 140);
   text-decoration: none;
+}
+
+img{
+  max-width: 90%;
+  max-height: 80%;
 }
 </style>
