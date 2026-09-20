@@ -17,7 +17,7 @@
           <div class="text-danger" v-if="mdpInvalide">Le mot de passe n'est pas valide.</div>
         </div>
 
-        <p class="text-danger" v-if="errorMessage">{{ errorMessage }}</p>
+        <p class="text-danger" v-if="errorMessage.errorMessage">{{ errorMessage.errorMessage }}</p>
 
         <div class="mb-3 text-start">
           Pas de compte? <RouterLink to="/register" class="nav-link" id="lien-creation-compte">Créez-en un</RouterLink>
@@ -63,6 +63,7 @@ const validateUser = () => {
 
 const loginUser = async () => {
   if (validateUser()) {
+    console.log("LOGIN USER FUNCTION CALL");
     await store.loginUser(courriel, mdp);
   }
 }
