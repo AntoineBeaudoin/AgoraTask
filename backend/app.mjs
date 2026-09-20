@@ -5,15 +5,17 @@ import authRoutes from "./routes/auth.mjs";
 import { get404, getErrors } from "./controllers/errorController.mjs";
 import { createUser } from "./controllers/authController.mjs";
 import Compte from "./models/compte.mjs";
+import cors from "cors";
 
 
 dotenv.config();
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 app.use("/api/account", authRoutes);
-app.get("/test-create-user", async (req, res, next) => {
+/*app.get("/test-create-user", async (req, res, next) => {
   req.body = {
     prenom: "Moussa",
     nom: "Dembele",
@@ -53,6 +55,7 @@ app.get("/test-create-u3", async (req, res, next) => {
  
   console.log("JE SUIS LAAAAAA Request body:", req.body);
 });
+*/
 
 app.use("/", get404);
 
@@ -65,7 +68,7 @@ bd.authenticate()
     .then(() => {
         console.log("Connected to PostgreSQL");
 
-         return bd.sync({ force: true });
+         //return bd.sync({ force: true });
     })
     .then(async () => {
 
