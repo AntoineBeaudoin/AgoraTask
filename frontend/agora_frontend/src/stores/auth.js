@@ -11,7 +11,6 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem("jwt"));
   const route = useRoute();
   const router = useRouter();
-  const profile = ref({});
 
   /**
  * Vérifie si l'utilisateur est authentifié

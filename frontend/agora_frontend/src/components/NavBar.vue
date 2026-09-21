@@ -16,7 +16,7 @@
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
 import { watch, onMounted, onBeforeUnmount, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 const store = useAuthStore();
 
@@ -27,6 +27,7 @@ const { token, isAuthenticated } = storeToRefs(store);
 const { isUserAdmin } = store;
 
 const route = useRoute();
+const router = useRouter();
 
 watch(route, async () => {
   token.value = store.getToken();
@@ -49,6 +50,7 @@ function handleStorage(e) {
 
 const logout = () => {
   store.disconnect();
+  router.go(0);
 }
 </script>
 
