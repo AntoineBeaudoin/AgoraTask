@@ -2,7 +2,9 @@
   <div class="container m-3 m-auto">
     <h2 class="text-center">Se connecter</h2>
 
-    <img src="../assets/images/user.png" alt="Image statique pour un compte utilisateur" class="w-50">
+    <div class="w-50 mx-auto text-center">
+      <img src="../assets/images/user.png" alt="Image statique pour un compte utilisateur" class="w-50">
+    </div>
 
     <form action="POST" novalidate @submit.prevent="loginUser" class="mx-auto d-block text-center">
         <div class="mb-3 text-start">
@@ -19,12 +21,8 @@
 
         <p class="text-danger" v-if="errorMessage.errorMessage">{{ errorMessage.errorMessage }}</p>
 
-        <div class="mb-3 text-start">
-          Pas de compte? <RouterLink to="/register" class="nav-link" id="lien-creation-compte">Créez-en un</RouterLink>
-        </div>
-
         <div class="d-flex justify-content-start mb-3">
-          <button type="submit" class="btn btn-success">Se Connecter</button>
+          <button type="submit" class="btn btn-success mx-auto d-block">Se Connecter</button>
         </div>
       </form>
   </div>
