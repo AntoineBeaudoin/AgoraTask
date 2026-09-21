@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { bd } from "./models/bd.mjs";
 import authRoutes from "./routes/auth.mjs";
+import adminRoutes from "./routes/admin.mjs";
 import { get404, getErrors } from "./controllers/errorController.mjs";
 import { createUser } from "./controllers/authController.mjs";
 import Compte from "./models/compte.mjs";
@@ -12,6 +13,7 @@ const app = express();
 
 app.use(express.json());
 app.use("/api/account", authRoutes);
+app.use("/api/admin", adminRoutes);
 // app.get("/test-create-user", async (req, res, next) => {
 //   req.body = {
 //     prenom: "Moussa",
