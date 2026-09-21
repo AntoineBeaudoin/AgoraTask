@@ -13,15 +13,15 @@
               <div class="col-md-6">
                 <div class="form-group mb-3">
                   <label for="title" class="d-none">Entrez le titre de la tâche</label>
-                  <input v-model="title" id="title" class="form-control" type="text" placeholder="Titre de la tâche"
+                  <input v-model="title" id="title" class="form-control" type="text" placeholder="Titre de la tâche *"
                     required />
-                  <span class="invalid-feedback">Entrez le titre de la tâche</span>
+                  <span id="titleError" class="invalid-feedback">Le titre de la tâche est requis</span>
                 </div>
                 <div class="form-group mb-3">
                   <label for="local" class="d-none">Entrez le local de la tâche</label>
-                  <input v-model="local" id="local" class="form-control" type="text" placeholder="Local de la tâche"
+                  <input v-model="local" id="local" class="form-control" type="text" placeholder="Local de la tâche *"
                     required />
-                  <span class="invalid-feedback">Entrez le local de la tâche</span>
+                  <span id="localError" class="invalid-feedback">Le local de la tâche est requis</span>
                 </div>
                 <div>
                   <label for="desc" class="d-none">Entrez la description de la tâche</label>
@@ -36,16 +36,21 @@
                   <input class="form-control w-75" id="imgs" type="file" multiple accept="image/*"
                     @change="images = [...$event.target.files]" />
                 </div>
-                <div class="form-group mb-3 row">
-                  <div class="col-6 d-flex align-items-center gap-2">
-                    <label for="sTime">Heure début: </label>
-                    <input v-model="startTime" id="sTime" type="time" class="form-control w-auto" />
-                    <span class="invalid-feedback">Entrez l'heure de début de la tâche</span>
+                <div class="form-group row">
+                  <div class="col-xl-6 mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                      <label for="sTime">Heure début * : </label>
+                      <input v-model="startTime" id="sTime" type="time" class="form-control w-auto" />
+                    </div>
+                    <span id="sTimeError" class="invalid-feedback">L'heure de début doit être plus tôt que l'heure de fin</span>
                   </div>
-                  <div class="col-6 d-flex align-items-center gap-2 border-start border-2 border-black">
-                    <label for="eTime">Heure fin: </label>
-                    <input v-model="endTime" id="eTime" type="time" class="form-control w-auto" />
-                    <span class="invalid-feedback">Entrez l'heure de fin de la tâche</span>
+                  <div class="col-xl-6 mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                      <label for="eTime">Heure fin * : </label>
+                      <input v-model="endTime" id="eTime" type="time" class="form-control w-auto" />
+                    </div>
+                    <span id="eTimeError" class="invalid-feedback">L'heure de fin doit être plus tard que l'heure de
+                      début</span>
                   </div>
                 </div>
                 <div class="form-group mb-3">
@@ -139,14 +144,55 @@ function close() {
 function formIsValid() {
   return title.value !== ''
     && local.value !== ''
-    && description.value !== ''
-    && startTime.value !== ''
-    && endTime.value !== '';
+    && datesAreValid();
+}
+
+function datesAreValid() {
+  if (!startTime.value || !endTime.value) {
+    return false;
+  }
+  return startTime.value < endTime.value
+    && dateIsLaterThanToday(startTime.value);
+}
+
+function dateIsLaterThanToday(date) {
+  const now = new Date();
+  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  return date > currentTime;
+}
+
+function markInvalidInputs() {
+  document.querySelectorAll('#taskModal .is-invalid').forEach((input) => {
+    input.classList.remove('is-invalid');
+  });
+
+  document.querySelectorAll('span').forEach((span) => {
+    span.classList.remove('d-block');
+  });
+
+  if (!title.value.trim()) {
+    document.querySelector('#title').classList.add('is-invalid');
+    document.querySelector('#titleError').classList.add('d-block');
+  }
+  if (!local.value.trim()) {
+    document.querySelector('#local').classList.add('is-invalid');
+    document.querySelector('#localError').classList.add('d-block');
+  }
+  if (!startTime.value || !dateIsLaterThanToday(startTime.value)) {
+    document.querySelector('#sTime').classList.add('is-invalid');
+    document.querySelector('#sTimeError').classList.add('d-block');
+  }
+  if (!endTime.value || !(startTime.value < endTime.value)) {
+    document.querySelector('#eTime').classList.add('is-invalid');
+    document.querySelector('#eTimeError').classList.add('d-block');
+  }
 }
 
 async function submit() {
-  console.log(formIsValid());
-  if (formIsValid()) {
+  if (!formIsValid()) {
+    markInvalidInputs();
+  }
+  else {
     const task = {
       title: title.value,
       local: local.value,
