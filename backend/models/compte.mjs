@@ -42,16 +42,15 @@ const Compte = bd.define("Compte", {
     type: DataTypes.ENUM(
       "administrateur",
       "coordonnateur",
-      "personnel_de_terrain",
-      "Role_En_Attente",
+      "personnel_de_terrain"
     ),
     allowNull: false,
-    defaultValue: "Role_En_Attente"
+    defaultValue: "personnel_de_terrain"
   },
-  approuve: {
+  IsArchived: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false
-  }
+    defaultValue: false,
+  },
 }
 );
 
