@@ -1,12 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/auth.js'
 import HomeView from '../views/HomeView.vue'
 import LoginView from '@/views/LoginView.vue'
 import EmployeView from '@/views/EmployeView.vue'
 import CoordoView from '@/views/CoordoView.vue'
 import AdminView from '@/views/AdminView.vue'
-import RoleEnAttenteView from '@/views/RoleEnAttenteView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -31,14 +29,6 @@ const router = createRouter({
       meta: {
         title: "Se connecter",
         redirectIfAuth: true,
-       }
-    },
-    {
-      path: "/waiting",
-      name: "waiting",
-      component: RoleEnAttenteView,
-      meta: {
-        title: "En Attente D'Approbation", requireAuth: true, role: "Role_En_Attente"
        }
     },
     {
@@ -85,8 +75,7 @@ router.beforeEach((to, from, next) => {
     const portals = {
       administrateur: "admin",
       coordonnateur: "coordo",
-      personnel_de_terrain: "employe",
-      Role_En_Attente: "waiting"
+      personnel_de_terrain: "employe"
     };
 
     return next({ name: portals[role] || "home" });
