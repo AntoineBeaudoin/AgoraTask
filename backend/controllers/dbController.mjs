@@ -24,6 +24,15 @@ try{
             motDePasse: hashedPassword,
             role: "personnel_de_terrain"
         });
+
+     const vraiAdmin = await Compte.create(
+        {
+            prenom: "Colin",
+            nom: "Giguère",
+            courriel: "admin@admin.com",
+            motDePasse: hashedPassword,
+            role: "administrateur"
+        });
     
     const admin = await Compte.create(
         {
@@ -45,6 +54,7 @@ try{
 
         await admin.save();
         await coordo.save();
+        await vraiAdmin.save();
         await employe.save();
     res.status(200).json({
       message:
