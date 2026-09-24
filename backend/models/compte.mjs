@@ -46,14 +46,9 @@ const Compte = bd.define("Compte", {
       "administrateur",
       "coordonnateur",
       "personnel_de_terrain",
-      "Role_En_Attente",
     ),
     allowNull: false,
-    defaultValue: "Role_En_Attente",
-  },
-  approuve: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
+    defaultValue: "personnel_de_terrain",
   },
   IsArchived: {
     type: DataTypes.BOOLEAN,
