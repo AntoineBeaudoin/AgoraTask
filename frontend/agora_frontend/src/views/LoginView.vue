@@ -70,16 +70,6 @@ const loginUser = async () => {
 </script>
 
 <style scoped>
-#lien-creation-compte {
-  color: blue;
-  text-decoration: underline;
-  display: inline;
-}
-
-#lien-creation-compte:hover {
-  color: rgb(0, 1, 140);
-  text-decoration: none;
-}
 
 img{
   max-width: 90%;
