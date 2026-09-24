@@ -21,11 +21,11 @@ const Task = bd.define("Task", {
     allowNull: true, 
   }, 
   startTime: {
-    type: DataTypes.(50), 
+    type: DataTypes.TIME(50), 
     allowNull: false,
   }, 
   endTime: {
-    type: DataTypes.(50), 
+    type: DataTypes.TIME(50), 
     allowNull: false,
   },
   recurring: {
