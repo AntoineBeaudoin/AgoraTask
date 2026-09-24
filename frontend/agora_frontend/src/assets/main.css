@@ -7,3 +7,44 @@
 .modal-dialog {
   margin-top: 1rem;
 }
+
+.revue-zone-drop {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 25px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.revue-zone-drop:hover,
+.revue-zone-drop.drag-over {
+  border-color: #198754;
+  background-color: #f0fff5;
+}
+
+.revue-zone-drop-icon {
+  font-size: 2rem;
+  margin-bottom: 5px;
+}
+
+.imgIconDisplay {
+  width: 80px; 
+  height: 80px; 
+  object-fit: cover; 
+  border-radius: 8px;
+}
+
+.btn-icon-close {
+  width: 25px;
+  height: 25px;
+  font-size: 11px;
+}
+
+.box-icon-add-images {
+  width: 80px; 
+  height: 80px; 
+  border: 2px dashed #ccc !important; 
+  font-size: 1.5rem !important; 
+  color: #aaa !important;
+}

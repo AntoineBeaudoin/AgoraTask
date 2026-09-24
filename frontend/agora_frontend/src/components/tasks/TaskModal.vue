@@ -31,18 +31,39 @@
                 </div>
               </div>
               <div class="col-md-6">
-                <div class="form-group mb-3 d-flex align-items-center gap-2">
-                  <label class="form-label" for="imgs">Image(s) à ajouter</label>
-                  <input class="form-control w-75" id="imgs" type="file" multiple accept="image/*"
-                    @change="images = [...$event.target.files]" />
+                <div class="mb-3">
+                  <label class="form-label d-none" for="imgs">Image(s) à ajouter (optionnel, max. 5)</label>
+                  <div id="zone-drop" class="revue-zone-drop" @click="openFilePicker" @dragover.prevent="handleDragOver"
+                    @dragleave="handleDragLeave" @drop.prevent="handleDrop" :class="{ 'drag-over': isDragging }">
+                    <div class="revue-zone-drop-icon">🖼</div>
+                    <div class="text-muted">Glisser-déposer ou cliquer pour</div>
+                    <div class="text-success fw-bold">Parcourir les fichiers</div>
+                    <div class="text-muted small mt-1">Max. 5 Mo par photo</div>
+                  </div>
+                  <input ref="inputPhotos" type="file" id="imgs" name="photos" accept=".jpg,.jpeg,.png,.gif,.bmp,.webp"
+                    multiple class="d-none" @change="handleFileChange" />
                 </div>
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                  <div v-for="(file, index) in images" :key="file.id || `${file.name}-${index}`"
+                    class="position-relative">
+                    <img class="imgIconDisplay" :src="file.preview" :alt="file.name" />
+                    <button type="button"
+                      class="btn btn-danger position-absolute top-0 end-0 rounded-circle p-0 btn-icon-close"
+                      @click="removeImage(index)"> ✕ </button>
+                  </div>
+                  <button v-if="images.length > 0 && images.length < 5" type="button"
+                    class="box-icon-add-images btn d-flex align-items-center justify-content-center"
+                    @click="openFilePicker"> + </button>
+                </div>
+
                 <div class="form-group row">
                   <div class="col-xl-6 mb-3">
                     <div class="d-flex align-items-center gap-2">
                       <label for="sTime">Heure début * : </label>
                       <input v-model="startTime" id="sTime" type="time" class="form-control w-auto" />
                     </div>
-                    <span id="sTimeError" class="invalid-feedback">L'heure de début doit être plus tôt que l'heure de fin</span>
+                    <span id="sTimeError" class="invalid-feedback">L'heure de début doit être plus tôt que l'heure de
+                      fin</span>
                   </div>
                   <div class="col-xl-6 mb-3">
                     <div class="d-flex align-items-center gap-2">
@@ -63,6 +84,9 @@
                   <option value="">Fréquence de la tâche</option>
                   <option value="daily">Tous les jours</option>
                   <option value="weekly">Toutes les semaines</option>
+                  <option value="bi_weekly">Deux fois par semaine</option>
+                  <option value="tri_weekly">Trois fois par semaine</option>
+                  <option value="two_week">Aux deux semaines</option>
                   <option value="monthly">Tous les mois</option>
                 </select>
                 <div class="form-group mb-3">
@@ -101,6 +125,11 @@ const recurring = ref(false);
 const frequency = ref('');
 const automaticAssignment = ref(false);
 const images = ref([]);
+const inputPhotos = ref(null);
+const isDragging = ref(false);
+
+const MAX_IMAGES = 5;
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 Mo
 
 const isEditing = computed(() => !!modalStore.editingTask);
 
@@ -116,7 +145,11 @@ watch(
       recurring.value = task.recurring ?? false;
       frequency.value = task.frequency ?? '';
       automaticAssignment.value = task.automaticAssignment ?? false;
-      images.value = task.images ?? [];
+      images.value = (task.images ?? []).map(image => ({
+        ...image,
+        preview: image.preview ?? image.url
+      }));
+
     } else {
       resetForm();
     }
@@ -125,6 +158,12 @@ watch(
 )
 
 function resetForm() {
+  images.value.forEach(image => {
+    if (image.preview) {
+      URL.revokeObjectURL(image.preview);
+    }
+  });
+
   title.value = '';
   local.value = '';
   description.value = '';
@@ -134,7 +173,12 @@ function resetForm() {
   frequency.value = '';
   automaticAssignment.value = false;
   images.value = [];
+
+  if (inputPhotos.value) {
+    inputPhotos.value.value = '';
+  }
 }
+
 
 function close() {
   resetForm();
@@ -218,4 +262,69 @@ async function submit() {
     close();
   }
 }
+
+function openFilePicker() {
+  inputPhotos.value?.click();
+}
+
+function handleDragOver() {
+  isDragging.value = true;
+}
+
+function handleDragLeave() {
+  isDragging.value = false;
+}
+
+function handleDrop(event) {
+  isDragging.value = false;
+  const files = Array.from(event.dataTransfer.files);
+  addFiles(files);
+}
+
+function handleFileChange(event) {
+  const files = Array.from(event.target.files);
+  addFiles(files);
+  event.target.value = '';
+}
+
+function addFiles(files) {
+  const remainingSlots = MAX_IMAGES - images.value.length;
+  if (remainingSlots <= 0) {
+    return;
+  }
+  const filesToAdd = files.slice(0, remainingSlots);
+  filesToAdd.forEach(file => {
+    if (!isValidImage(file)) {
+      return;
+    }
+    const preview = URL.createObjectURL(file);
+    images.value.push({
+      file,
+      preview,
+      name: file.name
+    });
+  });
+}
+
+function isValidImage(file) {
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp'];
+  if (!allowedTypes.includes(file.type)) {
+    alert(`${file.name} n'est pas un format d'image accepté.`);
+    return false;
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    alert(`${file.name} dépasse la limite de 5 Mo.`);
+    return false;
+  }
+  return true;
+}
+
+function removeImage(index) {
+  const image = images.value[index];
+  if (image?.preview) {
+    URL.revokeObjectURL(image.preview);
+  }
+  images.value.splice(index, 1);
+}
+
 </script>
