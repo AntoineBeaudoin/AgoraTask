@@ -11,8 +11,11 @@
   "author": "Julien Morel,Antoine Beaudoin,Moussa Dembélé, Evan",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "nodemon": "^3.1.14",
     "pg": "^8.23.0",
     "pg-hstore": "^2.3.4",
