@@ -41,3 +41,5 @@ bd.authenticate()
     .catch(error => {
         console.error("Database connection failed:", error);
     });
+
+export default app;
