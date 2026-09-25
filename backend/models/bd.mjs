@@ -1,9 +1,12 @@
-import {Sequelize} from "sequelize";
+import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const bd = new Sequelize(process.env.DATABASE_URL);
+const bd = new Sequelize(process.env.DATABASE_URL, {
+    dialect: "postgres",
+    logging: false
+});
 
-export {bd}
+export { bd }
 export default bd;
