@@ -1,54 +1,63 @@
-import Task from '../models/task.mjs';
+import {Task, TaskImage} from '../models/bd_index.mjs';
 import dotenv from "dotenv";
 
 dotenv.config();
 
-export async function createTask(req, res, next){
-    const {titre,local,description,
-        startTime,endTime,recurring,
-        frequency, automaticAssignment} = req.body;
-    try{
-        let start = new Date(startTime);
-        let end = new Date(endTime);
+export async function createTask(req, res, next) {
+    const {titre, local, description, startTime,
+        endTime, recurring, frequency,
+        automaticAssignment} = req.body;
+
+    try {
         const anotherTask = await Task.findOne({
             where: {
                 titre: titre,
                 local: local,
-                startTime: start,
-                endTime: end
+                startTime: startTime,
+                endTime: endTime
             }
         });
+
         if (anotherTask) {
             const error = new Error("Une tâche identique existe déjà.");
             error.statusCode = 409;
             throw error;
         }
 
-        const aTask = Task.build({
-            titre: titre,
-            local: local,
+        const aTask = await Task.create({
+            titre,
+            local,
             description: description ?? null,
-            startTime: start,
-            endTime: end,
-            recurring: recurring,
-            frequency: frequency,
-            automaticAssignment: automaticAssignment
+            startTime,
+            endTime,
+            recurring,
+            frequency,
+            automaticAssignment
         });
 
-        await aTask.save();
+        if (req.files) {
+            for (const file of req.files) {
+                await TaskImage.create({
+                    taskId: aTask.id,
+                    filename: file.filename,
+                    path: `/uploads/tasks/${file.filename}`,
+                    mimeType: file.mimetype
+                });
+            }
+        }
 
-        res.location(`/api/campsites/${aTask.id}`);
+        res.location(`/api/tasks/${aTask.id}`);
         res.status(201).json({
             status: 201,
             message: "Tâche ajoutée",
             data: aTask,
-            path: `/api/campsites/${aTask.id}`,
+            path: `/api/tasks/${aTask.id}`,
             timestamp: new Date().toISOString()
         });
     }
-    catch(err){
+    catch (err) {
         next(err);
-    }   
+    }
 }
 
 export async function replaceTask(req, res, next)
@@ -60,7 +69,7 @@ export async function replaceTask(req, res, next)
 export async function deleteTask(req, res, next) {
     const id = req.params.id;
     try {
-       const aTask = Task.findOne({
+       const aTask = await Task.findOne({
             where: {
                 id: id
             }
@@ -72,7 +81,7 @@ export async function deleteTask(req, res, next) {
     
             await aTask.save();
         }
-        
+
         res.status(204).json({});
     }
     catch (err) {
