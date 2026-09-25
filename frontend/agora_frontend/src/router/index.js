@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/auth.js'
 import HomeView from '../views/HomeView.vue'
 import LoginView from '@/views/LoginView.vue'
@@ -18,34 +17,34 @@ const router = createRouter({
     {
       path: '/about',
       name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () => import('../views/AboutView.vue'),
     },
     {
       path: "/login",
       name: "login",
       component: LoginView,
-      meta: { title: "Se connecter" }
+      meta: {
+        title: "Se connecter",
+        redirectIfAuth: true,
+       }
     },
     {
       path: "/admin",
       name: "admin",
       component: AdminView,
-      meta: { title: "Portail administrateur", requireAuth: true, requireAdmin: true }
+      meta: { title: "Portail administrateur", requireAuth: true, role: "administrateur" }
     },
     {
       path: "/coordo",
       name: "coordo",
       component: CoordoView,
-      meta: { title: "Portail coordonnateur", requireAuth: true, requireCoordo: true }
+      meta: { title: "Portail coordonnateur", requireAuth: true, role: "coordonnateur" }
     },
     {
       path: "/employe",
       name: "employe",
       component: EmployeView,
-      meta: { title: "Portail employé", requireAuth: true, requireCoordo: true }
+      meta: { title: "Portail employé", requireAuth: true, role: "personnel_de_terrain"}
     },
   ],
 
@@ -64,19 +63,33 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  const isLogged = localStorage.getItem("jwt");
   const authStore = useAuthStore();
-  const { errorMessage } = storeToRefs(authStore);
-  if (to.meta?.requireAuth && !isLogged) {
-    errorMessage.value = "";
-    next({ name: 'login', query: { redirect: to.fullPath } });
+  const logged = authStore.isTokenValid();
+
+  if (to.name === "login" && logged) {
+    const role = authStore.getRole();
+
+    const portals = {
+      administrateur: "admin",
+      coordonnateur: "coordo",
+      personnel_de_terrain: "employe"
+    };
+
+    return next({ name: portals[role] || "employe" });
   }
-  else if (to.meta?.requireAdmin && !authStore.isUserAdmin()) {
-    router.push("/");
+
+  if (to.meta.requireAuth && !logged) {
+    return next({
+      name: "login",
+      query: { redirect: to.fullPath }
+    });
   }
-  else {
-    next();
+
+  if (to.meta.role && authStore.getRole() !== to.meta.role) {
+    return next({ name: "home" });
   }
+
+  next();
 });
 
 

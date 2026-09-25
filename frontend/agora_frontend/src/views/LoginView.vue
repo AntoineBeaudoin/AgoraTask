@@ -2,7 +2,9 @@
   <div class="container m-3 m-auto">
     <h2 class="text-center">Se connecter</h2>
 
-    <img src="../assets/images/user.png" alt="Image statique pour un compte utilisateur" class="w-50">
+    <div class="w-50 mx-auto text-center">
+      <img src="../assets/images/user.png" alt="Image statique pour un compte utilisateur" class="w-50">
+    </div>
 
     <form action="POST" novalidate @submit.prevent="loginUser" class="mx-auto d-block text-center">
         <div class="mb-3 text-start">
@@ -17,14 +19,10 @@
           <div class="text-danger" v-if="mdpInvalide">Le mot de passe n'est pas valide.</div>
         </div>
 
-        <p class="text-danger" v-if="errorMessage">{{ errorMessage }}</p>
-
-        <div class="mb-3 text-start">
-          Pas de compte? <RouterLink to="/register" class="nav-link" id="lien-creation-compte">Créez-en un</RouterLink>
-        </div>
+        <p class="text-danger" v-if="errorMessage.errorMessage">{{ errorMessage.errorMessage }}</p>
 
         <div class="d-flex justify-content-start mb-3">
-          <button type="submit" class="btn btn-success">Se Connecter</button>
+          <button type="submit" class="btn btn-success mx-auto d-block">Se Connecter</button>
         </div>
       </form>
   </div>
@@ -63,6 +61,7 @@ const validateUser = () => {
 
 const loginUser = async () => {
   if (validateUser()) {
+    console.log("LOGIN USER FUNCTION CALL");
     await store.loginUser(courriel, mdp);
   }
 }
@@ -71,16 +70,6 @@ const loginUser = async () => {
 </script>
 
 <style scoped>
-#lien-creation-compte {
-  color: blue;
-  text-decoration: underline;
-  display: inline;
-}
-
-#lien-creation-compte:hover {
-  color: rgb(0, 1, 140);
-  text-decoration: none;
-}
 
 img{
   max-width: 90%;

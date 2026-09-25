@@ -6,18 +6,17 @@ import { jwtDecode } from "jwt-decode";
 import { apiFetch } from "@/utils/api";
 
 // Store qui serviera à mettre les méthodes pour la connexion à et la création d'un compte utilisateur.
-export const useAuthStore = defineStore('auth', () =>{
+export const useAuthStore = defineStore('auth', () => {
   const errorMessage = ref('');
   const token = ref(localStorage.getItem("jwt"));
   const route = useRoute();
   const router = useRouter();
-  const profile = ref({});
 
-    /**
-   * Vérifie si l'utilisateur est authentifié
-   *
-   * @type {*}
-   */
+  /**
+ * Vérifie si l'utilisateur est authentifié
+ *
+ * @type {*}
+ */
   const isAuthenticated = computed(() => {
     if (token.value) {
       const decoded = jwtDecode(token.value);
@@ -27,16 +26,16 @@ export const useAuthStore = defineStore('auth', () =>{
     return false;
   });
 
-   const setToken = (theToken) => {
+  const setToken = (theToken) => {
     localStorage.setItem("jwt", theToken);
     token.value = theToken;
   }
 
-   const disconnect = () => {
+  const disconnect = () => {
     localStorage.removeItem("jwt");
   }
 
-   function isTokenValid() {
+  function isTokenValid() {
     if (!token.value) return false;
     try {
       const { exp } = jwtDecode(token.value);
@@ -46,7 +45,7 @@ export const useAuthStore = defineStore('auth', () =>{
     }
   }
 
-    function isUserAdmin() {
+  function isUserAdmin() {
     if (!token.value) return false;
     try {
       const { role } = jwtDecode(token.value);
@@ -56,13 +55,45 @@ export const useAuthStore = defineStore('auth', () =>{
     }
   }
 
-   function isUserCoordo() {
+  function isUserCoordo() {
     if (!token.value) return false;
     try {
       const { role } = jwtDecode(token.value);
       return role === 'coordonnateur';
     } catch {
       return false;
+    }
+  }
+
+  function isUserEmploye() {
+    if (!token.value) return false;
+
+    try {
+      const { role } = jwtDecode(token.value);
+      return role === "personnel_de_terrain";
+    } catch {
+      return false;
+    }
+  }
+
+  function isUserEnAttente() {
+    if (!token.value) return false;
+
+    try {
+      const { role } = jwtDecode(token.value);
+      return role === "Role_En_Attente";
+    } catch {
+      return false;
+    }
+  }
+
+  function getRole() {
+    if (!token.value) return null;
+
+    try {
+      return jwtDecode(token.value).role;
+    } catch {
+      return null;
     }
   }
 
@@ -77,7 +108,8 @@ export const useAuthStore = defineStore('auth', () =>{
     return localStorage.getItem("jwt");
   }
 
-const loginUser = async (email, mdp) => {
+  const loginUser = async (email, mdp) => {
+    console.log("LOGIN USER FUNCTION BEGINNING");
     errorMessage.value = "";
     try {
       const response = await apiFetch("/api/account/login", {
@@ -87,8 +119,6 @@ const loginUser = async (email, mdp) => {
           password: mdp.value
         })
       });
-
-      const decodedToken = jwtDecode(response.data.token);
 
       console.log('response after login attempt', response);
 
@@ -100,6 +130,11 @@ const loginUser = async (email, mdp) => {
         throw new Error(`HTTP ${response}`);
       }
       else {
+        const decodedToken = jwtDecode(response.data.token);
+
+        console.log("TOKEN:", response.data.token);
+        console.log("DECODED TOKEN:", decodedToken);
+        console.log("ROLE:", decodedToken.role);
         setToken(response.data.token);
         const userRole = decodedToken.role;
         let redirectTo = ""
@@ -116,6 +151,10 @@ const loginUser = async (email, mdp) => {
             redirectTo = route.query.redirect || "/employe";
             break;
 
+          case "Role_En_Attente":
+            redirectTo = route.query.redirect || "/waiting";
+            break;
+
           default:
             throw new Error(`Rôle ${userRole} invalide.`);
         }
@@ -127,7 +166,7 @@ const loginUser = async (email, mdp) => {
     }
   };
 
-  return{
+  return {
     getToken,
     token,
     loginUser,
@@ -136,6 +175,9 @@ const loginUser = async (email, mdp) => {
     disconnect,
     isTokenValid,
     isUserAdmin,
-    isUserCoordo
+    isUserCoordo,
+    isUserEmploye,
+    isUserEnAttente,
+    getRole
   }
 })
