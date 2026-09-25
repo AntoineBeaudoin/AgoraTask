@@ -52,9 +52,13 @@ const Task = bd.define("Task", {
   images: { 
     type: DataTypes.TEXT(1048), 
     allowNull: true, 
+  },
+  archived: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 }
 );
 
-export default Compte;
-export { Compte };
+export default Task;
+export { Task };
