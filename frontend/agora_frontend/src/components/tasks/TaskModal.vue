@@ -192,6 +192,8 @@ function formIsValid() {
 }
 
 function datesAreValid() {
+  console.log("startTime ", startTime.value);
+  console.log("endtime ", endTime.value);
   if (!startTime.value || !endTime.value) {
     return false;
   }
@@ -199,8 +201,15 @@ function datesAreValid() {
     && dateIsLaterThanToday(startTime.value);
 }
 
+function getLaterDateAtMidnight(){
+  const date = new Date();
+  date.setDate(date.getDate() + 2);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
 function dateIsLaterThanToday(date) {
-  const now = new Date();
+  const now = getLaterDateAtMidnight();
   const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   return date > currentTime;
 }
