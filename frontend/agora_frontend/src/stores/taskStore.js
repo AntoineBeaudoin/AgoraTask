@@ -51,6 +51,13 @@ export const useTaskStore = defineStore('tasks', {
 
     },
 
+    async getTasks(task){
+      const response = await apiFetch('/api/task/list');
+      if (isNumber(response)){
+        
+      }
+    }
+
     async updateTask(task) {
       const index = this.tasks.findIndex(t => t.id === task.id);
 

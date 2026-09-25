@@ -51,11 +51,34 @@ export async function createTask(req, res, next) {
             status: 201,
             message: "Tâche ajoutée",
             data: aTask,
-            path: `/api/tasks/${aTask.id}`,
+            path: `/api/task/${aTask.id}`,
             timestamp: new Date().toISOString()
         });
     }
     catch (err) {
+        next(err);
+    }
+}
+
+export async function getAllTasks(req, res, next)
+{
+    try {
+        let tasks = await Task.findAll({
+            where: {
+                archived: false
+            }
+        });
+
+        res.status(200).json(
+            {
+                status: 200,
+                message: "Tâches récupérés avec succès.",
+                data: tasks,
+                path: `/api/task/list`,
+                timestamp: new Date().toISOString()
+            }
+        )
+    } catch (err) {
         next(err);
     }
 }
