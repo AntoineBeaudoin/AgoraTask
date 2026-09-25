@@ -49,10 +49,6 @@ const Task = bd.define("Task", {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
-  images: { 
-    type: DataTypes.TEXT(1048), 
-    allowNull: true, 
-  },
   archived: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
