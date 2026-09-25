@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 // import authRoutes from "./routes/auth.mjs";
 // import bdRoutes from "./routes/bd.mjs";
 import cors from "cors";
-import { bd } from "./models/bd.mjs";
+import bd from "./models/bd.mjs";
 import { get404, getErrors } from "./controllers/errorController.mjs";
 
 
