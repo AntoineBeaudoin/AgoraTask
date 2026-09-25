@@ -1,8 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
-import authRoutes from "./routes/auth.mjs";
-import bdRoutes from "./routes/bd.mjs";
-import cors from "cors";
+// import authRoutes from "./routes/auth.mjs";
+// import bdRoutes from "./routes/bd.mjs";
+// import cors from "cors";
 // import { bd } from "./models/bd.mjs";
 import { get404, getErrors } from "./controllers/errorController.mjs";
 
@@ -11,10 +11,10 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
-app.use("/api/account", authRoutes);
-app.use("/bd", bdRoutes);
+// app.use(cors());
+// app.use(express.json());
+// app.use("/api/account", authRoutes);
+// app.use("/bd", bdRoutes);
 
 app.get("/", (req, res) => {
     res.status(200).json({
