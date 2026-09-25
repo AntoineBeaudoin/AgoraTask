@@ -32,10 +32,7 @@ bd.authenticate()
         // mettre force à true pour réinitialiser la structure de la bd.
          return bd.sync({ force: false });
     })
-    .then(async () => {
-
-    console.log("Test accounts created");
-        
+    .then(async () => {        
         app.listen(port, async() => {
             console.log("Server running on port " + port);
         });
