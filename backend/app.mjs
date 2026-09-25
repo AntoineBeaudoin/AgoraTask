@@ -16,6 +16,11 @@ app.use(express.json());
 app.use("/api/account", authRoutes);
 app.use("/bd", bdRoutes);
 
+app.get("/", (req, res) => {
+    res.status(200).json({
+        message: "Agora API disponible"
+    });
+});
 
 app.use("/", get404);
 
