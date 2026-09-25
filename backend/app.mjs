@@ -12,8 +12,7 @@ const app = express();
 
 app.get("/", (req, res) => {
     res.json({
-        message: "Agora API disponible",
-        pgLoaded: !!pg
+        message: "Agora API disponible"
     });
 });
 
