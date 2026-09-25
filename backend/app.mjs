@@ -3,24 +3,32 @@ import dotenv from "dotenv";
 // import authRoutes from "./routes/auth.mjs";
 // import bdRoutes from "./routes/bd.mjs";
 import cors from "cors";
-import bd from "./models/bd.mjs";
+// import bd from "./models/bd.mjs";
 import { get404, getErrors } from "./controllers/errorController.mjs";
+import pg from "pg";
 
 
 dotenv.config();
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+app.get("/", (req, res) => {
+    res.json({
+        message: "Agora API disponible",
+        pgLoaded: !!pg
+    });
+});
+
+// app.use(cors());
+// app.use(express.json());
 // app.use("/api/account", authRoutes);
 // app.use("/bd", bdRoutes);
 
-app.get("/", (req, res) => {
-    res.status(200).json({
-        message: "Agora API disponible"
-    });
-});
+// app.get("/", (req, res) => {
+//     res.status(200).json({
+//         message: "Agora API disponible"
+//     });
+// });
 
 app.use("/", get404);
 
