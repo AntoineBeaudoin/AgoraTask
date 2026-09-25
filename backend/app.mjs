@@ -16,7 +16,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/account", authRoutes);
 app.use("/bd", bdRoutes);
-app.use("/task", taskRoutes);
+app.use("/api/task", taskRoutes);
 
 
 app.use("/", get404);
