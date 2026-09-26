@@ -5,12 +5,36 @@ import { isNumber } from '@/utils/checks';
 
 export const useTaskStore = defineStore('tasks', {
   state: () => ({
-    tasks: []
+    tasks: [],
+    loaded: false
   }),
 
 
 
   actions: {
+
+      async loadTasks() {
+        if (this.loaded) {
+          return;
+        }
+
+        try {
+          const response = await apiFetch('/task/list');
+
+          console.log('get tasks response:', response);
+
+          if (isNumber(response)) {
+            throw new Error(`HTTP ${response}`);
+          }
+
+          this.tasks = response.data;
+          this.loaded = true;
+
+        } catch (err) {
+          console.log(`HTTP ${err}`);
+        }
+      },
+
       async addTask(task) {
         const formData = new FormData();
 
@@ -30,7 +54,7 @@ export const useTaskStore = defineStore('tasks', {
         }
 
         try {
-          const response = await apiFetchFormData('/api/task/add', {
+          const response = await apiFetchFormData('/task/add', {
             method: 'POST',
             body: formData
           });
@@ -59,7 +83,7 @@ export const useTaskStore = defineStore('tasks', {
       },
 
     async getTasks(task){
-      const response = await apiFetch('/api/task/list');
+      const response = await apiFetch('/task/list');
       if (isNumber(response)){
         let i = 0;
       }
@@ -75,6 +99,25 @@ export const useTaskStore = defineStore('tasks', {
 
     async deleteTask(id) {
       this.tasks = this.tasks.filter(task => task.id !== id);
+      try {
+        console.log("task id:", id);
+        const response = await apiFetch("/task/" + id, {
+          method: "DELETE"
+        });
+
+        console.log("response after delete task: ", response);
+
+        if (isNumber(response)) {
+          throw new Error(`HTTP ${response}`);
+      }
+      else {
+        return true;
+      }
+      } catch (err) {
+          console.log(`HTTP ${err}`);
+          return false;
+      }
+
     }
   }
 })
