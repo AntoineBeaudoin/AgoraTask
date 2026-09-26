@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node app.mjs",
-    "dev": "nodemon app.mjs"
+    "start:local": "node --env-file=.env app.mjs",
+    "dev": "nodemon --exec \"node -r dotenv/config\" app.mjs"
   },
   "author": "Julien Morel,Antoine Beaudoin,Moussa Dembélé, Evan",
   "license": "ISC",
