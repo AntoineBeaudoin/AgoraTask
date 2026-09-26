@@ -1,6 +1,6 @@
 /** @file Fichier qui définit la logique pour la gestion des tâches */
 import { defineStore } from 'pinia'
-import { apiFetch } from '@/utils/api';
+import { apiFetch, apiFetchFormData } from '@/utils/api';
 import { isNumber } from '@/utils/checks';
 
 export const useTaskStore = defineStore('tasks', {
@@ -11,52 +11,59 @@ export const useTaskStore = defineStore('tasks', {
 
 
   actions: {
-    async addTask(task) {
-      const taskBody = {
-        titre: task.title,
-        local: task.local,
-        description: task.description,
-        startTime: task.startTime,
-        endTime: task.endTime,
-        recurring: task.recurring,
-        frequency: task.frequency,
-        automaticAssignment: task.automaticAssignment
-      }
-      try {
-        const response = await apiFetch('/api/task/add', {
-          method: "POST",
-          body: JSON.stringify(taskBody)
-        });
+      async addTask(task) {
+        const formData = new FormData();
 
-        console.log("createtask response: ", response);
+        formData.append('titre', task.title);
+        formData.append('local', task.local);
+        formData.append('description', task.description ?? '');
+        formData.append('startTime', task.startTime);
+        formData.append('endTime', task.endTime);
+        formData.append('recurring', task.recurring);
+        formData.append('frequency', task.frequency ?? '');
+        formData.append('automaticAssignment', task.automaticAssignment);
 
-        if (isNumber(response)) {
-          if (response == 409) {
-            return false;
+        for (const image of task.images ?? []) {
+          if (image.file) {
+            formData.append('images', image.file);
           }
-          else {
+        }
+
+        try {
+          const response = await apiFetchFormData('/api/task/add', {
+            method: 'POST',
+            body: formData
+          });
+
+          console.log('createtask response:', response);
+
+          if (isNumber(response)) {
+            if (response === 409) {
+              return false;
+            }
+
             throw new Error(`HTTP ${response}`);
           }
-        }
-        else {
-          const returnedTask = response.data;
-          this.tasks.push(returnedTask);
-          console.log("create task success");
-          return true;
-        }
-      } catch (err) {
-        console.log((`HTTP ${err}`));
-        return false;
-      }
 
-    },
+          const returnedTask = response.data;
+
+          this.tasks.push(returnedTask);
+
+          console.log('create task success');
+
+          return true;
+        } catch (err) {
+          console.log(`HTTP ${err}`);
+          return false;
+        }
+      },
 
     async getTasks(task){
       const response = await apiFetch('/api/task/list');
       if (isNumber(response)){
-        
+        let i = 0;
       }
-    }
+    },
 
     async updateTask(task) {
       const index = this.tasks.findIndex(t => t.id === task.id);

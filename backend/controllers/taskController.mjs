@@ -1,4 +1,5 @@
 import {Task, TaskImage} from '../models/bd_index.mjs';
+import { put } from "@vercel/blob";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -35,12 +36,21 @@ export async function createTask(req, res, next) {
             automaticAssignment
         });
 
-        if (req.files) {
+       if (req.files) {
             for (const file of req.files) {
+                const blob = await put(
+                    `task/${aTask.id}/${file.originalname}`,
+                    file.buffer,
+                    {
+                        access: "public",
+                        contentType: file.mimetype
+                    }
+                );
+
                 await TaskImage.create({
                     taskId: aTask.id,
-                    filename: file.filename,
-                    path: `/uploads/tasks/${file.filename}`,
+                    filename: file.originalname,
+                    path: blob.url,
                     mimeType: file.mimetype
                 });
             }
