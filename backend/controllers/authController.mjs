@@ -45,17 +45,22 @@ export async function loginUser(req, res, next) {
     const user = await Compte.findOne({ where: { courriel: email } });
 
     if (!user) {
-      const error = new Error(`Courriel ou mot de passe invalide.`);
+      let error = new Error("Courriel ou mot de passe invalide.");
       error.statusCode = 401;
-      throw error;
+      return next(error);
     }
 
     const isEqual = await bcrypt.compare(password, user.motDePasse);
 
     if (!isEqual) {
-      const error = new Error(`Courriel ou mot de passe invalide.`);
+      let error = new Error("Courriel ou mot de passe invalide.");
       error.statusCode = 401;
-      throw error;
+      return next(error);
+    }
+    if (user.IsArchived) {
+      let error = new Error("Ce compte est archivé.");
+      error.statusCode = 403;
+      return next(error);
     }
 
     const userResponse = user.get({ plain: true });

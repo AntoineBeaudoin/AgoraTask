@@ -10,44 +10,85 @@
       <div class="employee-count">{{ displayedUsers.length }} employé(s)</div>
     </div>
 
-    <!-- FILTRES -->
-    <div class="filters">
+    <!-- FILTRE ACTIFS / ARCHIVÉS / TOUS -->
+    <div class="status-filters">
       <button
-        class="filter-btn"
-        :class="{ 'active-filter': displayTitle === 'Employés actifs' }"
+        class="status-filter-btn"
+        :class="{ active: displayTitle === 'Employés actifs' }"
         @click="LoadUsers"
       >
         Employés actifs
       </button>
 
       <button
-        class="filter-btn"
-        :class="{ 'active-filter': displayTitle === 'Employés archivés' }"
+        class="status-filter-btn"
+        :class="{ active: displayTitle === 'Employés archivés' }"
         @click="ArchivedUsers"
       >
         Employés archivés
       </button>
 
       <button
-        class="filter-btn"
-        :class="{ 'active-filter': displayTitle === 'Tous les employés' }"
+        class="status-filter-btn"
+        :class="{ active: displayTitle === 'Tous les employés' }"
         @click="allUsers"
       >
         Tous les employés
       </button>
     </div>
 
-    <!-- CONTENU PRINCIPAL -->
+    <!-- CARTE PRINCIPALE -->
     <section class="employees-card">
+      <!-- TITRE -->
       <div class="card-header">
         <div>
           <h2>{{ displayTitle }}</h2>
+
           <span class="result-count"> {{ displayedUsers.length }} résultat(s) </span>
         </div>
       </div>
 
-      <!-- Aucun utilisateur -->
-      <div v-if="displayedUsers.length === 0" class="empty-state">Aucun employé à afficher.</div>
+      <!-- FILTRE PAR RÔLE -->
+      <div class="role-filters">
+        <span class="role-label"> Filtrer par rôle : </span>
+
+        <button
+          class="role-filter-btn"
+          :class="{ active: displayedRole === 'all' }"
+          @click="filterUsersByRole('all')"
+        >
+          Tous
+        </button>
+
+        <button
+          class="role-filter-btn"
+          :class="{ active: displayedRole === 'administrateur' }"
+          @click="filterUsersByRole('administrateur')"
+        >
+          Administrateurs
+        </button>
+
+        <button
+          class="role-filter-btn"
+          :class="{ active: displayedRole === 'coordonnateur' }"
+          @click="filterUsersByRole('coordonnateur')"
+        >
+          Coordonnateurs
+        </button>
+
+        <button
+          class="role-filter-btn"
+          :class="{ active: displayedRole === 'personnel_de_terrain' }"
+          @click="filterUsersByRole('personnel_de_terrain')"
+        >
+          Personnel de terrain
+        </button>
+      </div>
+
+      <!-- AUCUN UTILISATEUR -->
+      <div v-if="displayedUsers.length === 0" class="empty-state">
+        Aucun employé ne correspond aux filtres sélectionnés.
+      </div>
 
       <!-- TABLEAU -->
       <div v-else class="table-wrapper">
@@ -76,38 +117,47 @@
               </td>
 
               <!-- COURRIEL -->
-              <td class="email">
+              <td class="user-email">
                 {{ user.courriel }}
               </td>
 
-              <!-- RÔLE -->
+              <!-- MODIFICATION DU RÔLE -->
               <td>
-                <select
-                  class="role-select"
-                  :value="user.role"
-                  :disabled="user.IsArchived"
-                  @change="editUser(user.id, $event.target.value)"
-                >
-                  <option v-if="user.role === 'Role_En_Attente'" value="Role_En_Attente" disabled>
-                    En attente
-                  </option>
+                <div class="role-editor">
+                  <select
+                    v-model="pendingRoles[user.id]"
+                    class="role-select"
+                    :disabled="user.IsArchived"
+                  >
+                    <option v-if="user.role === 'Role_En_Attente'" value="Role_En_Attente" disabled>
+                      En attente
+                    </option>
 
-                  <option value="administrateur">Administrateur</option>
+                    <option value="administrateur">Administrateur</option>
 
-                  <option value="coordonnateur">Coordonnateur</option>
+                    <option value="coordonnateur">Coordonnateur</option>
 
-                  <option value="personnel_de_terrain">Personnel de terrain</option>
-                </select>
+                    <option value="personnel_de_terrain">Personnel de terrain</option>
+                  </select>
+
+                  <button
+                    class="confirm-role-btn"
+                    :disabled="user.IsArchived || pendingRoles[user.id] === user.role"
+                    @click="editUser(user.id, pendingRoles[user.id])"
+                  >
+                    Confirmer
+                  </button>
+                </div>
               </td>
 
               <!-- STATUT -->
               <td>
-                <span v-if="!user.IsArchived" class="status active-status"> Actif </span>
+                <span v-if="!user.IsArchived" class="status-badge active-status"> Actif </span>
 
-                <span v-else class="status archived-status"> Archivé </span>
+                <span v-else class="status-badge archived-status"> Archivé </span>
               </td>
 
-              <!-- ACTION -->
+              <!-- ARCHIVAGE -->
               <td>
                 <button
                   v-if="!user.IsArchived"
@@ -128,47 +178,52 @@
     </section>
   </main>
 </template>
-
 <script setup>
 import { ref } from 'vue'
 import { onMounted } from 'vue'
 import { apiFetch } from '../utils/api.js'
 let displayTitle = ref('Employés actifs')
+let displayedRole = ref('personnel_de_terrain')
+let pendingRoles = ref({})
 const displayedUsers = ref([])
+const loadedUsers = ref([])
 onMounted(() => {
   LoadUsers()
 })
-function LoadUsers() {
+async function LoadUsers() {
   displayTitle.value = 'Employés actifs'
   apiFetch('/users?archived=false', { method: 'GET' })
     .then((data) => {
-      displayedUsers.value = data.data.users
+      loadedUsers.value = data.data.users
+      ApplyRoleFilter()
     })
     .catch((error) => {
       console.error('Erreur lors du chargement des utilisateurs :', error)
     })
 }
-function ArchivedUsers() {
+async function ArchivedUsers() {
   displayTitle.value = 'Employés archivés'
   apiFetch('/users?archived=true', { method: 'GET' })
     .then((data) => {
-      displayedUsers.value = data.data.users
+      loadedUsers.value = data.data.users
+      ApplyRoleFilter()
     })
     .catch((error) => {
       console.error('Erreur lors du chargement des utilisateurs :', error)
     })
 }
-function allUsers() {
+async function allUsers() {
   displayTitle.value = 'Tous les employés'
   apiFetch('/users', { method: 'GET' })
     .then((data) => {
-      displayedUsers.value = data.data.users
+      loadedUsers.value = data.data.users
+      ApplyRoleFilter()
     })
     .catch((error) => {
       console.error('Erreur lors du chargement des utilisateurs :', error)
     })
 }
-function editUser(userId, newRule) {
+async function editUser(userId, newRule) {
   apiFetch('/users/Edit_Rule/', {
     method: 'PATCH',
     body: JSON.stringify({
@@ -184,7 +239,7 @@ function editUser(userId, newRule) {
       console.error("Erreur lors de la modification de la règle de l'utilisateur :", error)
     })
 }
-function archiveUser(userId, IsArchived) {
+async function archiveUser(userId, IsArchived) {
   apiFetch('/users/Archive_User', {
     method: 'PATCH',
     body: JSON.stringify({
@@ -200,33 +255,54 @@ function archiveUser(userId, IsArchived) {
       console.error("Erreur lors de l'archivage de l'utilisateur :", error)
     })
 }
+function ApplyRoleFilter() {
+  if (displayedRole.value === 'all') {
+    displayedUsers.value = loadedUsers.value
+  } else {
+    displayedUsers.value = loadedUsers.value.filter((user) => user.role === displayedRole.value)
+  }
+
+  loadedUsers.value.forEach((user) => {
+    if (pendingRoles.value[user.id] === undefined) {
+      pendingRoles.value[user.id] = user.role
+    }
+  })
+}
+function filterUsersByRole(role) {
+  displayedRole.value = role
+  ApplyRoleFilter()
+}
 </script>
 <style scoped>
-/* ============================= */
-/* PAGE */
-/* ============================= */
+/* =========================
+   PAGE
+========================= */
 
 .gestion-container {
-  max-width: 1250px;
+  max-width: 1200px;
+
   margin: 0 auto;
-  padding: 45px 30px;
-  font-family: Arial, sans-serif;
+
+  padding: 55px 30px;
 }
 
-/* ============================= */
-/* HEADER */
-/* ============================= */
+/* =========================
+   EN-TÊTE
+========================= */
 
 .page-header {
   display: flex;
+
   justify-content: space-between;
   align-items: center;
 
-  margin-bottom: 30px;
+  gap: 20px;
+
+  margin-bottom: 28px;
 }
 
 .page-header h1 {
-  margin: 0 0 8px 0;
+  margin: 0 0 7px 0;
 
   font-size: 32px;
   font-weight: 700;
@@ -238,15 +314,16 @@ function archiveUser(userId, IsArchived) {
   margin: 0;
 
   color: #6c757d;
+
   font-size: 15px;
 }
 
 .employee-count {
   padding: 9px 16px;
 
-  border-radius: 20px;
-
   background-color: #f1f3f5;
+
+  border-radius: 999px;
 
   color: #495057;
 
@@ -254,107 +331,150 @@ function archiveUser(userId, IsArchived) {
   font-weight: 600;
 }
 
-/* ============================= */
-/* FILTRES */
-/* ============================= */
+/* =========================
+   FILTRES DE STATUT
+========================= */
 
-.filters {
+.status-filters {
   display: flex;
 
-  gap: 12px;
+  flex-wrap: wrap;
+
+  gap: 10px;
 
   margin-bottom: 25px;
-
-  flex-wrap: wrap;
 }
 
-.filter-btn {
-  border: 1px solid #d9dee3;
+.status-filter-btn {
+  padding: 10px 18px;
+
+  border: 1px solid #ced4da;
+  border-radius: 8px;
 
   background-color: white;
 
-  color: #495057;
-
-  padding: 10px 19px;
-
-  border-radius: 8px;
+  color: #343a40;
 
   font-size: 14px;
   font-weight: 600;
 
   cursor: pointer;
 
-  transition:
-    background-color 0.2s,
-    color 0.2s,
-    border-color 0.2s,
-    transform 0.1s;
+  transition: 0.2s;
 }
 
-.filter-btn:hover {
-  background-color: #f3f5f7;
+.status-filter-btn:hover {
+  background-color: #f1f3f5;
 }
 
-.filter-btn:active {
-  transform: scale(0.97);
-}
-
-/* Bouton du filtre actuellement sélectionné */
-
-.filter-btn.active-filter {
+.status-filter-btn.active {
   background-color: #198754;
 
-  color: white;
-
   border-color: #198754;
+
+  color: white;
 }
 
-.filter-btn.active-filter:hover {
+.status-filter-btn.active:hover {
   background-color: #157347;
-
-  border-color: #157347;
 }
 
-/* ============================= */
-/* CARTE */
-/* ============================= */
+/* =========================
+   CARTE
+========================= */
 
 .employees-card {
+  overflow: hidden;
+
   background-color: white;
 
-  border: 1px solid #e3e6e9;
-
+  border: 1px solid #e2e6ea;
   border-radius: 12px;
-
-  overflow: hidden;
 
   box-shadow: 0 3px 15px rgba(0, 0, 0, 0.06);
 }
 
 .card-header {
-  padding: 22px 25px;
-
-  border-bottom: 1px solid #e9ecef;
+  padding: 22px 25px 13px;
 }
 
 .card-header h2 {
-  margin: 0 0 5px 0;
+  margin: 0 0 5px;
 
   font-size: 21px;
-  font-weight: 650;
+  font-weight: 700;
 
   color: #212529;
 }
 
 .result-count {
-  font-size: 13px;
-
   color: #868e96;
+
+  font-size: 13px;
 }
 
-/* ============================= */
-/* TABLEAU */
-/* ============================= */
+/* =========================
+   FILTRE PAR RÔLE
+========================= */
+
+.role-filters {
+  display: flex;
+
+  align-items: center;
+
+  flex-wrap: wrap;
+
+  gap: 8px;
+
+  padding: 14px 25px 18px;
+
+  border-bottom: 1px solid #e9ecef;
+
+  background-color: #fafafa;
+}
+
+.role-label {
+  margin-right: 5px;
+
+  color: #6c757d;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.role-filter-btn {
+  padding: 7px 13px;
+
+  border: 1px solid #ced4da;
+  border-radius: 999px;
+
+  background-color: white;
+
+  color: #495057;
+
+  font-size: 13px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.role-filter-btn:hover {
+  background-color: #e9ecef;
+}
+
+.role-filter-btn.active {
+  background-color: #198754;
+
+  border-color: #198754;
+
+  color: white;
+}
+
+/* =========================
+   TABLEAU
+========================= */
 
 .table-wrapper {
   width: 100%;
@@ -375,18 +495,18 @@ function archiveUser(userId, IsArchived) {
 .employees-table th {
   padding: 14px 20px;
 
-  text-align: left;
+  border-bottom: 1px solid #dee2e6;
+
+  color: #6c757d;
 
   font-size: 12px;
   font-weight: 700;
 
+  text-align: left;
+
   text-transform: uppercase;
 
   letter-spacing: 0.04em;
-
-  color: #6c757d;
-
-  border-bottom: 1px solid #dee2e6;
 }
 
 .employees-table td {
@@ -414,24 +534,31 @@ function archiveUser(userId, IsArchived) {
 }
 
 .user-name {
-  font-weight: 600;
+  font-weight: 700;
 }
 
-.email {
+.user-email {
   color: #6c757d;
 }
 
-/* ============================= */
-/* SELECT RÔLE */
-/* ============================= */
+/* =========================
+   MODIFICATION DU RÔLE
+========================= */
+
+.role-editor {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+}
 
 .role-select {
-  min-width: 180px;
+  min-width: 175px;
 
   padding: 8px 10px;
 
   border: 1px solid #ced4da;
-
   border-radius: 6px;
 
   background-color: white;
@@ -459,19 +586,55 @@ function archiveUser(userId, IsArchived) {
   cursor: not-allowed;
 }
 
-/* ============================= */
-/* STATUT */
-/* ============================= */
+/* BOUTON CONFIRMER */
 
-.status {
+.confirm-role-btn {
+  padding: 8px 11px;
+
+  border: 1px solid #198754;
+  border-radius: 6px;
+
+  background-color: #198754;
+
+  color: white;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.confirm-role-btn:hover:not(:disabled) {
+  background-color: #157347;
+
+  border-color: #157347;
+}
+
+.confirm-role-btn:disabled {
+  background-color: #e9ecef;
+
+  border-color: #dee2e6;
+
+  color: #adb5bd;
+
+  cursor: not-allowed;
+}
+
+/* =========================
+   STATUT
+========================= */
+
+.status-badge {
   display: inline-block;
 
   padding: 6px 11px;
 
-  border-radius: 20px;
+  border-radius: 999px;
 
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .active-status {
@@ -486,21 +649,21 @@ function archiveUser(userId, IsArchived) {
   color: #6c757d;
 }
 
-/* ============================= */
-/* ACTIONS */
-/* ============================= */
+/* =========================
+   ARCHIVAGE
+========================= */
 
 .action-btn {
   padding: 7px 13px;
 
   border-radius: 6px;
 
+  background-color: white;
+
   font-size: 13px;
   font-weight: 600;
 
   cursor: pointer;
-
-  background-color: white;
 
   transition: 0.2s;
 }
@@ -529,12 +692,12 @@ function archiveUser(userId, IsArchived) {
   color: white;
 }
 
-/* ============================= */
-/* LISTE VIDE */
-/* ============================= */
+/* =========================
+   AUCUN RÉSULTAT
+========================= */
 
 .empty-state {
-  padding: 60px 20px;
+  padding: 55px 20px;
 
   text-align: center;
 
@@ -543,35 +706,31 @@ function archiveUser(userId, IsArchived) {
   font-size: 15px;
 }
 
-/* ============================= */
-/* RESPONSIVE */
-/* ============================= */
+/* =========================
+   RESPONSIVE
+========================= */
 
-@media (max-width: 800px) {
+@media (max-width: 900px) {
   .gestion-container {
-    padding: 30px 15px;
+    padding: 35px 15px;
   }
 
   .page-header {
     flex-direction: column;
 
     align-items: flex-start;
-
-    gap: 15px;
   }
 
-  .filters {
+  .status-filters {
     width: 100%;
   }
 
-  .filter-btn {
-    flex: 1;
-
-    min-width: 150px;
+  .role-editor {
+    min-width: 290px;
   }
 
   .employees-table {
-    min-width: 900px;
+    min-width: 1050px;
   }
 }
 </style>

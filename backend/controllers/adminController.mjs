@@ -17,10 +17,11 @@ export async function getAllUsers(req, res, next) {
       } else if (archived === "false") {
         whereCondition.IsArchived = false;
       } else {
-        return res.status(400).json({
-          status: 400,
-          message: "Le paramètre archived doit être true ou false.",
-        });
+        let error = new Error();
+        error.statusCode = 400;
+        error.message =
+          "Paramètre 'archived' invalide. Utilisez 'true' ou 'false'.";
+        next(error);
       }
     }
 
@@ -33,10 +34,10 @@ export async function getAllUsers(req, res, next) {
       ];
 
       if (!rolesValides.includes(role)) {
-        return res.status(400).json({
-          status: 400,
-          message: "Rôle invalide.",
-        });
+        let error = new Error();
+        error.statusCode = 400;
+        error.message = "Rôle invalide.";
+        next(error);
       }
 
       whereCondition.role = role;
@@ -66,12 +67,9 @@ export async function editRule(req, res, next) {
     const { userId, newRole } = req.body;
     const user = await Compte.findByPk(userId);
     if (!user || user.IsArchived) {
-      return res.status(404).json({
-        status: 404,
-        message: "Utilisateur non trouvé",
-        data: null,
-        error: null,
-      });
+      let error = new Error("Utilisateur introuvable ou archivé.");
+      error.statusCode = 404;
+      return next(error);
     }
     if (
       newRole == "administrateur" ||
@@ -88,12 +86,9 @@ export async function editRule(req, res, next) {
         error: null,
       });
     } else {
-      res.status(400).json({
-        status: 400,
-        message: "Rôle invalide. Veuillez choisir un rôle valide.",
-        data: null,
-        error: null,
-      });
+      let error = new Error("Rôle invalide. Veuillez choisir un rôle valide.");
+      error.statusCode = 400;
+      next(error);
     }
   } catch (error) {
     next(error);
@@ -105,12 +100,9 @@ export async function EditUserIsArchived(req, res, next) {
     const { userId, IsArchived } = req.body;
     const user = await Compte.findByPk(userId);
     if (!user) {
-      return res.status(404).json({
-        status: 404,
-        message: "Utilisateur non trouvé",
-        data: null,
-        error: null,
-      });
+      let error = new Error("Utilisateur introuvable.");
+      error.statusCode = 404;
+      return next(error);
     }
     await user.update({ IsArchived: IsArchived });
     res.status(200).json({

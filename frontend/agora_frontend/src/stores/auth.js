@@ -33,6 +33,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   const disconnect = () => {
     localStorage.removeItem('jwt')
+    console.log('Token removed from localStorage')
+    router.push('/login')
   }
 
   function isTokenValid() {
@@ -120,12 +122,14 @@ export const useAuthStore = defineStore('auth', () => {
 
       console.log('response after login attempt', response)
 
-      if (response == 401) {
-        console.log('response is 401')
-        errorMessage.value = 'Identifiant ou mot de passe invalide.'
-      } else if (isNumber(response)) {
-        console.log('response is a number', response)
-        throw new Error(`HTTP ${response}`)
+      if (response.status !== 200 && response.status !== 201) {
+        // console.log('response is 401')
+        errorMessage.value =
+          response.status + ': ' + response.message || 'Erreur lors de la connexion'
+        // } else if (isNumber(response)) {
+        //   console.log('response is a number', response)
+        //   throw new Error(`HTTP ${response}`)
+        // }
       } else {
         const decodedToken = jwtDecode(response.data.token)
 
@@ -146,10 +150,6 @@ export const useAuthStore = defineStore('auth', () => {
 
           case 'personnel_de_terrain':
             redirectTo = route.query.redirect || '/employe'
-            break
-
-          case 'Role_En_Attente':
-            redirectTo = route.query.redirect || '/waiting'
             break
 
           default:
