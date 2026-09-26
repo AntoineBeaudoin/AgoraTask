@@ -76,7 +76,7 @@ export async function editRule(req, res, next) {
     if (
       newRole == "administrateur" ||
       newRole == "coordonnateur" ||
-      newRole == "utilisateur"
+      newRole == "personnel_de_terrain"
     ) {
       await user.update({ role: newRole });
       res.status(200).json({
@@ -99,32 +99,6 @@ export async function editRule(req, res, next) {
     next(error);
   }
 }
-
-// export async function editApproval(req, res, next) {
-//   try {
-//     const { userId, newApprovalStatus } = req.body;
-//     const user = await Compte.findByPk(userId);
-//     if (!user || user.IsArchived) {
-//       return res.status(404).json({
-//         status: 404,
-//         message: "Utilisateur non trouvé",
-//         data: null,
-//         error: null,
-//       });
-//     }
-//     await user.update({ approuve: newApprovalStatus });
-//     res.status(200).json({
-//       status: 200,
-//       message: "Statut d'approbation de l'utilisateur mis à jour avec succès",
-//       data: {
-//         user: user,
-//       },
-//       error: null,
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// }
 
 export async function EditUserIsArchived(req, res, next) {
   try {

@@ -5,7 +5,7 @@ import bdRoutes from "./routes/bd.mjs";
 import cors from "cors";
 import { bd } from "./models/bd.mjs";
 import { get404, getErrors } from "./controllers/errorController.mjs";
-
+import adminRoutes from "./routes/admin.mjs";
 dotenv.config();
 
 const app = express();
@@ -14,6 +14,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/account", authRoutes);
 app.use("/bd", bdRoutes);
+app.use("/users", adminRoutes);
 
 app.use("/", get404);
 

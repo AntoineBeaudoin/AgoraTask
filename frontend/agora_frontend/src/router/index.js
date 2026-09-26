@@ -5,6 +5,7 @@ import LoginView from '@/views/LoginView.vue'
 import EmployeView from '@/views/EmployeView.vue'
 import CoordoView from '@/views/CoordoView.vue'
 import AdminView from '@/views/AdminView.vue'
+import GestionEmployesView from '@/views/GestionEmployesView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,83 +21,87 @@ const router = createRouter({
       component: () => import('../views/AboutView.vue'),
     },
     {
-      path: "/login",
-      name: "login",
+      path: '/login',
+      name: 'login',
       component: LoginView,
       meta: {
-        title: "Se connecter",
+        title: 'Se connecter',
         redirectIfAuth: true,
-       }
+      },
     },
     {
-      path: "/admin",
-      name: "admin",
+      path: '/admin',
+      name: 'admin',
       component: AdminView,
-      meta: { title: "Portail administrateur", requireAuth: true, role: "administrateur" }
+      meta: { title: 'Portail administrateur', requireAuth: true, role: 'administrateur' },
     },
     {
-      path: "/coordo",
-      name: "coordo",
+      path: '/coordo',
+      name: 'coordo',
       component: CoordoView,
-      meta: { title: "Portail coordonnateur", requireAuth: true, role: "coordonnateur" }
+      meta: { title: 'Portail coordonnateur', requireAuth: true, role: 'coordonnateur' },
     },
     {
-      path: "/employe",
-      name: "employe",
+      path: '/employe',
+      name: 'employe',
       component: EmployeView,
-      meta: { title: "Portail employé", requireAuth: true, role: "personnel_de_terrain"}
+      meta: { title: 'Portail employé', requireAuth: true, role: 'personnel_de_terrain' },
+    },
+    {
+      path: '/GestionEmployes',
+      name: 'GestionEmployes',
+      component: GestionEmployesView,
+      meta: { title: 'Gestion des employés', requireAuth: true, role: 'administrateur' },
     },
   ],
 
-    scrollBehavior(to, from, savedPosition) {
+  scrollBehavior(to, from, savedPosition) {
     return new Promise((resolve) => {
       setTimeout(() => {
         if (savedPosition) {
-          resolve(savedPosition);
-        }
-        else {
+          resolve(savedPosition)
+        } else {
           resolve({ left: 0, top: 0 })
         }
       }, 500)
     })
   },
-});
+})
 
 router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore();
-  const logged = authStore.isTokenValid();
+  const authStore = useAuthStore()
+  const logged = authStore.isTokenValid()
 
-  if (to.name === "login" && logged) {
-    const role = authStore.getRole();
+  if (to.name === 'login' && logged) {
+    const role = authStore.getRole()
 
     const portals = {
-      administrateur: "admin",
-      coordonnateur: "coordo",
-      personnel_de_terrain: "employe"
-    };
+      administrateur: 'admin',
+      coordonnateur: 'coordo',
+      personnel_de_terrain: 'employe',
+    }
 
-    return next({ name: portals[role] || "employe" });
+    return next({ name: portals[role] || 'employe' })
   }
 
   if (to.meta.requireAuth && !logged) {
     return next({
-      name: "login",
-      query: { redirect: to.fullPath }
-    });
+      name: 'login',
+      query: { redirect: to.fullPath },
+    })
   }
 
   if (to.meta.role && authStore.getRole() !== to.meta.role) {
-    return next({ name: "home" });
+    return next({ name: 'home' })
   }
 
-  next();
-});
-
+  next()
+})
 
 router.afterEach((to) => {
   if (to.meta?.title) {
-    document.title = to.meta.title;
+    document.title = to.meta.title
   }
-});
+})
 
 export default router

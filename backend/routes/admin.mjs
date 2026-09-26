@@ -5,18 +5,12 @@ import { isAdmin } from "../Middleware/IsAdmin.mjs";
 
 const router = express.Router();
 
-router.get("/AllUsers", isConnected, isAdmin, adminController.getAllUsers);
+router.get("/", isConnected, isAdmin, adminController.getAllUsers);
 router.patch("/Edit_Rule", isConnected, isAdmin, adminController.editRule);
 router.patch(
-  "/Edit_Approval",
-  isConnected,
-  isAdmin,
-  adminController.editApproval,
-);
-router.delete(
   "/Archive_User",
   isConnected,
   isAdmin,
-  adminController.ArchiveUser,
+  adminController.EditUserIsArchived,
 );
 export default router;

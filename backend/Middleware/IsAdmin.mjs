@@ -1,4 +1,4 @@
-const isAdmin = (req, res, next) => {
+export const isAdmin = (req, res, next) => {
   if (!req.user) {
     const error = new Error("Utilisateur non authentifié.");
     error.statusCode = 401;
@@ -7,7 +7,7 @@ const isAdmin = (req, res, next) => {
 
   if (req.user.role !== "administrateur") {
     const error = new Error("Accès interdit : droits administrateur requis.");
-    error.statusCode = 403;
+    error.statusCode = 404;
     return next(error);
   }
 

@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import Compte from "../models/compte.mjs";
 
-const isConnected = async (req, res, next) => {
+export const isConnected = async (req, res, next) => {
   try {
     const authHeader = req.get("Authorization");
 
@@ -40,12 +40,12 @@ const isConnected = async (req, res, next) => {
       return next(error);
     }
 
-    // Compte pas encore approuvé
-    if (!compte.approuve) {
-      const error = new Error("Ce compte n'est pas encore approuvé.");
-      error.statusCode = 403;
-      return next(error);
-    }
+    // // Compte pas encore approuvé
+    // if (!compte.approuve) {
+    //   const error = new Error("Ce compte n'est pas encore approuvé.");
+    //   error.statusCode = 403;
+    //   return next(error);
+    // }
 
     req.user = {
       id: compte.id,
