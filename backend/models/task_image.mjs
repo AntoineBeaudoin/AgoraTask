@@ -1,5 +1,5 @@
 import { DataTypes } from "sequelize";
-import { bd } from "./bd.mjs";
+import bd from "./bd.mjs";
 
 const TaskImage = bd.define("TaskImage", {
   id: {
