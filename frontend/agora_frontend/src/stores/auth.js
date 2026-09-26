@@ -112,7 +112,7 @@ export const useAuthStore = defineStore('auth', () => {
     console.log("LOGIN USER FUNCTION BEGINNING");
     errorMessage.value = "";
     try {
-      const response = await apiFetch("/account/login", {
+      const response = await apiFetch("/api/account/login", {
         method: "POST",
         body: JSON.stringify({
           email: email.value,
