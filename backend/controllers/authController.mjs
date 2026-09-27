@@ -6,7 +6,7 @@ import bcrypt from "bcrypt";
 dotenv.config();
 
 export async function createUser(req, res, next) {
-  const { nom, prenom, courriel, mdp } = req.body;
+  const { nom, prenom, courriel, mdp, role } = req.body;
   try {
     let hashedPassword = await bcrypt.hash(mdp, 15);
     let user = Compte.build({
@@ -14,7 +14,7 @@ export async function createUser(req, res, next) {
       nom: nom,
       courriel: courriel,
       motDePasse: hashedPassword,
-      approuve: false,
+      role: role,
     });
 
     await user.save();
