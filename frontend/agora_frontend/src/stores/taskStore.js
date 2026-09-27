@@ -44,7 +44,7 @@ export const useTaskStore = defineStore('tasks', {
         formData.append('startTime', task.startTime);
         formData.append('endTime', task.endTime);
         formData.append('recurring', task.recurring);
-        formData.append('frequency', task.frequency ?? '');
+        formData.append('frequency', task.frequency || "daily");
         formData.append('automaticAssignment', task.automaticAssignment);
 
         for (const image of task.images ?? []) {

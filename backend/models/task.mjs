@@ -42,7 +42,6 @@ const Task = bd.define("Task", {
       "monthly",
       "other"
     ),
-    allowNull: false,
     defaultValue: "daily"
   },
   automaticAssignment: {

@@ -25,6 +25,7 @@ export async function createTask(req, res, next) {
             throw error;
         }
 
+        const theFrequency = frequency || "daily";
         const aTask = await Task.create({
             titre,
             local,
@@ -32,7 +33,7 @@ export async function createTask(req, res, next) {
             startTime,
             endTime,
             recurring,
-            frequency,
+            theFrequency,
             automaticAssignment
         });
 
