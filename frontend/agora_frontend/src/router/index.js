@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
+import { useErrorStore } from '@/stores/Error.js'
 import HomeView from '../views/HomeView.vue'
 import LoginView from '@/views/LoginView.vue'
 import EmployeView from '@/views/EmployeView.vue'
@@ -53,6 +54,11 @@ const router = createRouter({
       component: GestionEmployesView,
       meta: { title: 'Gestion des employés', requireAuth: true, role: 'administrateur' },
     },
+    {
+      path: '/error',
+      name: 'error',
+      component: () => import('../views/GlobalErrorView.vue'),
+    },
   ],
 
   scrollBehavior(to, from, savedPosition) {
@@ -98,9 +104,13 @@ router.beforeEach((to, from, next) => {
   next()
 })
 
-router.afterEach((to) => {
+router.afterEach((to, from) => {
+  const errorStore = useErrorStore()
   if (to.meta?.title) {
     document.title = to.meta.title
+  }
+  if (from.name === 'error' && to.name !== 'error') {
+    errorStore.clearError()
   }
 })
 
