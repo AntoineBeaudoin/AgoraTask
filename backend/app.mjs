@@ -14,7 +14,7 @@ app.get("/", (req, res) => {
     });
 });
 
-app.use(cors());
+app.use(cors({origin:'https://antoinebeaudoin.github.io/AgoraTask/'}));
 app.use(express.json());
 app.use("/api/account", authRoutes);
 app.use("/bd", bdRoutes);
