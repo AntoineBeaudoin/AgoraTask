@@ -22,18 +22,16 @@ async function validateTaskDoesNotAlreadyExist(title, local, startTime, endTime,
             endTime: endTime
         }
     });
+    if (taskId !== -1) {
+        if (anotherTask?.id !== taskId) {
+           return false;
+        }
+        return true;
+    }
     if (anotherTask) {
         const error = new Error("Une tâche identique existe déjà.");
         error.statusCode = 409;
         throw error;
-    }
-    if (taskId !== -1) {
-        if (anotherTask.id !== task.id) {
-            return res.status(409).json({
-                status: 409,
-                message: "Une tâche identique existe déjà."
-            });
-        }
     }
 }
 
@@ -67,9 +65,16 @@ export async function createTask(req, res, next) {
     const { title, local, description, startTime,
         endTime, recurring, frequency,
         automaticAssignment } = req.body;
-
-    validateTaskDoesNotAlreadyExist(title, local, startTime, endTime);
+    
     try {
+        let taskExists = await validateTaskDoesNotAlreadyExist(title, local, startTime, endTime);
+        if (taskExists)
+        {
+            return res.status(409).json({
+                status: 409,
+                message: "Une tâche identique existe déjà."
+            });
+        }
         const theFrequency = frequency || "daily";
         const aTask = await Task.create({
             title,
@@ -81,7 +86,7 @@ export async function createTask(req, res, next) {
             theFrequency,
             automaticAssignment
         });
-        addTaskImages(req, atask);
+        await addTaskImages(req, aTask);
         res.location(`/api/tasks/${aTask.id}`);
         res.status(201).json({
             status: 201,
@@ -136,7 +141,13 @@ export async function replaceTask(req, res, next) {
                 message: "Tâche introuvable."
             });
         }
-        validateTaskDoesNotAlreadyExist(title, local, startTime, endTime, id)
+        let taskExists = await validateTaskDoesNotAlreadyExist(title, local, startTime, endTime, id);
+        if (taskExists){
+            return res.status(409).json({
+                status: 409,
+                message: "Une tâche identique existe déjà."
+            });
+        }
         await task.update({
             title,
             local,
@@ -147,7 +158,7 @@ export async function replaceTask(req, res, next) {
             theFrequency: frequency || "daily",
             automaticAssignment
         });
-        addTaskImages(req, task);
+        await addTaskImages(req, task);
         const updatedTask = await Task.findByPk(task.id);
         return res.status(200).json({
             status: 200,
