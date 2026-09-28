@@ -59,6 +59,13 @@ const router = createRouter({
       name: 'error',
       component: () => import('../views/GlobalErrorView.vue'),
     },
+    //404
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('../views/GlobalErrorView.vue'),
+      meta: { title: 'Page introuvable' },
+    },
   ],
 
   scrollBehavior(to, from, savedPosition) {
@@ -99,6 +106,10 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.role && authStore.getRole() !== to.meta.role) {
     return next({ name: 'home' })
+  }
+  if (to.name === 'not-found') {
+    const errorStore = useErrorStore()
+    errorStore.setError(404, "cette page n'existe pas ou a été supprimée.")
   }
 
   next()

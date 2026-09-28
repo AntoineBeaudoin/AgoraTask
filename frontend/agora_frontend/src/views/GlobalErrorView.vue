@@ -53,7 +53,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import useErrorStore from '../stores/Error.js'
+import { useErrorStore } from '../stores/Error.js'
 
 const router = useRouter()
 const errorStore = useErrorStore()
