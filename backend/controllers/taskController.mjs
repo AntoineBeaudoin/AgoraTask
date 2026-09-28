@@ -167,7 +167,6 @@ export async function replaceTask(req, res, next) {
             automaticAssignment
         });
         await addTaskImages(req, task);
-        // const updatedTask = await Task.findByPk(task.id);
         const updatedTask  = await Task.findOne({
             where: {
                 id: task.id
