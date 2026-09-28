@@ -15,7 +15,11 @@ app.get("/", (req, res) => {
     });
 });
 
-app.use(cors());
+const allowedOrigins = process.env.FRONTEND_ORIGINS
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use("/api/account", authRoutes);
 app.use("/bd", bdRoutes);
