@@ -9,14 +9,12 @@ export const useTaskStore = defineStore('tasks', {
     loaded: false
   }),
 
-
-
   actions: {
 
     async getTaskById(id){
       return this.tasks.find((task) => task.id == id);
     },
-    
+
     async loadTasks() {
       if (this.loaded) {
         return;
@@ -27,8 +25,8 @@ export const useTaskStore = defineStore('tasks', {
 
         console.log('get tasks response:', response);
 
-        if (isNumber(response)) {
-          throw new Error(`HTTP ${response}`);
+        if (response.status !== 200) {
+          throw new Error(`HTTP ${response.status}`);
         }
 
         this.tasks = response.data;
@@ -86,13 +84,6 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
 
-    async getTasks(task) {
-      const response = await apiFetch('/task/list');
-      if (isNumber(response)) {
-        let i = 0;
-      }
-    },
-
     async updateTask(task) {
       const formData = new FormData();
       formData.append('title', task.title);
@@ -143,8 +134,8 @@ export const useTaskStore = defineStore('tasks', {
 
         console.log("response after delete task: ", response);
 
-        if (isNumber(response)) {
-          throw new Error(`HTTP ${response}`);
+        if (response !== null) {
+          throw new Error(`HTTP ${response.status}`);
         }
         else {
           return true;
