@@ -13,87 +13,119 @@ export const useTaskStore = defineStore('tasks', {
 
   actions: {
 
-      async loadTasks() {
-        if (this.loaded) {
-          return;
+    async loadTasks() {
+      if (this.loaded) {
+        return;
+      }
+
+      try {
+        const response = await apiFetch('/task/list');
+
+        console.log('get tasks response:', response);
+
+        if (isNumber(response)) {
+          throw new Error(`HTTP ${response}`);
         }
 
-        try {
-          const response = await apiFetch('/task/list');
+        this.tasks = response.data;
+        this.loaded = true;
 
-          console.log('get tasks response:', response);
+      } catch (err) {
+        console.log(`HTTP ${err}`);
+      }
+    },
 
-          if (isNumber(response)) {
-            throw new Error(`HTTP ${response}`);
+    async addTask(task) {
+      const formData = new FormData();
+
+      formData.append('titre', task.title);
+      formData.append('local', task.local);
+      formData.append('description', task.description ?? '');
+      formData.append('startTime', task.startTime);
+      formData.append('endTime', task.endTime);
+      formData.append('recurring', task.recurring);
+      formData.append('frequency', task.frequency || "daily");
+      formData.append('automaticAssignment', task.automaticAssignment);
+
+      for (const image of task.images ?? []) {
+        if (image.file) {
+          formData.append('images', image.file);
+        }
+      }
+
+      try {
+        const response = await apiFetchFormData('/task/add', {
+          method: 'POST',
+          body: formData
+        });
+
+        console.log('createtask response:', response);
+
+        if (isNumber(response)) {
+          if (response === 409) {
+            return false;
           }
 
-          this.tasks = response.data;
-          this.loaded = true;
-
-        } catch (err) {
-          console.log(`HTTP ${err}`);
-        }
-      },
-
-      async addTask(task) {
-        const formData = new FormData();
-
-        formData.append('titre', task.title);
-        formData.append('local', task.local);
-        formData.append('description', task.description ?? '');
-        formData.append('startTime', task.startTime);
-        formData.append('endTime', task.endTime);
-        formData.append('recurring', task.recurring);
-        formData.append('frequency', task.frequency || "daily");
-        formData.append('automaticAssignment', task.automaticAssignment);
-
-        for (const image of task.images ?? []) {
-          if (image.file) {
-            formData.append('images', image.file);
-          }
+          throw new Error(`HTTP ${response}`);
         }
 
-        try {
-          const response = await apiFetchFormData('/task/add', {
-            method: 'POST',
-            body: formData
-          });
+        const returnedTask = response.data;
 
-          console.log('createtask response:', response);
+        this.tasks.push(returnedTask);
 
-          if (isNumber(response)) {
-            if (response === 409) {
-              return false;
-            }
+        console.log('create task success');
 
-            throw new Error(`HTTP ${response}`);
-          }
+        return true;
+      } catch (err) {
+        console.log(`HTTP ${err}`);
+        return false;
+      }
+    },
 
-          const returnedTask = response.data;
-
-          this.tasks.push(returnedTask);
-
-          console.log('create task success');
-
-          return true;
-        } catch (err) {
-          console.log(`HTTP ${err}`);
-          return false;
-        }
-      },
-
-    async getTasks(task){
+    async getTasks(task) {
       const response = await apiFetch('/task/list');
-      if (isNumber(response)){
+      if (isNumber(response)) {
         let i = 0;
       }
     },
 
     async updateTask(task) {
-      const index = this.tasks.findIndex(t => t.id === task.id);
-
-      if (index !== -1) {
-        this.tasks[index] = task
+      const formData = new FormData();
+      formData.append('titre', task.title);
+      formData.append('local', task.local);
+      formData.append('description', task.description ?? '');
+      formData.append('startTime', task.startTime);
+      formData.append('endTime', task.endTime);
+      formData.append('recurring', task.recurring);
+      formData.append('frequency', task.frequency || 'daily');
+      formData.append('automaticAssignment', task.automaticAssignment);
+      for (const image of task.images ?? []) {
+        if (image.file) {
+          formData.append('images', image.file);
+        }
+      }
+      try {
+        const response = await apiFetchFormData(`/task/${task.id}`, {
+          method: 'PUT',
+          body: formData
+        });
+        console.log('update task response:', response);
+        if (isNumber(response)) {
+          if (response === 409) {
+            return false;
+          }
+          throw new Error(`HTTP ${response}`);
+        }
+        const updatedTask = response.data;
+        const index = this.tasks.findIndex(t => t.id === task.id);
+        if (index !== -1) {
+          this.tasks[index] = updatedTask;
+        }
+        console.log('update task success');
+        return true;
+      } catch (err) {
+        console.log(`HTTP ${err}`);
+        return false;
       }
     },
 
@@ -109,13 +141,13 @@ export const useTaskStore = defineStore('tasks', {
 
         if (isNumber(response)) {
           throw new Error(`HTTP ${response}`);
-      }
-      else {
-        return true;
-      }
+        }
+        else {
+          return true;
+        }
       } catch (err) {
-          console.log(`HTTP ${err}`);
-          return false;
+        console.log(`HTTP ${err}`);
+        return false;
       }
 
     }
