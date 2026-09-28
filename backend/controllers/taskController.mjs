@@ -87,11 +87,18 @@ export async function createTask(req, res, next) {
             automaticAssignment
         });
         await addTaskImages(req, aTask);
+
+        const theCreatedTask = await Task.findOne({
+            where: {
+                id: aTask.id
+            },
+            include: {model: TaskImage, as: 'images'}
+        });
         res.location(`/api/tasks/${aTask.id}`);
         res.status(201).json({
             status: 201,
             message: "Tâche ajoutée",
-            data: aTask,
+            data: theCreatedTask,
             path: `/api/task/${aTask.id}`,
             timestamp: new Date().toISOString()
         });
@@ -106,7 +113,8 @@ export async function getAllTasks(req, res, next) {
         let tasks = await Task.findAll({
             where: {
                 archived: false
-            }
+            },
+            include: {model: TaskImage, as: 'images'}
         });
 
         res.status(200).json(
@@ -159,7 +167,13 @@ export async function replaceTask(req, res, next) {
             automaticAssignment
         });
         await addTaskImages(req, task);
-        const updatedTask = await Task.findByPk(task.id);
+        // const updatedTask = await Task.findByPk(task.id);
+        const updatedTask  = await Task.findOne({
+            where: {
+                id: task.id
+            },
+            include: {model: TaskImage, as: 'images'}
+        }) 
         return res.status(200).json({
             status: 200,
             message: "Tâche modifiée avec succès.",
