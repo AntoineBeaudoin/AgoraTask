@@ -46,7 +46,7 @@
                 <div class="d-flex flex-wrap gap-2 mb-4">
                   <div v-for="(file, index) in images" :key="file.id || `${file.name}-${index}`"
                     class="position-relative">
-                    <img class="imgIconDisplay" :src="file.preview" :alt="file.name" />
+                    <img class="imgIconDisplay" :src="file.preview ?? file.path" :alt="file.name" />
                     <button type="button"
                       class="btn btn-danger position-absolute top-0 end-0 rounded-circle p-0 btn-icon-close"
                       @click="removeImage(index)"> ✕ </button>
@@ -136,6 +136,7 @@ const isEditing = computed(() => !!modalStore.editingTask);
 watch(
   () => modalStore.editingTask,
   (task) => {
+    console.log("the task to modify: ", task);
     if (task) {
       title.value = task.title ?? '';
       local.value = task.local ?? '';
@@ -147,7 +148,7 @@ watch(
       automaticAssignment.value = task.automaticAssignment ?? false;
       images.value = (task.images ?? []).map(image => ({
         ...image,
-        preview: image.preview ?? image.url
+        preview: image.path ?? image.url
       }));
 
     } else {
