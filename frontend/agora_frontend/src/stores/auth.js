@@ -122,12 +122,12 @@ export const useAuthStore = defineStore('auth', () => {
 
       console.log('response after login attempt', response);
 
-      if (response == 401) {
+      if (response.status == 401) {
         console.log('response is 401');
         errorMessage.value = "Identifiant ou mot de passe invalide.";
       }
-      else if (isNumber(response)) {
-        throw new Error(`HTTP ${response}`);
+      else if (response.status !== 200) {
+        throw new Error(`HTTP ${response.status}`);
       }
       else {
         const decodedToken = jwtDecode(response.data.token);
