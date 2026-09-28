@@ -1,5 +1,5 @@
 import router from '../router'
-import useErrorStore from '../stores/Error.js'
+import { useErrorStore } from '../stores/Error.js'
 
 export function launchError(errorCode, errorMessage) {
   const errorStore = useErrorStore()
