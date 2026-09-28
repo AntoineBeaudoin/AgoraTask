@@ -38,7 +38,7 @@ export const useTaskStore = defineStore('tasks', {
     async addTask(task) {
       const formData = new FormData();
 
-      formData.append('titre', task.title);
+      formData.append('title', task.title);
       formData.append('local', task.local);
       formData.append('description', task.description ?? '');
       formData.append('startTime', task.startTime);
@@ -91,7 +91,7 @@ export const useTaskStore = defineStore('tasks', {
 
     async updateTask(task) {
       const formData = new FormData();
-      formData.append('titre', task.title);
+      formData.append('title', task.title);
       formData.append('local', task.local);
       formData.append('description', task.description ?? '');
       formData.append('startTime', task.startTime);

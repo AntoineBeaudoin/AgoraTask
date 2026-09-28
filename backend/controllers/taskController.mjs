@@ -16,7 +16,7 @@ dotenv.config();
 async function validateTaskDoesNotAlreadyExist(title, local, startTime, endTime, taskId = -1) {
     const anotherTask = await Task.findOne({
         where: {
-            titre: title,
+            title: title,
             local: local,
             startTime: startTime,
             endTime: endTime
@@ -64,15 +64,15 @@ async function addTaskImages(req, task) {
 }
 
 export async function createTask(req, res, next) {
-    const { titre, local, description, startTime,
+    const { title, local, description, startTime,
         endTime, recurring, frequency,
         automaticAssignment } = req.body;
 
-    validateTaskDoesNotAlreadyExist(titre, local, startTime, endTime);
+    validateTaskDoesNotAlreadyExist(title, local, startTime, endTime);
     try {
         const theFrequency = frequency || "daily";
         const aTask = await Task.create({
-            titre,
+            title,
             local,
             description: description ?? null,
             startTime,
@@ -121,7 +121,7 @@ export async function getAllTasks(req, res, next) {
 export async function replaceTask(req, res, next) {
     const id = req.params.id;
     const {
-        titre, local, description, startTime, endTime, recurring, frequency, automaticAssignment
+        title, local, description, startTime, endTime, recurring, frequency, automaticAssignment
     } = req.body;
     try {
         const task = await Task.findOne({
@@ -138,7 +138,7 @@ export async function replaceTask(req, res, next) {
         }
         validateTaskDoesNotAlreadyExist(title, local, startTime, endTime, id)
         await task.update({
-            titre,
+            title,
             local,
             description: description ?? null,
             startTime,
