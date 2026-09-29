@@ -2,6 +2,15 @@
   <nav class="navbar navbar-expand navbar-dark bg-dark mb-4">
     <RouterLink to="/" class="navbar-brand ms-3">AgoraTask</RouterLink>
     <ul class="navbar-nav ms-auto">
+      <li class="nav-item me-3" v-if="isAuthenticated && role === 'personnel_de_terrain'">
+        <RouterLink to="/employe" class="nav-link">Employé</RouterLink>
+      </li>
+      <li class="nav-item me-3" v-if="isAuthenticated && role === 'coordonnateur'">
+        <RouterLink to="/coordo" class="nav-link">Coordo</RouterLink>
+      </li>
+      <li class="nav-item me-3" v-if="isAuthenticated && role === 'administrateur'">
+        <RouterLink to="/admin" class="nav-link">Admin</RouterLink>
+      </li>
       <li class="nav-item me-3" v-if="!isAuthenticated">
         <RouterLink to="/login" class="nav-link">Se connecter</RouterLink>
       </li>
@@ -15,7 +24,7 @@
 <script setup>
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
-import { watch, onMounted, onBeforeUnmount, ref } from 'vue';
+import { watch, onMounted, onBeforeUnmount, ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 const store = useAuthStore();
@@ -25,6 +34,8 @@ const fullName = ref('');
 const { token, isAuthenticated } = storeToRefs(store);
 
 const { isUserAdmin } = store;
+
+const role = computed(() => store.getRole());
 
 const route = useRoute();
 const router = useRouter();
