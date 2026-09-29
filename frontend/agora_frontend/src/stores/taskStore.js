@@ -9,7 +9,6 @@ export const useTaskStore = defineStore('tasks', {
     loaded: false
   }),
   actions: {
-
       async loadTasks() {
         if (this.loaded) {
           return;
