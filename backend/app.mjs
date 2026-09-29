@@ -15,7 +15,20 @@ app.get("/", (req, res) => {
     });
 });
 
-app.use(cors({origin:'https://antoinebeaudoin.github.io/AgoraTask/'}));
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://antoinebeaudoin.github.io'
+]
+
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Pas autorisé par le CORS'));
+        }
+    }
+}));
 app.use(express.json());
 app.use("/api/account", authRoutes);
 app.use("/bd", bdRoutes);
