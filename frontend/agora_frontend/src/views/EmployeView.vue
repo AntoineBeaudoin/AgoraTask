@@ -1,7 +1,12 @@
 <template>
   <main class="container py-5">
     <h1 class="mb-4 text-center">Vos tâches</h1>
-    <form action="" class="mx-auto">
+
+    <p v-if="taskStore.loaded && taskStore.tasks.length === 0" class="text-center text-muted">
+      Aucune tâche ne vous est assignée.
+    </p>
+    
+    <form v-else action="" class="mx-auto">
       <div v-for="task in taskStore.tasks" :key="task.id" class="card mb-3">
         <div class="card-body d-flex justify-content-between align-items-center">
           <div class="form-check d-flex align-items-center gap-2">
