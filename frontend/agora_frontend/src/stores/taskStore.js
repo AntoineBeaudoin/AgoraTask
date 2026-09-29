@@ -11,7 +11,7 @@ export const useTaskStore = defineStore('tasks', {
 
   actions: {
 
-    async getTaskById(id){
+    async getTaskById(id) {
       return this.tasks.find((task) => task.id == id);
     },
 
@@ -94,11 +94,17 @@ export const useTaskStore = defineStore('tasks', {
       formData.append('recurring', task.recurring);
       formData.append('frequency', task.frequency || 'daily');
       formData.append('automaticAssignment', task.automaticAssignment);
+
+      const existingImageIds = (task.images ?? [])
+        .filter(img => !img.file && img.id)
+        .map(img => img.id);
+      formData.append('existingImageIds', JSON.stringify(existingImageIds));
       for (const image of task.images ?? []) {
         if (image.file) {
           formData.append('images', image.file);
         }
       }
+
       try {
         const response = await apiFetchFormData(`/task/${task.id}`, {
           method: 'PUT',

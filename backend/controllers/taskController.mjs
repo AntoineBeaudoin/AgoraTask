@@ -1,5 +1,5 @@
 import { Task, TaskImage } from '../models/bd_index.mjs';
-import { put } from "@vercel/blob";
+import { put, del } from "@vercel/blob";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -24,7 +24,7 @@ async function validateTaskDoesNotAlreadyExist(title, local, startTime, endTime,
     });
     if (taskId !== -1) {
         if (anotherTask?.id !== taskId) {
-           return false;
+            return false;
         }
         return true;
     }
@@ -61,15 +61,41 @@ async function addTaskImages(req, task) {
     }
 }
 
+/**
+ * Synchronise les images existantes : supprime de Vercel Blob et de la BD
+ * les images qui ne figurent plus dans la liste conservée (`existingImageIds`).
+ */
+async function syncExistingImages(req, taskId) {
+    let existingIds = [];
+    if (req.body.existingImageIds) {
+        try {
+            existingIds = JSON.parse(req.body.existingImageIds).map(id => Number(id));
+        } catch {
+            existingIds = [];
+        }
+    }
+    const currentImages = await TaskImage.findAll({ where: { taskId } });
+    for (const image of currentImages) {
+        if (!existingIds.includes(image.id)) {
+            if (image.path) {
+                try {
+                    await del(image.path);
+                } catch (err) {
+                    console.error(`Erreur lors de la suppression sur Vercel Blob (${image.path}):`, err);
+                }
+            }
+            await image.destroy();
+        }
+    }
+}
+
 export async function createTask(req, res, next) {
     const { title, local, description, startTime,
         endTime, recurring, frequency,
         automaticAssignment } = req.body;
-    
     try {
         let taskExists = await validateTaskDoesNotAlreadyExist(title, local, startTime, endTime);
-        if (taskExists)
-        {
+        if (taskExists) {
             return res.status(409).json({
                 status: 409,
                 message: "Une tâche identique existe déjà."
@@ -92,7 +118,7 @@ export async function createTask(req, res, next) {
             where: {
                 id: aTask.id
             },
-            include: {model: TaskImage, as: 'images'}
+            include: { model: TaskImage, as: 'images' }
         });
         res.location(`/api/tasks/${aTask.id}`);
         res.status(201).json({
@@ -114,7 +140,7 @@ export async function getAllTasks(req, res, next) {
             where: {
                 archived: false
             },
-            include: {model: TaskImage, as: 'images'}
+            include: { model: TaskImage, as: 'images' }
         });
 
         res.status(200).json(
@@ -150,7 +176,7 @@ export async function replaceTask(req, res, next) {
             });
         }
         let taskExists = await validateTaskDoesNotAlreadyExist(title, local, startTime, endTime, id);
-        if (taskExists){
+        if (taskExists) {
             return res.status(409).json({
                 status: 409,
                 message: "Une tâche identique existe déjà."
@@ -166,13 +192,14 @@ export async function replaceTask(req, res, next) {
             theFrequency: frequency || "daily",
             automaticAssignment
         });
+        await syncExistingImages(req, task.id);
         await addTaskImages(req, task);
-        const updatedTask  = await Task.findOne({
+        const updatedTask = await Task.findOne({
             where: {
                 id: task.id
             },
-            include: {model: TaskImage, as: 'images'}
-        }) 
+            include: { model: TaskImage, as: 'images' }
+        })
         return res.status(200).json({
             status: 200,
             message: "Tâche modifiée avec succès.",

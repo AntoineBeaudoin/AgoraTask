@@ -148,7 +148,7 @@ watch(
       automaticAssignment.value = task.automaticAssignment ?? false;
       images.value = (task.images ?? []).map(image => ({
         ...image,
-        preview: image.path ?? image.url
+        preview: image.preview ?? image.path ?? image.url
       }));
 
     } else {
@@ -160,7 +160,7 @@ watch(
 
 function resetForm() {
   images.value.forEach(image => {
-    if (image.preview) {
+    if (image.preview && image.preview.startsWith('blob:')) {
       URL.revokeObjectURL(image.preview);
     }
   });
@@ -202,7 +202,7 @@ function datesAreValid() {
     && dateIsLaterThanToday(startTime.value);
 }
 
-function getLaterDateAtMidnight(){
+function getLaterDateAtMidnight() {
   const date = new Date();
   date.setDate(date.getDate() + 2);
   date.setHours(0, 0, 0, 0);
@@ -257,9 +257,9 @@ async function submit() {
       frequency: frequency.value,
       automaticAssignment: automaticAssignment.value,
       images: images.value
-    }
-
+    };
     if (isEditing.value) {
+      modalStore.editingTask.images = [...images.value];
       await taskStore.updateTask({
         ...modalStore.editingTask,
         ...task
@@ -267,7 +267,6 @@ async function submit() {
     } else {
       await taskStore.addTask(task);
     }
-
     resetForm();
     close();
   }
@@ -303,15 +302,21 @@ function addFiles(files) {
     return;
   }
   const filesToAdd = files.slice(0, remainingSlots);
-  filesToAdd.forEach(file => {
+  filesToAdd.forEach((file) => {
     if (!isValidImage(file)) {
       return;
     }
-    const preview = URL.createObjectURL(file);
+    const guid = generateGUID();
+    const extension = file.name.split('.').pop();
+    const randomFileName = `${guid}.${extension}`;
+
+    const renamedFile = new File([file], randomFileName, { type: file.type });
+    const preview = URL.createObjectURL(renamedFile);
+
     images.value.push({
-      file,
-      preview,
-      name: file.name
+      file: renamedFile,
+      name: randomFileName,
+      preview
     });
   });
 }
@@ -335,6 +340,17 @@ function removeImage(index) {
     URL.revokeObjectURL(image.preview);
   }
   images.value.splice(index, 1);
+}
+
+/**
+ * Fonction pour créer un guid aléatoire
+ */
+function generateGUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const random = (Math.random() * 16) | 0;
+    const guid = c === 'x' ? random : (random & 0x3) | 0x8;
+    return guid.toString(16);
+  });
 }
 
 </script>
