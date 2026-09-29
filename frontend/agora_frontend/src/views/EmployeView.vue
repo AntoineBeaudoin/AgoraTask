@@ -3,7 +3,7 @@
     <h1>Vos tâches</h1>
     <form action="" class="">
       <div v-for="task in taskStore.tasks" :key="task.id">
-        <input type="checkbox" class="form-check-input" id="task1" />
+        <input type="checkbox" class="form-check-input" id="task-" + task.id />
         <label for="task1"> {{ task.titre }}</label>
         <label class="form-check-label" for="task1"> | {{ task.local }}</label>
       </div>
