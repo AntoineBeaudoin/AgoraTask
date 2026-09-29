@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.mjs";
 import taskRoutes from "./routes/task.mjs";
+import taskRoutes from "./routes/task.mjs";
 import bdRoutes from "./routes/bd.mjs";
 import cors from "cors";
 import bd from "./models/bd.mjs";
@@ -23,6 +24,7 @@ app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use("/api/account", authRoutes);
 app.use("/bd", bdRoutes);
+app.use("/api/task", taskRoutes);
 app.use("/api/task", taskRoutes);
 
 app.get("/", (req, res) => {

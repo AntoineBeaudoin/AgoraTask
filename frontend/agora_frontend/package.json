@@ -1,6 +1,6 @@
 {
   "name": "agora_frontend",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -27,6 +27,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-oxlint": "~1.75.0",
     "eslint-plugin-vue": "~10.9.2",
+    "gh-pages": "^6.3.0",
     "globals": "^17.7.0",
     "npm-run-all2": "^9.0.2",
     "oxlint": "~1.75.0",
