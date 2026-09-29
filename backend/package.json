@@ -1,6 +1,6 @@
 {
   "name": "agora_backend",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "API d'AgoraTask permettant de gérer les tâches et les employés à l'aide de requêtes HTTP.",
   "main": "app.mjs",
   "scripts": {
@@ -18,6 +18,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.4.0",
     "nodemon": "^3.1.14",
     "pg": "^8.23.0",
     "pg-hstore": "^2.3.4",
