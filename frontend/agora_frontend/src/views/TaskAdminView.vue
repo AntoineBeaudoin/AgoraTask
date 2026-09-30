@@ -1,6 +1,6 @@
 <template>
   <section class="container">
-    <h1>Admin</h1>
+    <h1>Gestion de tâches administrative</h1>
     <button @click="testPopup" data-target="#taskModal" class="btn btn-secondary mx-auto m-3">Ajouter une tâche</button>
     <TaskModal />
 

@@ -4,7 +4,7 @@ import HomeView from '../views/HomeView.vue'
 import LoginView from '@/views/LoginView.vue'
 import EmployeView from '@/views/EmployeView.vue'
 import CoordoView from '@/views/CoordoView.vue'
-import AdminView from '@/views/AdminView.vue'
+import TaskAdminView from '@/views/TaskAdminView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -29,10 +29,10 @@ const router = createRouter({
        }
     },
     {
-      path: "/admin",
-      name: "admin",
-      component: AdminView,
-      meta: { title: "Portail administrateur", requireAuth: true, role: "administrateur" }
+      path: "/task/admin",
+      name: "taskAdmin",
+      component: TaskAdminView,
+      meta: { title: "Portail de tâche pour les administrateurs", requireAuth: true, role: "administrateur" }
     },
     {
       path: "/coordo",

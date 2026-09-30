@@ -140,7 +140,7 @@ export const useAuthStore = defineStore('auth', () => {
         let redirectTo = ""
         switch (userRole) {
           case "administrateur":
-            redirectTo = route.query.redirect || "/admin";
+            redirectTo = route.query.redirect || "/task/admin";
             break;
 
           case "coordonnateur":
