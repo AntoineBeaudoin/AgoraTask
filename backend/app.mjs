@@ -34,7 +34,7 @@ app.use(cors({
 app.use(express.json());
 app.use("/api/account", authRoutes);
 app.use("/bd", bdRoutes);
-app.use("/users", adminRoutes);
+app.use("/api/users", adminRoutes);
 app.use("/api/task", taskRoutes);
 
 app.get("/", (req, res) => {
