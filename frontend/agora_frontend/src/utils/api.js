@@ -26,3 +26,20 @@ export async function apiFetch(path, options = {}) {
   const jsonResponse = await res.json()
   return jsonResponse
 }
+
+export async function apiFetchFormData(path, options = {}) {
+   const token = localStorage.getItem("jwt");
+   const headers = { ...options.headers };
+   if (token) {
+     headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const res = await fetch( `${import.meta.env.VITE_API_BASE}${path}`, { ...options, headers } );
+    if (!res.ok) {
+      return res.status;
+    }
+
+    if (res.status === 204) return null;
+    const jsonResponse = await res.json();
+    return jsonResponse;
+}
