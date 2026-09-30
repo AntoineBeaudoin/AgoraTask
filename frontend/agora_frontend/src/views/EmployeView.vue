@@ -1,5 +1,5 @@
 <template>
-  <main class="container py-5">
+  <section class="container py-5">
     <h1 class="mb-4 text-center">Vos tâches</h1>
 
     <p v-if="taskStore.loaded && taskStore.tasks.length === 0" class="text-center text-muted">
@@ -12,7 +12,7 @@
           <div class="form-check d-flex align-items-center gap-2">
             <input class="form-check-input" type="checkbox" :id="'task-' + task.id" />
             <label class="form-check-label" :for="'task-' + task.id">
-              {{ task.titre }}
+              {{ task.title }}
               <span class="badge bg-secondary ms-2">{{ task.local }}</span>
             </label>
           </div>
@@ -34,7 +34,7 @@
         <button type="reset" class="btn btn-danger">Réinitialiser</button>
       </div>
     </form>
-  </main>
+  </section>
 </template>
 
 <script setup>
