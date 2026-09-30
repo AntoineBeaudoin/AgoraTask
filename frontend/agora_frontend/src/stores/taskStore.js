@@ -8,88 +8,125 @@ export const useTaskStore = defineStore('tasks', {
     tasks: [],
     loaded: false
   }),
+
   actions: {
-      async loadTasks() {
-        if (this.loaded) {
-          return;
+
+    async getTaskById(id) {
+      return this.tasks.find((task) => task.id == id);
+    },
+
+    async loadTasks() {
+      if (this.loaded) {
+        return;
+      }
+
+      try {
+        const response = await apiFetch('/task/list');
+
+        console.log('get tasks response:', response);
+
+        if (response.status !== 200) {
+          throw new Error(`HTTP ${response.status}`);
         }
 
-        try {
-          const response = await apiFetch('/task/list');
+        this.tasks = response.data;
+        this.loaded = true;
 
-          console.log('get tasks response:', response);
+      } catch (err) {
+        console.log(`HTTP ${err}`);
+      }
+    },
 
-          if (isNumber(response)) {
-            throw new Error(`HTTP ${response}`);
+    async addTask(task) {
+      const formData = new FormData();
+
+      formData.append('title', task.title);
+      formData.append('room', task.room);
+      formData.append('description', task.description ?? '');
+      formData.append('startTime', task.startTime);
+      formData.append('endTime', task.endTime);
+      formData.append('recurring', task.recurring);
+      formData.append('frequency', task.frequency || "daily");
+      formData.append('automaticAssignment', task.automaticAssignment);
+
+      for (const image of task.images ?? []) {
+        if (image.file) {
+          formData.append('images', image.file);
+        }
+      }
+
+      try {
+        const response = await apiFetchFormData('/task/add', {
+          method: 'POST',
+          body: formData
+        });
+
+        console.log('createtask response:', response);
+
+        if (isNumber(response)) {
+          if (response === 409) {
+            return false;
           }
 
-          this.tasks = response.data;
-          this.loaded = true;
-
-        } catch (err) {
-          console.log(`HTTP ${err}`);
-        }
-      },
-
-      async addTask(task) {
-        const formData = new FormData();
-
-        formData.append('titre', task.title);
-        formData.append('local', task.local);
-        formData.append('description', task.description ?? '');
-        formData.append('startTime', task.startTime);
-        formData.append('endTime', task.endTime);
-        formData.append('recurring', task.recurring);
-        formData.append('frequency', task.frequency || "daily");
-        formData.append('automaticAssignment', task.automaticAssignment);
-
-        for (const image of task.images ?? []) {
-          if (image.file) {
-            formData.append('images', image.file);
-          }
+          throw new Error(`HTTP ${response}`);
         }
 
-        try {
-          const response = await apiFetchFormData('/task/add', {
-            method: 'POST',
-            body: formData
-          });
+        const returnedTask = response.data;
 
-          console.log('createtask response:', response);
+        this.tasks.push(returnedTask);
 
-          if (isNumber(response)) {
-            if (response === 409) {
-              return false;
-            }
+        console.log('create task success');
 
-            throw new Error(`HTTP ${response}`);
-          }
-
-          const returnedTask = response.data;
-
-          this.tasks.push(returnedTask);
-
-          console.log('create task success');
-
-          return true;
-        } catch (err) {
-          console.log(`HTTP ${err}`);
-          return false;
-        }
-      },
-
-    async getTasks(task){
-      const response = await apiFetch('/task/list');
-      if (isNumber(response)){
-        let i = 0;
+        return true;
+      } catch (err) {
+        console.log(`HTTP ${err}`);
+        return false;
       }
     },
 
     async updateTask(task) {
-      const index = this.tasks.findIndex(t => t.id === task.id);
+      const formData = new FormData();
+      formData.append('title', task.title);
+      formData.append('room', task.room);
+      formData.append('description', task.description ?? '');
+      formData.append('startTime', task.startTime);
+      formData.append('endTime', task.endTime);
+      formData.append('recurring', task.recurring);
+      formData.append('frequency', task.frequency || 'daily');
+      formData.append('automaticAssignment', task.automaticAssignment);
 
-      if (index !== -1) {
-        this.tasks[index] = task
+      const existingImageIds = (task.images ?? [])
+        .filter(img => !img.file && img.id)
+        .map(img => img.id);
+      formData.append('existingImageIds', JSON.stringify(existingImageIds));
+      for (const image of task.images ?? []) {
+        if (image.file) {
+          formData.append('images', image.file);
+        }
+      }
+
+      try {
+        const response = await apiFetchFormData(`/task/${task.id}`, {
+          method: 'PUT',
+          body: formData
+        });
+        console.log('update task response:', response);
+        if (isNumber(response)) {
+          if (response === 409) {
+            return false;
+          }
+          throw new Error(`HTTP ${response}`);
+        }
+        const updatedTask = response.data;
+        const index = this.tasks.findIndex(t => t.id === task.id);
+        if (index !== -1) {
+          this.tasks[index] = updatedTask;
+        }
+        console.log('update task success');
+        return true;
+      } catch (err) {
+        console.log(`HTTP ${err}`);
+        return false;
       }
     },
 
@@ -103,15 +140,15 @@ export const useTaskStore = defineStore('tasks', {
 
         console.log("response after delete task: ", response);
 
-        if (isNumber(response)) {
-          throw new Error(`HTTP ${response}`);
-      }
-      else {
-        return true;
-      }
+        if (response !== null) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        else {
+          return true;
+        }
       } catch (err) {
-          console.log(`HTTP ${err}`);
-          return false;
+        console.log(`HTTP ${err}`);
+        return false;
       }
 
     }

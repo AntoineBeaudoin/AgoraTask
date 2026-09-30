@@ -9,7 +9,7 @@
         <RouterLink to="/coordo" class="nav-link">Coordo</RouterLink>
       </li>
       <li class="nav-item me-3" v-if="isAuthenticated && role === 'administrateur'">
-        <RouterLink to="/admin" class="nav-link">Admin</RouterLink>
+        <RouterLink to="/task/admin" class="nav-link">Admin</RouterLink>
       </li>
       <li class="nav-item me-3" v-if="!isAuthenticated">
         <RouterLink to="/login" class="nav-link">Se connecter</RouterLink>
@@ -33,7 +33,7 @@ const fullName = ref('')
 
 const { token, isAuthenticated } = storeToRefs(store)
 
-const { isUserAdmin } = store
+const { isUserAdmin } = storeToRefs(store);
 
 const role = computed(() => store.getRole())
 
@@ -60,6 +60,7 @@ function handleStorage(e) {
 
 const logout = () => {
   store.disconnect()
+  router.go(0)
 }
 </script>
 

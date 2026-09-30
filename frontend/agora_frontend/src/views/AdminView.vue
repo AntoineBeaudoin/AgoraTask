@@ -10,7 +10,9 @@
 
             <p class="card-text">Créer, modifier et attribuer les tâches.</p>
 
-            <a href="#" class="btn btn-primary mt-auto"> Gérer les tâches </a>
+            <RouterLink :to="{ name: 'taskAdmin' }" class="btn btn-primary mt-auto">
+              Gérer les tâches
+            </RouterLink>
           </div>
         </div>
       </div>

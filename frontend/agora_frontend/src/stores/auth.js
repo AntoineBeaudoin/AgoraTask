@@ -135,9 +135,9 @@ export const useAuthStore = defineStore('auth', () => {
         const userRole = decodedToken.role
         let redirectTo = ''
         switch (userRole) {
-          case 'administrateur':
-            redirectTo = route.query.redirect || '/admin'
-            break
+          case "administrateur":
+            redirectTo = route.query.redirect || "/admin";
+            break;
 
           case 'coordonnateur':
             redirectTo = route.query.redirect || '/coordo'
