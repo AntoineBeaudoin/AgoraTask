@@ -1,22 +1,14 @@
 import Compte from "../models/compte.mjs"
 import bcrypt from "bcrypt";
+import { Task } from '../models/bd_index.mjs';
 
 const seedDatabase = async (req, res) => {
     try {
-        await Compte.destroy({
-            where: {
-                IsArchived: false,
-            }
-        });
-        await Compte.destroy({
-            where: {
-                IsArchived: true,
-            }
-        });
-
+        await Compte.destroy({ where: {} });
+        await Task.destroy({ where: {} });
         const hashedPassword = await bcrypt.hash("Test1234!", 15);
 
-        const employe = await Compte.create(
+        await Compte.create(
             {
                 prenom: "Antoine",
                 nom: "Beaudoin",
@@ -25,7 +17,7 @@ const seedDatabase = async (req, res) => {
                 role: "personnel_de_terrain"
             });
 
-        const vraiAdmin = await Compte.create(
+        await Compte.create(
             {
                 prenom: "Colin",
                 nom: "Giguère",
@@ -34,7 +26,7 @@ const seedDatabase = async (req, res) => {
                 role: "administrateur"
             });
 
-        const admin = await Compte.create(
+        await Compte.create(
             {
                 prenom: "Julien",
                 nom: "Morel",
@@ -43,7 +35,7 @@ const seedDatabase = async (req, res) => {
                 role: "administrateur"
             });
 
-        const coordo = await Compte.create(
+        await Compte.create(
             {
                 prenom: "Moussa",
                 nom: "Dembélé",
@@ -52,10 +44,72 @@ const seedDatabase = async (req, res) => {
                 role: "coordonnateur"
             });
 
-        await admin.save();
-        await coordo.save();
-        await vraiAdmin.save();
-        await employe.save();
+        await Task.create({
+            title: "Préparer la salle polyvalente",
+            room: "Salle polyvalente",
+            description: "Installer les tables et les chaises nécessaires pour les activités de la journée.",
+            startTime: "08:30:00",
+            endTime: "09:00:00",
+            recurring: true,
+            frequency: "daily",
+            automaticAssignment: true
+        });
+
+        await Task.create({
+            title: "Nettoyer les vestiaires",
+            room: "Vestiaires",
+            description: "Nettoyer les planchers, vider les poubelles et vérifier l'état général des vestiaires.",
+            startTime: "12:00:00",
+            endTime: "12:30:00",
+            recurring: true,
+            frequency: "daily",
+            automaticAssignment: true
+        });
+
+        await Task.create({
+            title: "Ranger le matériel sportif",
+            room: "Gymnase",
+            description: "Ramasser et ranger les ballons, cônes et autres équipements sportifs après les activités.",
+            startTime: "16:00:00",
+            endTime: "16:30:00",
+            recurring: true,
+            frequency: "daily",
+            automaticAssignment: true
+        });
+
+        await Task.create({
+            title: "Nettoyage complet du gymnase",
+            room: "Gymnase",
+            description: "Balayer et laver le plancher du gymnase et nettoyer les surfaces fréquemment touchées.",
+            startTime: "17:00:00",
+            endTime: "18:00:00",
+            recurring: true,
+            frequency: "weekly",
+            automaticAssignment: false
+        });
+
+        await Task.create({
+            title: "Nettoyer les salles après les activités",
+            room: "Salles d'activités",
+            description: "Ramasser les déchets, replacer le mobilier et nettoyer les surfaces utilisées pendant les activités.",
+            startTime: "17:30:00",
+            endTime: "18:30:00",
+            recurring: true,
+            frequency: "daily",
+            automaticAssignment: true
+        });
+
+        await Task.create({
+            title: "Vider les poubelles",
+            room: "Centre de loisirs",
+            description: "Vider les poubelles des différentes salles et remplacer les sacs.",
+            startTime: "18:30:00",
+            endTime: "19:00:00",
+            recurring: true,
+            frequency: "daily",
+            automaticAssignment: true
+        });
+
         res.status(200).json({
             message:
                 "La base de données a été intialisée avec succès.",
@@ -67,7 +121,5 @@ const seedDatabase = async (req, res) => {
             .json({ error: "Internal Server Error", message: e.message });
     }
 }
-
-console.log("utilisateurs tests créées.");
 
 export { seedDatabase };
