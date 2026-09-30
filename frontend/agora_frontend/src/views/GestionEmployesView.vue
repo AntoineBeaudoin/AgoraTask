@@ -12,7 +12,6 @@
       </button>
     </header>
 
-    <!-- FORMULAIRE DE CRÉATION -->
     <div v-if="showCreateForm" class="create-user-card">
       <div class="create-form-header">
         <h2>Créer un compte</h2>
@@ -22,7 +21,6 @@
 
       <form class="create-user-form" @submit.prevent="createAccount">
         <div class="form-grid">
-          <!-- PRÉNOM -->
           <div class="form-field">
             <label for="prenom"> Prénom </label>
 
@@ -39,7 +37,6 @@
             </span>
           </div>
 
-          <!-- NOM -->
           <div class="form-field">
             <label for="nom"> Nom </label>
 
@@ -56,7 +53,6 @@
             </span>
           </div>
 
-          <!-- COURRIEL -->
           <div class="form-field">
             <label for="courriel"> Courriel </label>
 
@@ -73,7 +69,6 @@
             </span>
           </div>
 
-          <!-- RÔLE -->
           <div class="form-field">
             <label for="role"> Rôle </label>
 
@@ -90,7 +85,6 @@
             </span>
           </div>
 
-          <!-- MOT DE PASSE -->
           <div class="form-field full-width">
             <label for="mdp"> Mot de passe </label>
 
@@ -112,12 +106,10 @@
           </div>
         </div>
 
-        <!-- ERREUR SERVEUR / GÉNÉRALE -->
         <div v-if="createErrors.general" class="general-error">
           {{ createErrors.general }}
         </div>
 
-        <!-- ACTIONS -->
         <div class="create-actions">
           <button type="button" class="cancel-create-btn" @click="toggleCreateForm">Annuler</button>
 
@@ -126,7 +118,6 @@
       </form>
     </div>
 
-    <!-- FILTRE ACTIFS / ARCHIVÉS / TOUS -->
     <div class="status-filters">
       <button
         class="status-filter-btn"
@@ -204,12 +195,10 @@
         </button>
       </div>
 
-      <!-- AUCUN UTILISATEUR -->
       <div v-if="displayedUsers.length === 0" class="empty-state">
         Aucun employé ne correspond aux filtres sélectionnés.
       </div>
 
-      <!-- TABLEAU -->
       <div v-else class="table-wrapper">
         <table class="employees-table">
           <thead>
@@ -225,12 +214,10 @@
 
           <tbody>
             <tr v-for="user in displayedUsers" :key="user.id">
-              <!-- NOM -->
               <td class="user-name">
                 {{ user.nom }}
               </td>
 
-              <!-- PRÉNOM -->
               <td>
                 {{ user.prenom }}
               </td>
@@ -240,7 +227,6 @@
                 {{ user.courriel }}
               </td>
 
-              <!-- MODIFICATION DU RÔLE -->
               <td>
                 <div class="role-editor">
                   <select
@@ -265,14 +251,12 @@
                 </div>
               </td>
 
-              <!-- STATUT -->
               <td>
                 <span v-if="!user.IsArchived" class="status-badge active-status"> Actif </span>
 
                 <span v-else class="status-badge archived-status"> Archivé </span>
               </td>
 
-              <!-- ARCHIVAGE -->
               <td>
                 <button
                   v-if="!user.IsArchived"
@@ -338,20 +322,20 @@ async function allUsers() {
       console.error('Erreur lors du chargement des utilisateurs :', error)
     })
 }
-async function editUser(userId, newRule) {
-  apiFetch('/users/Edit_Rule/', {
+async function editUser(userId, newRole) {
+  apiFetch('/users/Edit_Role/', {
     method: 'PATCH',
     body: JSON.stringify({
       userId: userId,
-      newRole: newRule,
+      newRole: newRole,
     }),
   })
     .then((data) => {
-      console.log("Règle de l'utilisateur modifiée avec succès :", data)
+      console.log("Rôle de l'utilisateur modifié avec succès :", data)
       LoadUsers() // Recharger la liste des utilisateurs après la modification
     })
     .catch((error) => {
-      console.error("Erreur lors de la modification de la règle de l'utilisateur :", error)
+      console.error("Erreur lors de la modification du rôle de l'utilisateur :", error)
     })
 }
 async function archiveUser(userId, IsArchived) {
@@ -497,8 +481,6 @@ function validateCreateForm() {
 }
 
 function createAccount() {
-  // Si le formulaire n'est pas valide :
-  // aucune requête n'est envoyée
   if (!validateCreateForm()) {
     return
   }
@@ -524,13 +506,10 @@ function createAccount() {
 
       console.log('Compte créé :', data)
 
-      // Réinitialisation
       resetCreateForm()
 
-      // Retour à la liste active
       LoadUsers()
 
-      // Fermer le formulaire
       showCreateForm.value = false
     })
 

@@ -1,9 +1,8 @@
 import Compte from "../models/compte.mjs";
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
+
 import bcrypt from "bcrypt";
 
-dotenv.config();
 export async function getAllUsersWithFilter(req, res, next) {
   try {
     const { archived, role } = req.query;
@@ -62,7 +61,7 @@ export async function getAllUsersWithFilter(req, res, next) {
     next(error);
   }
 }
-export async function editRule(req, res, next) {
+export async function editRole(req, res, next) {
   try {
     const { userId, newRole } = req.body;
     const user = await Compte.findByPk(userId);

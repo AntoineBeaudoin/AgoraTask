@@ -1,7 +1,6 @@
 <template>
   <main class="error-page" :class="`error-${errorType}`">
     <section class="error-container">
-      <!-- PARTIE VISUELLE -->
       <div class="error-visual">
         <div class="error-glow"></div>
 
@@ -14,7 +13,6 @@
         </div>
       </div>
 
-      <!-- CONTENU -->
       <div class="error-content">
         <span class="error-badge">
           {{ errorConfig.badge }}
@@ -37,7 +35,6 @@
           </p>
         </div>
 
-        <!-- ACTIONS -->
         <div class="error-actions">
           <button v-if="errorConfig.canRetry" class="primary-btn" @click="retry">Réessayer</button>
 

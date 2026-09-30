@@ -5,8 +5,8 @@ import { isAdmin } from "../Middleware/IsAdmin.mjs";
 
 const router = express.Router();
 
-router.get("/", isConnected, isAdmin, adminController.getAllUsers);
-router.patch("/Edit_Rule", isConnected, isAdmin, adminController.editRule);
+router.get("/", isConnected, isAdmin, adminController.getAllUsersWithFilter);
+router.patch("/Edit_Role", isConnected, isAdmin, adminController.editRole);
 router.patch(
   "/Archive_User",
   isConnected,
