@@ -55,4 +55,3 @@ const Compte = bd.define("Compte", {
 );
 
 export default Compte;
-export { Compte };

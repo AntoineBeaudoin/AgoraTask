@@ -8,11 +8,11 @@ const Task = bd.define("Task", {
     autoIncrement: true,
     allowNull: false 
   }, 
-   titre: { 
+   title: { 
     type: DataTypes.STRING(100), 
     allowNull: false,
   },
-   local: { 
+   room: { 
     type: DataTypes.STRING(100), 
     allowNull: false,
   },

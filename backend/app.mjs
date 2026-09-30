@@ -15,23 +15,15 @@ app.get("/", (req, res) => {
     });
 });
 
-const allowedOrigins = [
-    'http://localhost:5173',
-    'https://antoinebeaudoin.github.io'
-]
-
-app.use(cors({
-    origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Pas autorisé par le CORS'));
-        }
-    }
-}));
+const allowedOrigins = process.env.FRONTEND_ORIGINS
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use("/api/account", authRoutes);
 app.use("/bd", bdRoutes);
+app.use("/api/task", taskRoutes);
 app.use("/api/task", taskRoutes);
 
 app.get("/", (req, res) => {

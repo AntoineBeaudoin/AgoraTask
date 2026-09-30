@@ -14,6 +14,7 @@ const upload = multer({
 
 router.get("/list", taskController.getAllTasks);
 router.post("/add",  upload.array("images", 5), taskController.createTask);
+router.put("/:id", upload.array("images", 5), taskController.replaceTask);
 router.delete("/:id", taskController.deleteTask);
 
 export default router;

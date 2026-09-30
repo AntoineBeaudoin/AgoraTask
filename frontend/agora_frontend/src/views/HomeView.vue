@@ -3,6 +3,9 @@
 
 <template>
   <main>
-    <h1>AgoraTask</h1>
+    <h1>Accueil - AgoraTask</h1>
   </main>
 </template>
+
+<script setup>
+</script>
