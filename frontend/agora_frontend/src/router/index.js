@@ -32,7 +32,7 @@ const router = createRouter({
       },
     },
     {
-      path: "/task/admin",
+      path: "/GestionDesTaches",
       name: "taskAdmin",
       component: TaskAdminView,
       meta: { title: "Portail de tâche pour les administrateurs", requireAuth: true, role: "administrateur" }

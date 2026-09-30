@@ -9,7 +9,7 @@
         <RouterLink to="/coordo" class="nav-link">Coordo</RouterLink>
       </li>
       <li class="nav-item me-3" v-if="isAuthenticated && role === 'administrateur'">
-        <RouterLink to="/task/admin" class="nav-link">Admin</RouterLink>
+        <RouterLink to="/admin" class="nav-link">Admin</RouterLink>
       </li>
       <li class="nav-item me-3" v-if="!isAuthenticated">
         <RouterLink to="/login" class="nav-link">Se connecter</RouterLink>
