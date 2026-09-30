@@ -485,7 +485,7 @@ function createAccount() {
     return
   }
 
-  apiFetch('/api/account/register', {
+  apiFetch('/account/register', {
     method: 'POST',
 
     body: JSON.stringify({
