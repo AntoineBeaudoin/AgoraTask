@@ -1,6 +1,5 @@
 <template>
   <main class="gestion-container">
-    <!-- TITRE GLOBAL DE LA PAGE -->
     <header class="page-header">
       <div class="page-heading">
         <h1>Gestion des utilisateurs</h1>
@@ -168,7 +167,6 @@
         <div class="employee-count">{{ displayedUsers.length }} résultat(s)</div>
       </div>
 
-      <!-- tes filtres par rôle ici -->
       <!-- FILTRE PAR RÔLE -->
       <div class="role-filters">
         <span class="role-label"> Filtrer par rôle : </span>
@@ -544,10 +542,6 @@ function createAccount() {
 }
 </script>
 <style scoped>
-/* =========================================================
-   PAGE GLOBALE
-========================================================= */
-
 .gestion-container {
   width: 100%;
   max-width: 1200px;
@@ -556,10 +550,6 @@ function createAccount() {
 
   padding: 70px 32px 100px;
 }
-
-/* =========================================================
-   TITRE GLOBAL DE LA PAGE
-========================================================= */
 
 .page-header {
   display: flex;
@@ -594,13 +584,6 @@ function createAccount() {
   font-size: 15px;
   line-height: 1.5;
 }
-
-/* =========================================================
-   BOUTON CRÉER UN COMPTE
-
-   Couleur volontairement différente des filtres verts.
-   C'est l'action principale de la page.
-========================================================= */
 
 .create-user-btn {
   flex-shrink: 0;
@@ -799,10 +782,6 @@ function createAccount() {
   border-color: #343a40;
 }
 
-/* =========================================================
-   MESSAGES DU FORMULAIRE
-========================================================= */
-
 .create-error,
 .create-success {
   margin-top: 20px;
@@ -825,13 +804,6 @@ function createAccount() {
 
   color: #0f5132;
 }
-
-/* =========================================================
-   FILTRES ACTIFS / ARCHIVÉS / TOUS
-
-   On laisse volontairement une bonne séparation
-   entre le header et la liste.
-========================================================= */
 
 .status-filters {
   display: flex;
@@ -886,10 +858,6 @@ function createAccount() {
   border-color: #157347;
 }
 
-/* =========================================================
-   GRANDE CARTE DE LA LISTE
-========================================================= */
-
 .employees-card {
   margin-top: 8px;
 
@@ -902,10 +870,6 @@ function createAccount() {
 
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.055);
 }
-
-/* =========================================================
-   EN-TÊTE DE LA CARTE
-========================================================= */
 
 .card-header {
   display: flex;
@@ -950,10 +914,6 @@ function createAccount() {
   font-size: 13px;
   font-weight: 650;
 }
-
-/* =========================================================
-   FILTRES PAR RÔLE
-========================================================= */
 
 .role-filters {
   display: flex;
@@ -1018,10 +978,6 @@ function createAccount() {
 
   border-color: #157347;
 }
-
-/* =========================================================
-   TABLEAU
-========================================================= */
 
 .table-wrapper {
   width: 100%;
@@ -1094,10 +1050,6 @@ function createAccount() {
   word-break: break-word;
 }
 
-/* =========================================================
-   ÉDITION DU RÔLE
-========================================================= */
-
 .role-editor {
   display: flex;
   align-items: center;
@@ -1138,10 +1090,6 @@ function createAccount() {
   cursor: not-allowed;
 }
 
-/* =========================================================
-   CONFIRMATION DU RÔLE
-========================================================= */
-
 .confirm-role-btn {
   padding: 8px 12px;
 
@@ -1178,10 +1126,6 @@ function createAccount() {
   cursor: not-allowed;
 }
 
-/* =========================================================
-   STATUT
-========================================================= */
-
 .status-badge {
   display: inline-block;
 
@@ -1206,10 +1150,6 @@ function createAccount() {
 
   color: #6c757d;
 }
-
-/* =========================================================
-   ACTION ARCHIVER / RÉACTIVER
-========================================================= */
 
 .action-btn {
   padding: 8px 13px;
@@ -1255,10 +1195,6 @@ function createAccount() {
   color: white;
 }
 
-/* =========================================================
-   AUCUN RÉSULTAT
-========================================================= */
-
 .empty-state {
   padding: 70px 20px;
 
@@ -1268,10 +1204,6 @@ function createAccount() {
 
   font-size: 14px;
 }
-
-/* =========================================================
-   RESPONSIVE TABLETTE
-========================================================= */
 
 @media (max-width: 900px) {
   .gestion-container {
@@ -1296,10 +1228,6 @@ function createAccount() {
     min-width: 285px;
   }
 }
-
-/* =========================================================
-   RESPONSIVE MOBILE
-========================================================= */
 
 @media (max-width: 700px) {
   .gestion-container {
