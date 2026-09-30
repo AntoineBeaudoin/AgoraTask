@@ -5,7 +5,7 @@
       <div class="modal-dialog modal-xl">
         <div class="modal-content mt-3 ps-3 pe-3">
           <div class="modal-header ps-0">
-            <h2 class="modal-title">{{ isEditing ? 'Modifier une tâche' : 'Ajouter/Modifier une tâche' }}</h2>
+            <h2 class="modal-title">{{ isEditing ? 'Modifier une tâche' : 'Ajouter une tâche' }}</h2>
             <button type="button" class="bg-transparent border-0 ms-auto p-3 btn btn-close" @click="close"></button>
           </div>
           <form @submit.prevent="submit" novalidate class="mt-3">
