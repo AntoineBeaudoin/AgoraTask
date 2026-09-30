@@ -22,46 +22,45 @@
 </template>
 
 <script setup>
-import { useAuthStore } from '@/stores/auth';
-import { storeToRefs } from 'pinia';
-import { watch, onMounted, onBeforeUnmount, ref, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth'
+import { storeToRefs } from 'pinia'
+import { watch, onMounted, onBeforeUnmount, ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
-const store = useAuthStore();
+const store = useAuthStore()
 
-const fullName = ref('');
+const fullName = ref('')
 
-const { token, isAuthenticated } = storeToRefs(store);
+const { token, isAuthenticated } = storeToRefs(store)
 
-const { isUserAdmin } = store;
+const { isUserAdmin } = storeToRefs(store);
 
-const role = computed(() => store.getRole());
+const role = computed(() => store.getRole())
 
-const route = useRoute();
-const router = useRouter();
+const route = useRoute()
+const router = useRouter()
 
 watch(route, async () => {
-  token.value = store.getToken();
+  token.value = store.getToken()
 })
 
 onMounted(async () => {
-  window.addEventListener("storage", handleStorage);
-});
+  window.addEventListener('storage', handleStorage)
+})
 
 onBeforeUnmount(() => {
-  window.removeEventListener('storage', handleStorage);
-});
-
+  window.removeEventListener('storage', handleStorage)
+})
 
 function handleStorage(e) {
   if (e.key == 'jwt') {
-    token.value = store.getToken();
+    token.value = store.getToken()
   }
 }
 
 const logout = () => {
-  store.disconnect();
-  router.go(0);
+  store.disconnect()
+  router.go(0)
 }
 </script>
 

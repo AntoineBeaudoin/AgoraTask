@@ -2,6 +2,9 @@
   "name": "agora_backend",
   "version": "1.3.0",
   "description": "API d'AgoraTask permettant de gérer les tâches et les employés à l'aide de requêtes HTTP.",
+  "license": "ISC",
+  "author": "Julien Morel,Antoine Beaudoin,Moussa Dembélé, Evan",
+  "type": "commonjs",
   "main": "app.mjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -9,8 +12,6 @@
     "start:local": "node --env-file=.env app.mjs",
     "dev": "nodemon --exec \"node -r dotenv/config\" app.mjs"
   },
-  "author": "Julien Morel,Antoine Beaudoin,Moussa Dembélé, Evan",
-  "license": "ISC",
   "dependencies": {
     "@vercel/blob": "^2.8.0",
     "bcrypt": "^6.0.0",
