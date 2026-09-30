@@ -18,10 +18,10 @@
                   <span id="titleError" class="invalid-feedback">Le titre de la tâche est requis</span>
                 </div>
                 <div class="form-group mb-3">
-                  <label for="local" class="d-none">Entrez le local de la tâche</label>
-                  <input v-model="local" id="local" class="form-control" type="text" placeholder="Local de la tâche *"
+                  <label for="room" class="d-none">Entrez le local de la tâche</label>
+                  <input v-model="room" id="room" class="form-control" type="text" placeholder="Local de la tâche *"
                     required />
-                  <span id="localError" class="invalid-feedback">Le local de la tâche est requis</span>
+                  <span id="roomError" class="invalid-feedback">Le local de la tâche est requis</span>
                 </div>
                 <div>
                   <label for="desc" class="d-none">Entrez la description de la tâche</label>
@@ -117,7 +117,7 @@ const taskStore = useTaskStore();
 const modalStore = useModalStore();
 
 const title = ref('');
-const local = ref('');
+const room = ref('');
 const description = ref('');
 const startTime = ref('');
 const endTime = ref('');
@@ -139,7 +139,7 @@ watch(
     console.log("the task to modify: ", task);
     if (task) {
       title.value = task.title ?? '';
-      local.value = task.local ?? '';
+      room.value = task.room ?? '';
       description.value = task.description ?? '';
       startTime.value = task.startTime ?? '';
       endTime.value = task.endTime ?? '';
@@ -166,7 +166,7 @@ function resetForm() {
   });
 
   title.value = '';
-  local.value = '';
+  room.value = '';
   description.value = '';
   startTime.value = '';
   endTime.value = '';
@@ -188,7 +188,7 @@ function close() {
 
 function formIsValid() {
   return title.value !== ''
-    && local.value !== ''
+    && room.value !== ''
     && datesAreValid();
 }
 
@@ -228,9 +228,9 @@ function markInvalidInputs() {
     document.querySelector('#title').classList.add('is-invalid');
     document.querySelector('#titleError').classList.add('d-block');
   }
-  if (!local.value.trim()) {
-    document.querySelector('#local').classList.add('is-invalid');
-    document.querySelector('#localError').classList.add('d-block');
+  if (!room.value.trim()) {
+    document.querySelector('#room').classList.add('is-invalid');
+    document.querySelector('#roomError').classList.add('d-block');
   }
   if (!startTime.value || !dateIsLaterThanToday(startTime.value)) {
     document.querySelector('#sTime').classList.add('is-invalid');
@@ -249,7 +249,7 @@ async function submit() {
   else {
     const task = {
       title: title.value,
-      local: local.value,
+      room: room.value,
       description: description.value,
       startTime: startTime.value,
       endTime: endTime.value,

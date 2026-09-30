@@ -7,17 +7,17 @@ dotenv.config();
 /**
  * Valide qu'une tâche n'existe pas déjà. Si la tâche existe déjà lance une erreur 409
  * @param {*} title Titre de la tâche
- * @param {*} local Local de la tâche
+ * @param {*} room Local de la tâche
  * @param {*} startTime Heure de début de la tâche
  * @param {*} endTime Heure de fin de la tâche
  * @param {*} taskId Id de la tâche (-1 par défaut)
  * @returns 
  */
-async function validateTaskDoesNotAlreadyExist(title, local, startTime, endTime, taskId = -1) {
+async function validateTaskDoesNotAlreadyExist(title, room, startTime, endTime, taskId = -1) {
     const anotherTask = await Task.findOne({
         where: {
             title: title,
-            local: local,
+            room: room,
             startTime: startTime,
             endTime: endTime
         }
@@ -90,11 +90,11 @@ async function syncExistingImages(req, taskId) {
 }
 
 export async function createTask(req, res, next) {
-    const { title, local, description, startTime,
+    const { title, room, description, startTime,
         endTime, recurring, frequency,
         automaticAssignment } = req.body;
     try {
-        let taskExists = await validateTaskDoesNotAlreadyExist(title, local, startTime, endTime);
+        let taskExists = await validateTaskDoesNotAlreadyExist(title, room, startTime, endTime);
         if (taskExists) {
             return res.status(409).json({
                 status: 409,
@@ -104,7 +104,7 @@ export async function createTask(req, res, next) {
         const theFrequency = frequency || "daily";
         const aTask = await Task.create({
             title,
-            local,
+            room,
             description: description ?? null,
             startTime,
             endTime,
@@ -160,7 +160,7 @@ export async function getAllTasks(req, res, next) {
 export async function replaceTask(req, res, next) {
     const id = req.params.id;
     const {
-        title, local, description, startTime, endTime, recurring, frequency, automaticAssignment
+        title, room, description, startTime, endTime, recurring, frequency, automaticAssignment
     } = req.body;
     try {
         const task = await Task.findOne({
@@ -175,7 +175,7 @@ export async function replaceTask(req, res, next) {
                 message: "Tâche introuvable."
             });
         }
-        let taskExists = await validateTaskDoesNotAlreadyExist(title, local, startTime, endTime, id);
+        let taskExists = await validateTaskDoesNotAlreadyExist(title, room, startTime, endTime, id);
         if (taskExists) {
             return res.status(409).json({
                 status: 409,
@@ -184,7 +184,7 @@ export async function replaceTask(req, res, next) {
         }
         await task.update({
             title,
-            local,
+            room,
             description: description ?? null,
             startTime,
             endTime,

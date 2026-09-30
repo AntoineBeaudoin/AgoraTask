@@ -46,7 +46,7 @@ const seedDatabase = async (req, res) => {
 
         await Task.create({
             title: "Préparer la salle polyvalente",
-            local: "Salle polyvalente",
+            room: "Salle polyvalente",
             description: "Installer les tables et les chaises nécessaires pour les activités de la journée.",
             startTime: "08:30:00",
             endTime: "09:00:00",
@@ -57,7 +57,7 @@ const seedDatabase = async (req, res) => {
 
         await Task.create({
             title: "Nettoyer les vestiaires",
-            local: "Vestiaires",
+            room: "Vestiaires",
             description: "Nettoyer les planchers, vider les poubelles et vérifier l'état général des vestiaires.",
             startTime: "12:00:00",
             endTime: "12:30:00",
@@ -68,7 +68,7 @@ const seedDatabase = async (req, res) => {
 
         await Task.create({
             title: "Ranger le matériel sportif",
-            local: "Gymnase",
+            room: "Gymnase",
             description: "Ramasser et ranger les ballons, cônes et autres équipements sportifs après les activités.",
             startTime: "16:00:00",
             endTime: "16:30:00",
@@ -79,7 +79,7 @@ const seedDatabase = async (req, res) => {
 
         await Task.create({
             title: "Nettoyage complet du gymnase",
-            local: "Gymnase",
+            room: "Gymnase",
             description: "Balayer et laver le plancher du gymnase et nettoyer les surfaces fréquemment touchées.",
             startTime: "17:00:00",
             endTime: "18:00:00",
@@ -90,7 +90,7 @@ const seedDatabase = async (req, res) => {
 
         await Task.create({
             title: "Nettoyer les salles après les activités",
-            local: "Salles d'activités",
+            room: "Salles d'activités",
             description: "Ramasser les déchets, replacer le mobilier et nettoyer les surfaces utilisées pendant les activités.",
             startTime: "17:30:00",
             endTime: "18:30:00",
@@ -101,7 +101,7 @@ const seedDatabase = async (req, res) => {
 
         await Task.create({
             title: "Vider les poubelles",
-            local: "Centre de loisirs",
+            room: "Centre de loisirs",
             description: "Vider les poubelles des différentes salles et remplacer les sacs.",
             startTime: "18:30:00",
             endTime: "19:00:00",

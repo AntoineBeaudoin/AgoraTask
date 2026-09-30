@@ -12,7 +12,7 @@ const Task = bd.define("Task", {
     type: DataTypes.STRING(100), 
     allowNull: false,
   },
-   local: { 
+   room: { 
     type: DataTypes.STRING(100), 
     allowNull: false,
   },

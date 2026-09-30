@@ -13,7 +13,7 @@
             <input class="form-check-input" type="checkbox" :id="'task-' + task.id" />
             <label class="form-check-label" :for="'task-' + task.id">
               {{ task.title }}
-              <span class="badge bg-secondary ms-2">{{ task.local }}</span>
+              <span class="badge bg-secondary ms-2">{{ task.room }}</span>
             </label>
           </div>
 
