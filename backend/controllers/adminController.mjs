@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 
 dotenv.config();
-export async function getAllUsers(req, res, next) {
+export async function getAllUsersWithFilter(req, res, next) {
   try {
     const { archived, role } = req.query;
 
