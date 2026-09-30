@@ -1,5 +1,5 @@
 import { DataTypes } from "sequelize";
-import { bd } from "./bd.mjs";
+import bd from "./bd.mjs";
 
 const Compte = bd.define("Compte", {
   id: {
