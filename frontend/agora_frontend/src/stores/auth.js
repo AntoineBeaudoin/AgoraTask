@@ -112,8 +112,8 @@ export const useAuthStore = defineStore('auth', () => {
     console.log('LOGIN USER FUNCTION BEGINNING')
     errorMessage.value = ''
     try {
-      const response = await apiFetch("/account/login", {
-        method: "POST",
+      const response = await apiFetch('/account/login', {
+        method: 'POST',
         body: JSON.stringify({
           email: email.value,
           password: mdp.value,
@@ -123,13 +123,8 @@ export const useAuthStore = defineStore('auth', () => {
       console.log('response after login attempt', response)
 
       if (response.status !== 200 && response.status !== 201) {
-        // console.log('response is 401')
         errorMessage.value =
           response.status + ': ' + response.message || 'Erreur lors de la connexion'
-        // } else if (isNumber(response)) {
-        //   console.log('response is a number', response)
-        //   throw new Error(`HTTP ${response}`)
-        // }
       } else {
         const decodedToken = jwtDecode(response.data.token)
 
