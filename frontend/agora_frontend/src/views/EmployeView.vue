@@ -30,7 +30,7 @@
       </div>
 
       <div class="d-flex justify-content-center gap-2 mt-4">
-        <button type="submit" class="btn btn-primary">Sauvegarder</button>
+        <button class="btn btn-primary">Sauvegarder</button>
         <button type="reset" class="btn btn-danger">Réinitialiser</button>
       </div>
     </form>
