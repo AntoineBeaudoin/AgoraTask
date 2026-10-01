@@ -60,7 +60,6 @@ function handleStorage(e) {
 
 const logout = () => {
   store.disconnect()
-  router.go(0)
 }
 </script>
 

@@ -34,7 +34,7 @@ export const useAuthStore = defineStore('auth', () => {
   const disconnect = () => {
     localStorage.removeItem('jwt')
     console.log('Token removed from localStorage')
-    router.push('/login')
+    router.push('/')
   }
 
   function isTokenValid() {
