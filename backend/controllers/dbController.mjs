@@ -2,6 +2,15 @@ import Compte from "../models/compte.mjs"
 import bcrypt from "bcrypt";
 import { Task } from '../models/bd_index.mjs';
 
+
+/**
+ * Remplit la base de données avec des données de test.
+ *
+ * @async
+ * @param {*} req La requête envoyée par le frontend.
+ * @param {*} res La réponse à retourner au backend.
+ * @returns {*} Cette fonction ne retourne rien.
+ */
 const seedDatabase = async (req, res) => {
     try {
         await Compte.destroy({ where: {} });

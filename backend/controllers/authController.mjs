@@ -5,6 +5,18 @@ import bcrypt from "bcrypt";
 
 dotenv.config();
 
+
+/**
+ * Créé un utilisateur avec un nom, un prénom, un courriel, un mot de passe qui sera hashé, 
+ * ainsi qu'un rôle. 
+ *
+ * @export
+ * @async
+ * @param {*} req La requête envoyée par le frontend.
+ * @param {*} res La réponse à retourner au backend.
+ * @param {*} next Le prochain middleware à appeler, utilisé en cas d'erreur.
+ * @returns {*} Cette fonction ne retourne rien.
+ */
 export async function createUser(req, res, next) {
   const { nom, prenom, courriel, mdp, role } = req.body;
   try {
@@ -39,6 +51,17 @@ export async function createUser(req, res, next) {
   }
 }
 
+
+/**
+ * Authentifie un utilisateur et génère un jeton JWT que le client peut utiliser 
+ *
+ * @export
+ * @async
+ * @param {*} req La requête envoyée par le frontend.
+ * @param {*} res La réponse à retourner au frontend.
+ * @param {*} next Le prochain middleware à appeler, utilisé en cas d'erreur.
+ * @returns {unknown} Retourne le prochain résultat au middleware, en cas d'erreur.
+ */
 export async function loginUser(req, res, next) {
   const { email, password } = req.body;
   try {

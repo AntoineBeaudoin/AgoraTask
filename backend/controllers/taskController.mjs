@@ -89,6 +89,17 @@ async function syncExistingImages(req, taskId) {
     }
 }
 
+
+/**
+ * Créé une tâche avec ses propriétés associés.
+ *
+ * @export
+ * @async
+ * @param {*} req La requête envoyée par le frontend.
+ * @param {*} res La réponse à retourner au frontend.
+ * @param {*} next Le prochain middleware à appeler, en cas d'erreur.
+ * @returns {unknown} Retourne le prochain résultat au middleware, en cas d'erreur.
+ */
 export async function createTask(req, res, next) {
     const { title, room, description, startTime,
         endTime, recurring, frequency,
@@ -134,6 +145,17 @@ export async function createTask(req, res, next) {
     }
 }
 
+
+/**
+ * Retourne toutes les tâches qui ne sont pas archivés, ainsi que chacune des urls des images qui lui sont associés.
+ *
+ * @export
+ * @async
+ * @param {*} req La requête envoyée par le frontend.
+ * @param {*} res La réponse à retourner au frontend.
+ * @param {*} next Le prochain middlware à appeler, en cas d'erreur.
+ * @returns {*} Cette fonction ne retourne rien.
+ */
 export async function getAllTasks(req, res, next) {
     try {
         let tasks = await Task.findAll({
