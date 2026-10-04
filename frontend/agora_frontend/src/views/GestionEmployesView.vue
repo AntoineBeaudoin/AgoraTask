@@ -12,6 +12,8 @@
       </button>
     </header>
 
+    <EditPasswordModal/>
+
     <div v-if="showCreateForm" class="create-user-card">
       <div class="create-form-header">
         <h2>Créer un compte</h2>
@@ -199,6 +201,7 @@
         Aucun employé ne correspond aux filtres sélectionnés.
       </div>
 
+
       <div v-else class="table-wrapper">
         <table class="employees-table">
           <thead>
@@ -242,6 +245,12 @@
                   </select>
 
                   <button
+                    class="btn btn-success rounded-5 confirm-role-btn"
+                    @click="editPasswordUser(user.id)">
+                    Modifier le mot de passe
+                  </button>
+
+                  <button
                     class="confirm-role-btn"
                     :disabled="user.IsArchived || pendingRoles[user.id] === user.role"
                     @click="editUser(user.id, pendingRoles[user.id])"
@@ -278,17 +287,24 @@
   </main>
 </template>
 <script setup>
-import { ref } from 'vue'
-import { onMounted, reactive } from 'vue'
-import { apiFetch } from '../utils/api.js'
+import { ref } from 'vue';
+import { onMounted, reactive } from 'vue';
+import { apiFetch } from '../utils/api.js';
+import { useModalStore } from '@/stores/modalStore.js';
+import EditPasswordModal from '@/components/users/EditPasswordModal.vue';
+
+const modalStore = useModalStore();
+
 let displayTitle = ref('Employés actifs')
 let displayedRole = ref('personnel_de_terrain')
 let pendingRoles = ref({})
 const displayedUsers = ref([])
 const loadedUsers = ref([])
+
 onMounted(() => {
   LoadUsers()
 })
+
 async function LoadUsers() {
   displayTitle.value = 'Employés actifs'
   apiFetch('/users?archived=false', { method: 'GET' })
@@ -300,6 +316,7 @@ async function LoadUsers() {
       console.error('Erreur lors du chargement des utilisateurs :', error)
     })
 }
+
 async function ArchivedUsers() {
   displayTitle.value = 'Employés archivés'
   apiFetch('/users?archived=true', { method: 'GET' })
@@ -311,6 +328,7 @@ async function ArchivedUsers() {
       console.error('Erreur lors du chargement des utilisateurs :', error)
     })
 }
+
 async function allUsers() {
   displayTitle.value = 'Tous les employés'
   apiFetch('/users', { method: 'GET' })
@@ -322,6 +340,7 @@ async function allUsers() {
       console.error('Erreur lors du chargement des utilisateurs :', error)
     })
 }
+
 async function editUser(userId, newRole) {
   apiFetch('/users/Edit_Role/', {
     method: 'PATCH',
@@ -338,6 +357,11 @@ async function editUser(userId, newRole) {
       console.error("Erreur lors de la modification du rôle de l'utilisateur :", error)
     })
 }
+
+async function editPasswordUser(userId){
+  await modalStore.openEditPassword(userId);
+}
+
 async function archiveUser(userId, IsArchived) {
   apiFetch('/users/Archive_User', {
     method: 'PATCH',
