@@ -2,6 +2,7 @@ import Compte from "../models/compte.mjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
+import {validatePassword} from "../utils/utils.mjs";
 
 dotenv.config();
 
@@ -117,4 +118,64 @@ export async function loginUser(req, res, next) {
   } catch (err) {
     next(err);
   }
+}
+
+/**
+ * Change le mot de passe d'un compte utilisateur dans la base de données.
+ *
+ * @export
+ * @async
+ * @param {*} req La requête envoyée par le frontend.
+ * @param {*} res La réponse à retourner au frontend.
+ * @param {*} next Le prochain middleware à exécuter, s'il y a une erreur.
+ * @returns {unknown} Cette fonction retourne une erreur, si nécessaire.
+ */
+export async function changePassword(req, res, next){
+    const {id, currentPassword, newPassword} = req.body;
+    try{
+        if (!currentPassword || !newPassword){
+            const error = new Error(`Le nouveau et l'ancien mot de passe sont requis.`);
+            error.statusCode = 400;
+            throw error;
+        }
+    
+        if (!utils.validatePassword(newPassword)){
+            const error = new Error(`Le mot de passe doit contenir 8 caractères, dont au moins 1 majuscule, minuscule, caractère spécial et chiffre.`);
+            error.statusCode = 422;
+            return next(error);
+        }
+    
+        let user = await Compte.findOne({
+          where: {
+          id: id
+        }});
+    
+        if(!user){
+                const error = new Error(`Mot de passe courant invalide.`);
+                error.statusCode = 401;
+                throw error;
+        }
+    
+        const isEqual = await bcrypt.compare(currentPassword, user.motDePasse);
+        if(!isEqual){
+            const error = new Error(`L'ancien mot de passe est invalide.`);
+            error.statusCode = 401;
+            throw error;
+        }
+
+        let hashedPassword = await bcrypt.hash(newPassword, 15);
+        user.motDePasse = hashedPassword;
+        await user.save();
+
+        res.status(200).json({
+            status: 200,
+            data: user,
+            message: "Mot de passe du profil mis à jour avec succès.",
+            path: `/api/account/password`,
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch(err){
+        next(err);
+    }
 }
