@@ -130,52 +130,71 @@ export async function loginUser(req, res, next) {
  * @param {*} next Le prochain middleware à exécuter, s'il y a une erreur.
  * @returns {unknown} Cette fonction retourne une erreur, si nécessaire.
  */
-export async function changePassword(req, res, next){
-    const {id, currentPassword, newPassword} = req.body;
-    try{
-        if (!currentPassword || !newPassword){
-            const error = new Error(`Le nouveau et l'ancien mot de passe sont requis.`);
+export async function changePassword(req, res, next) {
+    const { currentPassword, newPassword, id } = req.body;
+
+    try {
+        if (!currentPassword || !newPassword) {
+            const error = new Error(
+                "Le nouveau et l'ancien mot de passe sont requis."
+            );
             error.statusCode = 400;
             throw error;
         }
-    
-        if (!utils.validatePassword(newPassword)){
-            const error = new Error(`Le mot de passe doit contenir 8 caractères, dont au moins 1 majuscule, minuscule, caractère spécial et chiffre.`);
+
+        if (!validatePassword(newPassword)) {
+            const error = new Error(
+                "Le mot de passe doit contenir 8 caractères, dont au moins 1 majuscule, minuscule, caractère spécial et chiffre."
+            );
             error.statusCode = 422;
-            return next(error);
+            throw error;
         }
-    
-        let user = await Compte.findOne({
-          where: {
-          id: id
-        }});
-    
-        if(!user){
-                const error = new Error(`Mot de passe courant invalide.`);
-                error.statusCode = 401;
-                throw error;
+
+        const user = await Compte.findOne({
+            where: { id }
+        });
+
+        if (!user) {
+            const error = new Error("Compte introuvable.");
+            error.statusCode = 404;
+            throw error;
         }
-    
-        const isEqual = await bcrypt.compare(currentPassword, user.motDePasse);
-        if(!isEqual){
-            const error = new Error(`L'ancien mot de passe est invalide.`);
+
+        const isCurrentPasswordValid = await bcrypt.compare(
+            currentPassword,
+            user.motDePasse
+        );
+
+        if (!isCurrentPasswordValid) {
+            const error = new Error("L'ancien mot de passe est invalide.");
             error.statusCode = 401;
             throw error;
         }
 
-        let hashedPassword = await bcrypt.hash(newPassword, 15);
-        user.motDePasse = hashedPassword;
+        const isSamePassword = await bcrypt.compare(
+            newPassword,
+            user.motDePasse
+        );
+
+        if (isSamePassword) {
+            const error = new Error(
+                "Le nouveau mot de passe doit être différent de l'ancien mot de passe."
+            );
+            error.statusCode = 422;
+            throw error;
+        }
+
+        user.motDePasse = await bcrypt.hash(newPassword, 15);
+
         await user.save();
 
         res.status(200).json({
             status: 200,
-            data: user,
             message: "Mot de passe du profil mis à jour avec succès.",
-            path: `/api/account/password`,
+            path: "/api/account/password",
             timestamp: new Date().toISOString()
         });
-    }
-    catch(err){
+    } catch (err) {
         next(err);
     }
 }
