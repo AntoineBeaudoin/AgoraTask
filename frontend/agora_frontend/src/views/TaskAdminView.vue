@@ -1,7 +1,7 @@
 <template>
   <section class="container">
     <h1>Gestion de tâches administrative</h1>
-    <button @click="testPopup" data-target="#taskModal" class="btn btn-secondary mx-auto m-3">Ajouter une tâche</button>
+    <button @click="addTask" data-target="#taskModal" class="btn btn-secondary mx-auto m-3">Ajouter une tâche</button>
     <TaskModal />
 
     <div v-for="task in taskStore.tasks" :key="task.id" class="card mb-3 shadow-sm">
@@ -12,6 +12,7 @@
 
         <div class="d-flex gap-2">
           <button @click="updateTask(task.id)" class="btn btn-primary">Modifier la tâche</button>
+          <button @click="duplicateTask(task.id)" class="btn btn-secondary">Dupliquer</button>
           <button @click="taskStore.deleteTask(task.id)" class="btn btn-danger">Supprimer</button>
         </div>
       </div>
@@ -37,7 +38,11 @@ async function updateTask(id) {
   await modalStore.openEditTask(theTask);
 }
 
-async function testPopup() {
+async function duplicateTask(id) {
+  await taskStore.duplicateTask(id);
+}
+
+async function addTask() {
   const modalStore = useModalStore();
   modalStore.openAddTask();
 }
