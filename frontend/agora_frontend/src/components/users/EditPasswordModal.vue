@@ -42,7 +42,7 @@
               </span>
             </div>
 
-            <p class="text-danger">{{ errorMessage }}</p>
+            <p class="text-danger mx-auto text-center">{{ errorMessage }}</p>
 
             <div class="modal-footer">
               <button type="button" class="btn btn-danger" @click="close">
@@ -128,24 +128,27 @@ function markInvalidInputs() {
 }
 
 async function submit() {
-  console.log("is password valid: ", formIsValid());
+  errorMessage.value = "";
   if (!formIsValid()) {
     markInvalidInputs();
     return;
   }
 
-  const userId = modalStore.editingUser?.id;
+  const userId = modalStore.editingUser;
 
   if (!userId) {
     return;
   }
 
-  let hasPasswordChanged = authStore.changePassword(userId, oldPassword, newPassword);
+  let hasPasswordChanged = await authStore.changePassword(userId, oldPassword, newPassword);
   if (!hasPasswordChanged)
   {
     errorMessage.value = "Une erreur est survenue lors du changement du mot de passe.";
   }
+  else
+  {
+    close();
+  }
 
-  close();
 }
 </script>
