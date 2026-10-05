@@ -26,14 +26,13 @@ export const useAuthStore = defineStore('auth', () => {
   })
 
   const setToken = (theToken) => {
-    localStorage.setItem('jwt', theToken)
-    token.value = theToken
+    localStorage.setItem('jwt', theToken);
+    token.value = theToken;
   }
 
   const disconnect = () => {
-    localStorage.removeItem('jwt')
-    console.log('Token removed from localStorage')
-    router.push('/')
+    localStorage.removeItem('jwt');
+    router.push('/');
   }
 
   const getUserById = async (id) => {
@@ -135,16 +134,11 @@ export const useAuthStore = defineStore('auth', () => {
         }),
       })
 
-      console.log('response after login attempt', response)
-
       if (response.status !== 200 && response.status !== 201) {
         errorMessage.value = response.status + ': ' + response.message || 'Erreur lors de la connexion'
       } else {
         const decodedToken = jwtDecode(response.data.token)
 
-        console.log('TOKEN:', response.data.token)
-        console.log('DECODED TOKEN:', decodedToken)
-        console.log('ROLE:', decodedToken.role)
         setToken(response.data.token)
         const userRole = decodedToken.role
         let redirectTo = ''
