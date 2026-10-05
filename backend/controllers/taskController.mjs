@@ -1,5 +1,6 @@
 import { Task, TaskImage } from '../models/bd_index.mjs';
 import { put, del } from "@vercel/blob";
+import { Op } from 'sequelize';
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -58,6 +59,32 @@ async function addTaskImages(req, task) {
                 mimeType: file.mimetype
             });
         }
+    }
+}
+
+async function copyExistingImages(originalTask, newTask) {
+    for (const image of originalTask.images ?? []) {
+        const imageResponse = await fetch(image.path);
+
+        if (!imageResponse.ok) {
+            throw new Error( `Impossible de récupérer l'image ${image.filename}` );
+        }
+
+        const imageBuffer = Buffer.from( await imageResponse.arrayBuffer() );
+        const blob = await put(
+            `task/${newTask.id}/${image.filename}`,
+            imageBuffer,
+            {
+                access: "public",
+                contentType: image.mimeType
+            }
+        );
+        await TaskImage.create({
+            taskId: newTask.id,
+            filename: image.filename,
+            path: blob.url,
+            mimeType: image.mimeType
+        });
     }
 }
 
@@ -212,6 +239,63 @@ export async function replaceTask(req, res, next) {
     }
 }
 
+export async function duplicateTask(req, res, next) {
+    const id = req.params.id;
+    try {
+        const originalTask = await Task.findOne({
+            where: { id, archived: false },
+            include: { model: TaskImage, as: 'images' }
+        });
+        if (!originalTask) {
+            return res.status(404).json({
+                status: 404,
+                message: "Tâche introuvable."
+            });
+        }
+        const baseTitle = originalTask.title.replace(/\s-\sCopie\s#\d+$/, '');
+        const copies = await Task.findAll({
+            where: { title: { [Op.like]: `${baseTitle} - Copie #%` } }
+        });
+        let highestCopyNumber = 0;
+        for (const copy of copies) {
+            const match = copy.title.match(/\s-\sCopie\s#(\d+)$/);
+            if (match) {
+                const copyNumber = Number(match[1]);
+                if (copyNumber > highestCopyNumber) {
+                    highestCopyNumber = copyNumber;
+                }
+            }
+        }
+        const nextCopyNumber = highestCopyNumber + 1;
+        const newTitle = `${baseTitle} - Copie #${nextCopyNumber}`;
+        await validateTaskDoesNotAlreadyExist(newTitle, originalTask.room, originalTask.startTime, originalTask.endTime);
+        const newTask = await Task.create({
+            title: newTitle,
+            room: originalTask.room,
+            description: originalTask.description,
+            startTime: originalTask.startTime,
+            endTime: originalTask.endTime,
+            recurring: originalTask.recurring,
+            theFrequency: originalTask.theFrequency,
+            automaticAssignment: originalTask.automaticAssignment,
+            archived: false
+        });
+        await copyExistingImages(originalTask, newTask);
+        const createdTask = await Task.findOne({
+            where: { id: newTask.id },
+            include: { model: TaskImage, as: 'images' }
+        });
+        return res.status(201).json({
+            status: 201,
+            message: "Tâche dupliquée avec succès.",
+            data: createdTask,
+            path: `/api/task/${newTask.id}`,
+            timestamp: new Date().toISOString()
+        });
+    } catch (err) {
+        next(err);
+    }
+}
 
 export async function deleteTask(req, res, next) {
     const id = req.params.id;
