@@ -99,7 +99,8 @@
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-danger" @click="close">Annuler</button>
-              <button type="submit" class="btn btn-success">{{ isEditing ? 'Modifier' : 'Ajouter' }}</button>
+              <button id="submitBtn" type="submit" class="btn btn-success">{{ isEditing ? 'Modifier' : 'Ajouter'
+              }}</button>
             </div>
           </form>
         </div>
@@ -115,6 +116,8 @@ import { useModalStore } from '@/stores/modalStore';
 
 const taskStore = useTaskStore();
 const modalStore = useModalStore();
+
+const SUBMIT_BUTTON_ID = 'submitBtn';
 
 const title = ref('');
 const room = ref('');
@@ -247,6 +250,7 @@ async function submit() {
     markInvalidInputs();
   }
   else {
+    switchIsButtonActiveById(SUBMIT_BUTTON_ID);
     const task = {
       title: title.value,
       room: room.value,
@@ -268,7 +272,24 @@ async function submit() {
       await taskStore.addTask(task);
     }
     resetForm();
+    switchIsButtonActiveById(SUBMIT_BUTTON_ID);
     close();
+  }
+}
+
+/**
+ * Function to toggle on and off the disabled proprety of a button via it's Id
+ * @param buttonId Id of the button to toggle on or off the disabled proprety
+ */
+function switchIsButtonActiveById(buttonId) {
+  const button = document.getElementById(buttonId);
+  if (button) {
+    if (button.disabled) {
+      button.disabled = false;
+    }
+    else {
+      button.disabled = true;
+    }
   }
 }
 
