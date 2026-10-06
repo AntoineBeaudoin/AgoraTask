@@ -2,10 +2,23 @@ import Compte from "../models/compte.mjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
-import {validatePassword} from "../utils/utils.mjs";
 
 dotenv.config();
 
+
+/**
+ * Valide qu'un mot de passe respecte les exigences de sécurité.
+ *
+ * @param {*} password Le mot de passe à valider.
+ * @returns {boolean} Vrai si le mot de passe est considéré comme sécuritaire, faux autrement.
+ */
+const validatePassword = (password) => {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+    if (!passwordRegex.test(password)){
+        return false;
+    }
+    return true;
+}
 
 /**
  * Créé un utilisateur avec un nom, un prénom, un courriel, un mot de passe qui sera hashé, 
@@ -131,14 +144,22 @@ export async function loginUser(req, res, next) {
  * @returns {unknown} Cette fonction retourne une erreur, si nécessaire.
  */
 export async function changePassword(req, res, next) {
-    const { currentPassword, newPassword, id } = req.body;
+    const {confirmedPassword, newPassword, id } = req.body;
 
     try {
-        if (!currentPassword || !newPassword) {
+        if (!confirmedPassword || !newPassword) {
             const error = new Error(
-                "Le nouveau et l'ancien mot de passe sont requis."
+                "Le mot de passe et sa confirmation sont requis."
             );
             error.statusCode = 400;
+            throw error;
+        }
+
+        if (confirmedPassword !== newPassword) {
+            const error = new Error(
+                "Le mot de passe et sa confirmation doivent être identiques."
+            );
+            error.statusCode = 422;
             throw error;
         }
 
@@ -157,17 +178,6 @@ export async function changePassword(req, res, next) {
         if (!user) {
             const error = new Error("Compte introuvable.");
             error.statusCode = 404;
-            throw error;
-        }
-
-        const isCurrentPasswordValid = await bcrypt.compare(
-            currentPassword,
-            user.motDePasse
-        );
-
-        if (!isCurrentPasswordValid) {
-            const error = new Error("L'ancien mot de passe est invalide.");
-            error.statusCode = 401;
             throw error;
         }
 
