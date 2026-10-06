@@ -123,7 +123,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const loginUser = async (email, mdp) => {
-    console.log('LOGIN USER FUNCTION BEGINNING')
     errorMessage.value = ''
     try {
       const response = await apiFetch('/account/login', {
@@ -166,14 +165,14 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const changePassword = async(userId, oldPassword, newPassword) => {
+  const changePassword = async(userId, newPassword, confirmedPassword) => {
     try {
       const response = await apiFetch('/account/password', {
         method: 'POST',
         body: JSON.stringify({
           id: userId,
-          currentPassword: oldPassword.value,
           newPassword: newPassword.value,
+          confirmedPassword: confirmedPassword.value
         }),
       });
       if (response.status !== 200)
