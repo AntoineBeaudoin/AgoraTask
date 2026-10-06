@@ -17,19 +17,6 @@
           <form @submit.prevent="submit" novalidate class="mt-3">
 
             <div class="form-group mb-3">
-              <label for="oldPassword" class="d-none">
-                Ancien mot de passe
-              </label>
-
-              <input v-model="oldPassword" id="oldPassword" class="form-control" type="password"
-                placeholder="Ancien mot de passe" required />
-
-              <span id="oldPasswordError" class="invalid-feedback">
-                L'ancien mot de passe est requis
-              </span>
-            </div>
-
-            <div class="form-group mb-3">
               <label for="newPassword" class="d-none">
                 Nouveau mot de passe
               </label>
@@ -38,7 +25,20 @@
                 placeholder="Nouveau mot de passe" required />
 
               <span id="newPasswordError" class="invalid-feedback">
-                Le nouveau mot de passe doit être différent que l'ancien mot de passe, et respecter les exigences de sécurité.
+                Le mot de passe doit contenir au moins 8 caractères, dont une majuscule, une minuscule, un chiffre, et un caractère spécial.
+              </span>
+            </div>
+
+            <div class="form-group mb-3">
+              <label for="confirmedPassword" class="d-none">
+                Confirmation du mot de passe
+              </label>
+
+              <input v-model="confirmedPassword" id="confirmedPassword" class="form-control" type="password"
+                placeholder="Confirmation du mot de passe" required />
+
+              <span id="confirmedPasswordError" class="invalid-feedback">
+                Le mot de passe et sa confirmation doivent être identiques.
               </span>
             </div>
 
@@ -68,8 +68,8 @@ import { useAuthStore } from '@/stores/auth';
 const modalStore = useModalStore();
 const authStore = useAuthStore();
 
-const oldPassword = ref('');
 const newPassword = ref('');
+const confirmedPassword = ref('');
 const errorMessage = ref('');
 
 watch(() => modalStore.editingUser, (user) => {
@@ -87,7 +87,7 @@ function resetValidationMessages() {
 
 function resetForm() {
   errorMessage.value = '';
-  oldPassword.value = '';
+  confirmedPassword.value = '';
   newPassword.value = '';
 
   resetValidationMessages();
@@ -105,22 +105,22 @@ function validatePassword(password)
 }
 
 function formIsValid() {
-  const theOldPassword = oldPassword.value.trim();
+  const theConfirmedPassword = confirmedPassword.value.trim();
   const theNewPassword = newPassword.value.trim();
-  return theOldPassword !== '' && theNewPassword !== '' && theNewPassword !== theOldPassword && validatePassword(theNewPassword);
+  return theConfirmedPassword !== '' && theNewPassword !== '' && theNewPassword === theConfirmedPassword && validatePassword(theNewPassword);
 }
 
 function markInvalidInputs() {
   resetValidationMessages();
-  const theOldPassword = oldPassword.value.trim();
+  const theConfirmedPassword = confirmedPassword.value.trim();
   const theNewPassword = newPassword.value.trim();
-  if (!theOldPassword) {
-    document.querySelector('#oldPassword').classList.add('is-invalid');
+  if (theConfirmedPassword != theNewPassword) {
+    document.querySelector('#confirmedPassword').classList.add('is-invalid');
 
-    document.querySelector('#oldPasswordError').classList.add('d-block');
+    document.querySelector('#confirmedPasswordError').classList.add('d-block');
   }
 
-  if (!theNewPassword || theNewPassword === theOldPassword || !validatePassword(theNewPassword)) {
+  if (!theNewPassword || !validatePassword(theNewPassword)) {
     document.querySelector('#newPassword').classList.add('is-invalid');
 
     document.querySelector('#newPasswordError').classList.add('d-block');
@@ -140,7 +140,7 @@ async function submit() {
     return;
   }
 
-  let hasPasswordChanged = await authStore.changePassword(userId, oldPassword, newPassword);
+  let hasPasswordChanged = await authStore.changePassword(userId, newPassword, confirmedPassword);
   if (!hasPasswordChanged)
   {
     errorMessage.value = "Une erreur est survenue lors du changement du mot de passe.";
