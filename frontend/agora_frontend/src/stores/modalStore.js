@@ -4,7 +4,10 @@ import { defineStore } from 'pinia'
 export const useModalStore = defineStore('modal', {
   state: () => ({
     taskModalOpen: false,
-    editingTask: null
+    editingTask: null,
+
+    passwordModalOpen: false,
+    editingUser: null
   }),
 
   actions: {
@@ -21,6 +24,16 @@ export const useModalStore = defineStore('modal', {
     closeTaskModal() {
       this.taskModalOpen = false
       this.editingTask = null
+    },
+
+    openEditPassword(userId) {
+       this.editingUser = userId
+       this.passwordModalOpen = true
+    },
+
+    closePasswordModal() {
+       this.passwordModalOpen = false
+       this.editingUser = null
     }
   }
 })
