@@ -29,17 +29,6 @@ const Compte = bd.define("Compte", {
   motDePasse: {
     type: DataTypes.STRING(255),
     allowNull: false,
-    validate: {
-      motdePasseValide(value) {
-        const mdpRegex =
-          /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
-        if (!mdpRegex.test(value)) {
-          throw new Error(
-            "Le mot de passe doit contenir au moins 8 caractères, dont une lettre minuscule et majuscule, un nombre et un caractère spécial.",
-          );
-        }
-      },
-    },
   },
   role: {
     type: DataTypes.ENUM(

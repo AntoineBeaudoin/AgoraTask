@@ -5,6 +5,32 @@ import bcrypt from "bcrypt";
 
 dotenv.config();
 
+
+/**
+ * Valide qu'un mot de passe respecte les exigences de sécurité.
+ *
+ * @param {*} password Le mot de passe à valider.
+ * @returns {boolean} Vrai si le mot de passe est considéré comme sécuritaire, faux autrement.
+ */
+const validatePassword = (password) => {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+    if (!passwordRegex.test(password)){
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Créé un utilisateur avec un nom, un prénom, un courriel, un mot de passe qui sera hashé, 
+ * ainsi qu'un rôle. 
+ *
+ * @export
+ * @async
+ * @param {*} req La requête envoyée par le frontend.
+ * @param {*} res La réponse à retourner au backend.
+ * @param {*} next Le prochain middleware à appeler, utilisé en cas d'erreur.
+ * @returns {*} Cette fonction ne retourne rien.
+ */
 export async function createUser(req, res, next) {
   const { nom, prenom, courriel, mdp, role } = req.body;
   try {
@@ -39,6 +65,17 @@ export async function createUser(req, res, next) {
   }
 }
 
+
+/**
+ * Authentifie un utilisateur et génère un jeton JWT que le client peut utiliser 
+ *
+ * @export
+ * @async
+ * @param {*} req La requête envoyée par le frontend.
+ * @param {*} res La réponse à retourner au frontend.
+ * @param {*} next Le prochain middleware à appeler, utilisé en cas d'erreur.
+ * @returns {unknown} Retourne le prochain résultat au middleware, en cas d'erreur.
+ */
 export async function loginUser(req, res, next) {
   const { email, password } = req.body;
   try {
@@ -94,4 +131,80 @@ export async function loginUser(req, res, next) {
   } catch (err) {
     next(err);
   }
+}
+
+/**
+ * Change le mot de passe d'un compte utilisateur dans la base de données.
+ *
+ * @export
+ * @async
+ * @param {*} req La requête envoyée par le frontend.
+ * @param {*} res La réponse à retourner au frontend.
+ * @param {*} next Le prochain middleware à exécuter, s'il y a une erreur.
+ * @returns {unknown} Cette fonction retourne une erreur, si nécessaire.
+ */
+export async function changePassword(req, res, next) {
+    const {confirmedPassword, newPassword, id } = req.body;
+
+    try {
+        if (!confirmedPassword || !newPassword) {
+            const error = new Error(
+                "Le mot de passe et sa confirmation sont requis."
+            );
+            error.statusCode = 400;
+            throw error;
+        }
+
+        if (confirmedPassword !== newPassword) {
+            const error = new Error(
+                "Le mot de passe et sa confirmation doivent être identiques."
+            );
+            error.statusCode = 422;
+            throw error;
+        }
+
+        if (!validatePassword(newPassword)) {
+            const error = new Error(
+                "Le mot de passe doit contenir 8 caractères, dont au moins 1 majuscule, minuscule, caractère spécial et chiffre."
+            );
+            error.statusCode = 422;
+            throw error;
+        }
+
+        const user = await Compte.findOne({
+            where: { id }
+        });
+
+        if (!user) {
+            const error = new Error("Compte introuvable.");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        const isSamePassword = await bcrypt.compare(
+            newPassword,
+            user.motDePasse
+        );
+
+        if (isSamePassword) {
+            const error = new Error(
+                "Le nouveau mot de passe doit être différent de l'ancien mot de passe."
+            );
+            error.statusCode = 422;
+            throw error;
+        }
+
+        user.motDePasse = await bcrypt.hash(newPassword, 15);
+
+        await user.save();
+
+        res.status(200).json({
+            status: 200,
+            message: "Mot de passe du profil mis à jour avec succès.",
+            path: "/api/account/password",
+            timestamp: new Date().toISOString()
+        });
+    } catch (err) {
+        next(err);
+    }
 }

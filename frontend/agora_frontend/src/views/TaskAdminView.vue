@@ -35,7 +35,7 @@ onMounted(() => {
 
 async function updateTask(id) {
   let theTask = await taskStore.getTaskById(id);
-  await modalStore.openEditTask(theTask);
+  modalStore.openEditTask(theTask);
 }
 
 async function duplicateTask(id) {

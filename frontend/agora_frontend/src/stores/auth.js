@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import { isNumber } from '@/utils/checks'
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { jwtDecode } from 'jwt-decode'
@@ -27,14 +26,29 @@ export const useAuthStore = defineStore('auth', () => {
   })
 
   const setToken = (theToken) => {
-    localStorage.setItem('jwt', theToken)
-    token.value = theToken
+    localStorage.setItem('jwt', theToken);
+    token.value = theToken;
   }
 
   const disconnect = () => {
-    localStorage.removeItem('jwt')
-    console.log('Token removed from localStorage')
-    router.push('/')
+    localStorage.removeItem('jwt');
+    router.push('/');
+  }
+
+  const getUserById = async (id) => {
+    try {
+      const response = await apiFetch(`/account/${id}`);
+      if (response.status !== 200) {
+        errorMessage.value = response.status + ': ' + (response.message || 'Erreur lors de la récupération du compte')
+        return null
+      }
+      return response.data
+    }
+    catch (err) {
+      console.log('Erreur lors de la récupération du compte:', err)
+      errorMessage.value = 'Erreur lors de la récupération du compte'
+      return null
+    }
   }
 
   function isTokenValid() {
@@ -109,7 +123,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const loginUser = async (email, mdp) => {
-    console.log('LOGIN USER FUNCTION BEGINNING')
     errorMessage.value = ''
     try {
       const response = await apiFetch('/account/login', {
@@ -120,17 +133,11 @@ export const useAuthStore = defineStore('auth', () => {
         }),
       })
 
-      console.log('response after login attempt', response)
-
       if (response.status !== 200 && response.status !== 201) {
-        errorMessage.value =
-          response.status + ': ' + response.message || 'Erreur lors de la connexion'
+        errorMessage.value = response.status + ': ' + response.message || 'Erreur lors de la connexion'
       } else {
         const decodedToken = jwtDecode(response.data.token)
 
-        console.log('TOKEN:', response.data.token)
-        console.log('DECODED TOKEN:', decodedToken)
-        console.log('ROLE:', decodedToken.role)
         setToken(response.data.token)
         const userRole = decodedToken.role
         let redirectTo = ''
@@ -158,6 +165,27 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const changePassword = async(userId, newPassword, confirmedPassword) => {
+    try {
+      const response = await apiFetch('/account/password', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: userId,
+          newPassword: newPassword.value,
+          confirmedPassword: confirmedPassword.value
+        }),
+      });
+      if (response.status !== 200)
+      {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return true;
+    } catch (err) {
+      console.log('error', err);
+      return false;
+    }
+  }
+
   return {
     getToken,
     token,
@@ -171,5 +199,7 @@ export const useAuthStore = defineStore('auth', () => {
     isUserEmploye,
     isUserEnAttente,
     getRole,
+    getUserById,
+    changePassword
   }
 })
