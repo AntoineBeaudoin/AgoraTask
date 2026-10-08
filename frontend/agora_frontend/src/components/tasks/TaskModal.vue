@@ -113,6 +113,7 @@
 import { computed, ref, watch } from 'vue';
 import { useTaskStore } from '@/stores/taskStore';
 import { useModalStore } from '@/stores/modalStore';
+import { switchIsButtonActiveById } from '@/utils/dom-manipulation';
 
 const taskStore = useTaskStore();
 const modalStore = useModalStore();
@@ -274,22 +275,6 @@ async function submit() {
     resetForm();
     switchIsButtonActiveById(SUBMIT_BUTTON_ID);
     close();
-  }
-}
-
-/**
- * Function to toggle on and off the disabled proprety of a button via it's Id
- * @param buttonId Id of the button to toggle on or off the disabled proprety
- */
-function switchIsButtonActiveById(buttonId) {
-  const button = document.getElementById(buttonId);
-  if (button) {
-    if (button.disabled) {
-      button.disabled = false;
-    }
-    else {
-      button.disabled = true;
-    }
   }
 }
 

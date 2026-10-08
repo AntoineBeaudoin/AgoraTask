@@ -12,7 +12,7 @@
 
         <div class="d-flex gap-2">
           <button @click="updateTask(task.id)" class="btn btn-primary">Modifier la tâche</button>
-          <button @click="duplicateTask(task.id)" class="btn btn-secondary">Dupliquer</button>
+          <button @click="duplicateTask(task.id)" v-bind:id="task.id" class="btn btn-secondary">Dupliquer</button>
           <button @click="taskStore.deleteTask(task.id)" class="btn btn-danger">Supprimer</button>
         </div>
       </div>
@@ -25,6 +25,7 @@ import { useModalStore } from "@/stores/modalStore";
 import { useTaskStore } from "@/stores/taskStore";
 import TaskModal from '@/components/tasks/TaskModal.vue';
 import { onMounted } from "vue";
+import { switchIsButtonActiveById } from '@/utils/dom-manipulation';
 
 const taskStore = useTaskStore();
 const modalStore = useModalStore();
@@ -39,7 +40,9 @@ async function updateTask(id) {
 }
 
 async function duplicateTask(id) {
+  switchIsButtonActiveById(id);
   await taskStore.duplicateTask(id);
+  switchIsButtonActiveById(id);
 }
 
 async function addTask() {
