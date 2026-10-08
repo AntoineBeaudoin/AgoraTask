@@ -13,6 +13,7 @@
         <div class="d-flex gap-2">
           <button @click="updateTask(task.id)" class="btn btn-primary">Modifier la tâche</button>
           <button @click="taskStore.deleteTask(task.id)" class="btn btn-danger">Supprimer</button>
+          <button @click="taskDetails(task.id)" class="btn btn-danger">Voir details</button>
         </div>
       </div>
     </div>
@@ -40,5 +41,10 @@ async function updateTask(id) {
 async function testPopup() {
   const modalStore = useModalStore();
   modalStore.openAddTask();
+}
+
+async function taskDetails(id) {
+  taskStore.tasks = taskStore.getTaskById(id);
+  modalStore.openTaskDescription();
 }
 </script>

@@ -11,6 +11,10 @@ export const useModalStore = defineStore('modal', {
   }),
 
   actions: {
+    openTaskDescription() {
+      this.taskModalOpen = true;
+    },
+
     openAddTask() {
       this.editingTask = null
       this.taskModalOpen = true
