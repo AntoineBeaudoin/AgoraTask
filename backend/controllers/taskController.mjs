@@ -67,10 +67,10 @@ async function copyExistingImages(originalTask, newTask) {
         const imageResponse = await fetch(image.path);
 
         if (!imageResponse.ok) {
-            throw new Error( `Impossible de récupérer l'image ${image.filename}` );
+            throw new Error(`Impossible de récupérer l'image ${image.filename}`);
         }
 
-        const imageBuffer = Buffer.from( await imageResponse.arrayBuffer() );
+        const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
         const blob = await put(
             `task/${newTask.id}/${image.filename}`,
             imageBuffer,
@@ -274,12 +274,16 @@ export async function duplicateTask(req, res, next) {
                 message: "Tâche introuvable."
             });
         }
+        // Retire le suffixe " - Copie #N" du titre afin de retrouver le titre original.
+        // Exemple : "Nettoyage - Copie #3" devient "Nettoyage".
         const baseTitle = originalTask.title.replace(/\s-\sCopie\s#\d+$/, '');
         const copies = await Task.findAll({
             where: { title: { [Op.like]: `${baseTitle} - Copie #%` } }
         });
         let highestCopyNumber = 0;
         for (const copy of copies) {
+            // Extrait le numéro de copie à la fin du titre.
+            // Exemple : "Nettoyage - Copie #12" retourne "12".
             const match = copy.title.match(/\s-\sCopie\s#(\d+)$/);
             if (match) {
                 const copyNumber = Number(match[1]);
@@ -291,17 +295,7 @@ export async function duplicateTask(req, res, next) {
         const nextCopyNumber = highestCopyNumber + 1;
         const newTitle = `${baseTitle} - Copie #${nextCopyNumber}`;
         await validateTaskDoesNotAlreadyExist(newTitle, originalTask.room, originalTask.startTime, originalTask.endTime);
-        const newTask = await Task.create({
-            title: newTitle,
-            room: originalTask.room,
-            description: originalTask.description,
-            startTime: originalTask.startTime,
-            endTime: originalTask.endTime,
-            recurring: originalTask.recurring,
-            theFrequency: originalTask.theFrequency,
-            automaticAssignment: originalTask.automaticAssignment,
-            archived: false
-        });
+        const newTask = await createDuplicatedTaskObject(newTitle, originalTask);
         await copyExistingImages(originalTask, newTask);
         const createdTask = await Task.findOne({
             where: { id: newTask.id },
@@ -317,6 +311,20 @@ export async function duplicateTask(req, res, next) {
     } catch (err) {
         next(err);
     }
+}
+
+async function createDuplicatedTaskObject(newTitle, originalTask) {
+    return await Task.create({
+        title: newTitle,
+        room: originalTask.room,
+        description: originalTask.description,
+        startTime: originalTask.startTime,
+        endTime: originalTask.endTime,
+        recurring: originalTask.recurring,
+        theFrequency: originalTask.theFrequency,
+        automaticAssignment: originalTask.automaticAssignment,
+        archived: false
+    });
 }
 
 export async function deleteTask(req, res, next) {
