@@ -1,0 +1,1 @@
+import{a as e,c as t,n,s as r}from"./index-DlJ0p_Qo.js";var i={};function a(n,i){return t(),r(`main`,null,[...i[0]||=[e(`h1`,null,`Je suis la page about`,-1)]])}var o=n(i,[[`render`,a]]);export{o as default};
