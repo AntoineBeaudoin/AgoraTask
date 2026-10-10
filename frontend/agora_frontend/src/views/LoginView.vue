@@ -7,24 +7,27 @@
     </div>
 
     <form action="POST" novalidate @submit.prevent="loginUser" class="mx-auto d-block text-center">
-        <div class="mb-3 text-start">
-          <label for="courriel" class="form-label">Courriel :</label>
-          <input type="email" class="form-control" name="courriel" id="courriel" v-model.trim="courriel" />
-          <div class="text-danger" v-if="courrielInvalide">Le courriel n'est pas valide.</div>
-        </div>
+      <div class="mb-3 text-start">
+        <label for="courriel" class="form-label">Courriel :</label>
+        <input type="email" class="form-control" name="courriel" id="courriel" v-model.trim="courriel" />
+        <div class="text-danger" v-if="courrielInvalide">Le courriel n'est pas valide.</div>
+      </div>
 
-        <div class="mb-3 text-start">
-          <label for="mdp" class="form-label">Mot De Passe : </label>
-          <input type="password" class="form-control" name="mdp" id="mdp" v-model.trim="mdp" />
-          <div class="text-danger" v-if="mdpInvalide">Le mot de passe n'est pas valide.</div>
-        </div>
+      <div class="mb-3 text-start">
+        <label for="mdp" class="form-label">Mot De Passe : </label>
+        <input type="password" class="form-control" name="mdp" id="mdp" v-model.trim="mdp" />
+        <div class="text-danger" v-if="mdpInvalide">Le mot de passe n'est pas valide.</div>
+      </div>
 
-        <p class="text-danger" v-if="errorMessage.errorMessage">{{ errorMessage.errorMessage }}</p>
+      <p class="text-danger" v-if="errorMessage.errorMessage">{{ errorMessage.errorMessage }}</p>
 
-        <div class="d-flex justify-content-start mb-3">
-          <button type="submit" class="btn btn-success mx-auto d-block">Se Connecter</button>
-        </div>
-      </form>
+      <div class="d-flex justify-content-start mb-3">
+        <button type="submit" class="btn btn-success mx-auto d-block" :disabled="loading">
+          <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          {{ loading ? 'Connexion en cours...' : 'Se Connecter' }}
+        </button>
+      </div>
+    </form>
   </div>
 </template>
 
@@ -59,10 +62,17 @@ const validateUser = () => {
   return formIsValid;
 };
 
+const loading = ref(false);
+
 const loginUser = async () => {
   if (validateUser()) {
-    console.log("LOGIN USER FUNCTION CALL");
-    await store.loginUser(courriel, mdp);
+    loading.value = true;
+    try {
+      console.log("LOGIN USER FUNCTION CALL");
+      await store.loginUser(courriel, mdp);
+    } finally {
+      loading.value = false;
+    }
   }
 }
 
@@ -70,8 +80,7 @@ const loginUser = async () => {
 </script>
 
 <style scoped>
-
-img{
+img {
   max-width: 90%;
   max-height: 80%;
 }
