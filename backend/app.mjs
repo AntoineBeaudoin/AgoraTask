@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.mjs";
 import taskRoutes from "./routes/task.mjs";
+import posteRoutes from "./routes/poste.mjs";
 import bdRoutes from "./routes/bd.mjs";
 import cors from "cors";
 import bd  from "./models/bd.mjs";
@@ -29,6 +30,7 @@ app.use("/api/account", authRoutes);
 app.use("/bd", bdRoutes);
 app.use("/api/users", adminRoutes);
 app.use("/api/task", taskRoutes);
+app.use("/api/poste", posteRoutes);
 
 app.get("/", (req, res) => {
     res.status(200).json({
