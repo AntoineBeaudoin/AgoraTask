@@ -113,6 +113,24 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function loadEmployes()
+  {
+      try {
+        const response = await apiFetch('/account/employes');
+
+        console.log('get employes response:', response);
+
+        if (response.status !== 200) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        return response.data;
+
+      } catch (err) {
+        console.log(`HTTP ${err}`);
+      }
+  }
+
   /**
    * Retrouve le jeton de l'utilisateur connecté dans le localStorage.
    *
@@ -200,6 +218,7 @@ export const useAuthStore = defineStore('auth', () => {
     isUserEnAttente,
     getRole,
     getUserById,
-    changePassword
+    changePassword,
+    loadEmployes
   }
 })
