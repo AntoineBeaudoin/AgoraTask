@@ -68,7 +68,6 @@ const loginUser = async () => {
   if (validateUser()) {
     loading.value = true;
     try {
-      console.log("LOGIN USER FUNCTION CALL");
       await store.loginUser(courriel, mdp);
     } finally {
       loading.value = false;
