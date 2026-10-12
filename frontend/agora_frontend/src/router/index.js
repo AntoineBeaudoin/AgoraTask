@@ -8,6 +8,7 @@ import CoordoView from '@/views/CoordoView.vue'
 import TaskAdminView from '@/views/TaskAdminView.vue'
 import GestionEmployesView from '@/views/GestionEmployesView.vue'
 import AdminView from '@/views/AdminView.vue'
+import PosteAdminView from '@/views/PosteAdminView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -60,6 +61,12 @@ const router = createRouter({
       name: 'GestionEmployes',
       component: GestionEmployesView,
       meta: { title: 'Gestion des employés', requireAuth: true, role: 'administrateur' },
+    },
+    {
+      path: '/GestionPostes',
+      name: 'GestionPostes',
+      component: PosteAdminView,
+      meta: { title: 'Gestion des postes de travail', requireAuth: true, role: 'administrateur' },
     },
     {
       path: '/error',
