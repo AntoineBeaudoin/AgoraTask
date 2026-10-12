@@ -3,150 +3,128 @@ import { apiFetch } from '@/utils/api';
 import { isNumber } from '@/utils/checks';
 
 export const usePosteStore = defineStore("postes", {
-   state: () => ({
+  state: () => ({
     postes: [],
     loaded: false
   }),
 
-  async getPosteById(id) {
+  actions: {
+    async getPosteById(id) {
       return this.postes.find((poste) => poste.id == id);
     },
 
     async loadPostes() {
-      if (this.loaded) {
-        return;
+      if (this.loaded) return;
+
+      try {
+        const response = await apiFetch('/poste/list');
+
+        console.log('get postes response:', response);
+
+        if (response.status !== 200) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        this.postes = response.data;
+        this.loaded = true;
+      } catch (err) {
+        console.error(`Error loading postes: ${err}`);
       }
-
-      // try {
-      //   const response = await apiFetch('/task/list');
-
-      //   console.log('get tasks response:', response);
-
-      //   if (response.status !== 200) {
-      //     throw new Error(`HTTP ${response.status}`);
-      //   }
-
-      //   this.tasks = response.data;
-      //   this.loaded = true;
-
-      // } catch (err) {
-      //   console.log(`HTTP ${err}`);
-      // }
     },
 
     async addPoste(poste) {
-      // const formData = new FormData();
+      try {
+        const response = await apiFetch('/poste/add', {
+          method: 'POST',
+          body: JSON.stringify({
+            nom: poste.nom,
+            description: poste.description ?? '',
+            tasks: poste.tasks ?? []
+          })
+        });
 
-      // formData.append('title', task.title);
-      // formData.append('room', task.room);
-      // formData.append('description', task.description ?? '');
-      // formData.append('startTime', task.startTime);
-      // formData.append('endTime', task.endTime);
-      // formData.append('recurring', task.recurring);
-      // formData.append('frequency', task.frequency || "daily");
-      // formData.append('automaticAssignment', task.automaticAssignment);
+        console.log('create poste response:', response);
 
-      // for (const image of task.images ?? []) {
-      //   if (image.file) {
-      //     formData.append('images', image.file);
-      //   }
-      // }
+        if (isNumber(response)) {
+          if (response === 409) {
+            return false;
+          }
 
-      // try {
-      //   const response = await apiFetchFormData('/task/add', {
-      //     method: 'POST',
-      //     body: formData
-      //   });
+          throw new Error(`HTTP ${response}`);
+        }
 
-      //   console.log('createtask response:', response);
+        const returnedPoste = response.data;
 
-      //   if (isNumber(response)) {
-      //     if (response === 409) {
-      //       return false;
-      //     }
+        this.postes.push(returnedPoste);
 
-      //     throw new Error(`HTTP ${response}`);
-      //   }
-
-      //   const returnedTask = response.data;
-
-      //   this.tasks.push(returnedTask);
-
-      //   console.log('create task success');
-
-      //   return true;
-      // } catch (err) {
-      //   console.log(`HTTP ${err}`);
-      //   return false;
-      // }
+        console.log('create poste success');
+        return true;
+      } catch (err) {
+        console.error('create poste error:', err);
+        return false;
+      }
     },
 
     async updatePoste(poste) {
-      // const formData = new FormData();
-      // formData.append('title', task.title);
-      // formData.append('room', task.room);
-      // formData.append('description', task.description ?? '');
-      // formData.append('startTime', task.startTime);
-      // formData.append('endTime', task.endTime);
-      // formData.append('recurring', task.recurring);
-      // formData.append('frequency', task.frequency || 'daily');
-      // formData.append('automaticAssignment', task.automaticAssignment);
+      try {
+        const response = await apiFetch(`/poste/${poste.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            nom: poste.nom,
+            description: poste.description ?? '',
+            tasks: poste.tasks ?? []
+          })
+        });
 
-      // const existingImageIds = (task.images ?? [])
-      //   .filter(img => !img.file && img.id)
-      //   .map(img => img.id);
-      // formData.append('existingImageIds', JSON.stringify(existingImageIds));
-      // for (const image of task.images ?? []) {
-      //   if (image.file) {
-      //     formData.append('images', image.file);
-      //   }
-      // }
+        console.log('update poste response:', response);
 
-      // try {
-      //   const response = await apiFetchFormData(`/task/${task.id}`, {
-      //     method: 'PUT',
-      //     body: formData
-      //   });
-      //   console.log('update task response:', response);
-      //   if (isNumber(response)) {
-      //     if (response === 409) {
-      //       return false;
-      //     }
-      //     throw new Error(`HTTP ${response}`);
-      //   }
-      //   const updatedTask = response.data;
-      //   const index = this.tasks.findIndex(t => t.id === task.id);
-      //   if (index !== -1) {
-      //     this.tasks[index] = updatedTask;
-      //   }
-      //   console.log('update task success');
-      //   return true;
-      // } catch (err) {
-      //   console.log(`HTTP ${err}`);
-      //   return false;
-      // }
+        if (isNumber(response)) {
+          if (response === 409) {
+            return false;
+          }
+
+          throw new Error(`HTTP ${response}`);
+        }
+
+        const updatedPoste = response.data;
+        const index = this.postes.findIndex(p => p.id === poste.id);
+
+        if (index !== -1) {
+          this.postes[index] = updatedPoste;
+        }
+
+        console.log('update poste success');
+        return true;
+      } catch (err) {
+        console.error('update poste error:', err);
+        return false;
+      }
     },
 
     async deletePoste(id) {
       this.postes = this.postes.filter(poste => poste.id !== id);
-      // try {
-      //   console.log("task id:", id);
-      //   const response = await apiFetch("/task/" + id, {
-      //     method: "DELETE"
-      //   });
+      try {
+        console.log("poste id:", id);
+        const response = await apiFetch("/poste/" + id, {
+          method: "DELETE"
+        });
 
-      //   console.log("response after delete task: ", response);
+        console.log("response after delete poste: ", response);
 
-      //   if (response !== null) {
-      //     throw new Error(`HTTP ${response.status}`);
-      //   }
-      //   else {
-      //     return true;
-      //   }
-      // } catch (err) {
-      //   console.log(`HTTP ${err}`);
-      //   return false;
-      // }
-
+        if (response !== null) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        else {
+          return true;
+        }
+      } catch (err) {
+        console.log(`HTTP ${err}`);
+        return false;
+      }
     }
+  }
+
 })
