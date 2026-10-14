@@ -7,6 +7,7 @@ import cors from "cors";
 import bd  from "./models/bd.mjs";
 import { get404, getErrors } from "./controllers/errorController.mjs";
 import adminRoutes from "./routes/admin.mjs";
+import "./models/task_association_schedule.mjs";
 
 dotenv.config();
 
