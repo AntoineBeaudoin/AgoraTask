@@ -49,8 +49,9 @@
                 Annuler
               </button>
 
-              <button type="submit" class="btn btn-success">
-                Modifier
+              <button type="submit" class="btn btn-success" :disabled="loading">
+                <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                {{ loading ? 'Modification en cours...' : 'Modifier' }}
               </button>
             </div>
           </form>
@@ -71,6 +72,8 @@ const authStore = useAuthStore();
 const newPassword = ref('');
 const confirmedPassword = ref('');
 const errorMessage = ref('');
+
+const loading = ref(false);
 
 watch(() => modalStore.editingUser, (user) => {
   if (!user) {
@@ -128,7 +131,10 @@ function markInvalidInputs() {
 }
 
 async function submit() {
+  if (loading.value) return;
+
   errorMessage.value = "";
+
   if (!formIsValid()) {
     markInvalidInputs();
     return;
@@ -140,15 +146,24 @@ async function submit() {
     return;
   }
 
-  let hasPasswordChanged = await authStore.changePassword(userId, newPassword, confirmedPassword);
-  if (!hasPasswordChanged)
-  {
-    errorMessage.value = "Une erreur est survenue lors du changement du mot de passe.";
-  }
-  else
-  {
-    close();
-  }
+  loading.value = true;
 
+  try {
+    const hasPasswordChanged = await authStore.changePassword(
+      userId,
+      newPassword,
+      confirmedPassword
+    );
+
+    if (!hasPasswordChanged) {
+      errorMessage.value = "Une erreur est survenue lors du changement du mot de passe.";
+    } else {
+      close();
+    }
+  } catch {
+    errorMessage.value = "Une erreur est survenue lors du changement du mot de passe.";
+  } finally {
+    loading.value = false;
+  }
 }
 </script>

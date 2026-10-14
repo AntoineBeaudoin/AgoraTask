@@ -130,6 +130,23 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
 
+    async duplicateTask(id) {
+      try {
+        const response = await apiFetch(`/task/${id}/duplicate`, {
+          method: 'POST'
+        });
+        if (isNumber(response)) {
+          throw new Error(`HTTP ${response}`);
+        }
+        const duplicatedTask = response.data;
+        this.tasks.push(duplicatedTask);
+        return true;
+      } catch (err) {
+        return false;
+      }
+    },
+
+
     async deleteTask(id) {
       this.tasks = this.tasks.filter(task => task.id !== id);
       try {
