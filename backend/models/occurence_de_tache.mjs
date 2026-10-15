@@ -46,4 +46,4 @@ const occurence_de_tache = bd.define("occurence_de_tache", {
   },
 });
 
-export default occurence_de_tache;
+export { occurence_de_tache };
