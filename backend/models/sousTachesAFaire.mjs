@@ -1,16 +1,16 @@
 import { DataTypes } from "sequelize";
 import bd from "./bd.mjs";
-const lien_tache_employe = bd.define("LienTacheEmploye", {
+const sous_taches_AFaire = bd.define("SousTachesAFaire", {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
   },
-  tacheId: {
+  sousTacheId: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  employeId: {
+  tachesAFaireId: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
@@ -24,4 +24,4 @@ const lien_tache_employe = bd.define("LienTacheEmploye", {
     defaultValue: false,
   },
 });
-export { lien_tache_employe };
+export { sous_taches_AFaire };

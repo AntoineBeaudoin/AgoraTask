@@ -61,16 +61,30 @@ Task.belongsToMany(poste, {
 });
 // Relation between employe and tache
 import { employe } from "./employe.mjs";
-import { lien_tache_employe } from "./lien_tache_employe.mjs";
+import { tachesAFaire } from "./tachesAFaire.mjs";
 employe.belongsToMany(Task, {
-  through: lien_tache_employe,
+  through: tachesAFaire,
   foreignKey: "employeId",
   otherKey: "tacheId",
   as: "taches",
 });
 Task.belongsToMany(employe, {
-  through: lien_tache_employe,
+  through: tachesAFaire,
   foreignKey: "tacheId",
   otherKey: "employeId",
   as: "employes",
+});
+// relation between tacheafaire and sous_tache
+import { sous_taches_AFaire } from "./SousTachesAFaire.mjs";
+tachesAFaire.belongsToMany(sous_tache, {
+  through: sous_taches_AFaire,
+  foreignKey: "tachesAFaireId",
+  otherKey: "sousTacheId",
+  as: "sous_taches",
+});
+sous_tache.belongsToMany(tachesAFaire, {
+  through: sous_taches_AFaire,
+  foreignKey: "sousTacheId",
+  otherKey: "tachesAFaireId",
+  as: "tachesAFaires",
 });
