@@ -59,3 +59,18 @@ Task.belongsToMany(poste, {
   otherKey: "posteId",
   as: "postes",
 });
+// Relation between employe and tache
+import { employe } from "./employe.mjs";
+import { lien_tache_employe } from "./lien_tache_employe.mjs";
+employe.belongsToMany(Task, {
+  through: lien_tache_employe,
+  foreignKey: "employeId",
+  otherKey: "tacheId",
+  as: "taches",
+});
+Task.belongsToMany(employe, {
+  through: lien_tache_employe,
+  foreignKey: "tacheId",
+  otherKey: "employeId",
+  as: "employes",
+});
