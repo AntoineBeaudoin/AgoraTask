@@ -10,7 +10,7 @@ const tachesAFaire = bd.define("TachesAFaire", {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  employeId: {
+  compteId: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
