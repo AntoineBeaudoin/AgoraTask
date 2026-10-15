@@ -10,7 +10,6 @@ TaskImage.belongsTo(Task, {
   foreignKey: "taskId",
   as: "task",
 });
-export { TaskImage };
 // Relation between Task and occurence_de_tache
 import { occurence_de_tache } from "./occurence_de_tache.mjs";
 Task.hasMany(occurence_de_tache, {
@@ -22,4 +21,14 @@ occurence_de_tache.belongsTo(Task, {
   foreignKey: "tacheId",
   as: "task",
 });
-export { Task, occurence_de_tache };
+// Relation between Task and sous_tache
+import { sous_tache } from "./sous_taches.mjs";
+Task.hasMany(sous_tache, {
+  foreignKey: "tacheId",
+  as: "sous_taches",
+  onDelete: "CASCADE",
+});
+sous_tache.belongsTo(Task, {
+  foreignKey: "tacheId",
+  as: "task",
+});
