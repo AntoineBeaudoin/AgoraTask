@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 import bd from "./bd.mjs";
 
-const occurence_de_tache = bd.define("occurence_de_tache", {
+const occurrence_de_tache = bd.define("occurence_de_tache", {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -46,4 +46,4 @@ const occurence_de_tache = bd.define("occurence_de_tache", {
   },
 });
 
-export { occurence_de_tache };
+export { occurrence_de_tache };
