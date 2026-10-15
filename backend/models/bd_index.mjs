@@ -32,3 +32,16 @@ sous_tache.belongsTo(Task, {
   foreignKey: "tacheId",
   as: "task",
 });
+// Relation between poste and compte
+import { poste } from "./poste.mjs";
+import { Compte } from "./compte.mjs";
+
+poste.hasOne(Compte, {
+  foreignKey: "posteId",
+  as: "compte",
+  onDelete: "SET NULL",
+});
+Compte.belongsTo(poste, {
+  foreignKey: "posteId",
+  as: "poste",
+});
