@@ -164,7 +164,7 @@ const seedDatabase = async (req, res) => {
       "dimanche",
     ];
     let idOccurrence = {};
-    let occurrence;
+    let occurence;
     for (const journee of jours) {
       occurence = await occurrence_de_tache.create({
         heureDebut: "08:30:00",
@@ -364,7 +364,8 @@ const seedDatabase = async (req, res) => {
     const assignationSalle = await tachesAFaire.create({
       tacheId: preparerSalle.id,
       compteId: antoine.id,
-      commentaire: "Préparer la salle avant le début des activités.",
+      commentaire:
+        "la reunion a commencé plutot que prévu, j'ai pas eu le temps de tout installer.",
       isCompleted: false,
       occurrence_de_tacheId: idOccurrence.preparerSalle_id,
     });
