@@ -66,7 +66,7 @@ const router = createRouter({
       path: '/GestionPostes',
       name: 'GestionPostes',
       component: PosteAdminView,
-      meta: { title: 'Gestion des postes de travail', requireAuth: true, role: 'administrateur' },
+      meta: { title: 'Gestion des postes de travail', requireAuth: true, roles: ['administrateur', 'coordonnateur'] },
     },
     {
       path: '/error',
@@ -118,9 +118,14 @@ router.beforeEach((to, from, next) => {
     })
   }
 
+  if (to.meta.roles && !to.meta.roles.includes(authStore.getRole())) {
+    return next({ name: 'home' })
+  }
+
   if (to.meta.role && authStore.getRole() !== to.meta.role) {
     return next({ name: 'home' })
   }
+
   if (to.name === 'not-found') {
     const errorStore = useErrorStore()
     errorStore.setError(404, "cette page n'existe pas ou a été supprimée.")
