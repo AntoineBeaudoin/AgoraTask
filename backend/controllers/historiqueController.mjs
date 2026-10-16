@@ -14,7 +14,12 @@ import { Op } from "sequelize";
 
 export async function getEmployeEnService(req, res, next) {
   try {
-    const { date } = req.body;
+    const { date } = req.query;
+    if (!date) {
+      const error = new Error("La date est requise.");
+      error.statusCode = 400;
+      return next(error);
+    }
     const EmployeEnService = await Compte.findAll({
       include: [
         {
@@ -45,7 +50,13 @@ export async function getEmployeEnService(req, res, next) {
 
 export async function getEmployeTaches(req, res, next) {
   try {
-    const { compteId, date } = req.body;
+    const { compteId } = req.params;
+    const { date } = req.query;
+    if (!date) {
+      const error = new Error("La date est requise.");
+      error.statusCode = 400;
+      return next(error);
+    }
     const EmployeTaches = await tachesAFaire.findAll({
       where: {
         compteId: compteId,
