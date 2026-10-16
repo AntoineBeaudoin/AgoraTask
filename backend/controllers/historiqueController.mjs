@@ -1,0 +1,81 @@
+import bcrypt from "bcrypt";
+import {
+  Compte,
+  Task,
+  TaskImage,
+  poste,
+  occurrence_de_tache,
+  sous_tache,
+  TaskPoste,
+  tachesAFaire,
+  sous_taches_AFaire,
+} from "../models/bd_index.mjs";
+import { Op } from "sequelize";
+
+export async function getEmployeEnService(req, res, next) {
+  try {
+    const { date } = req.body;
+    const EmployeEnService = await Compte.findAll({
+      include: [
+        {
+          model: Task,
+          as: "taches",
+          required: true,
+          through: {
+            where: {
+              createdAt: {
+                [Op.gte]: new Date(date + "T00:00:00"),
+                [Op.lte]: new Date(date + "T23:59:59.999"),
+              },
+            },
+          },
+        },
+      ],
+    });
+    res.status(200).json({
+      status: 200,
+      message: "Liste des employés en service récupérée avec succès",
+      data: EmployeEnService,
+      error: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getEmployeTaches(req, res, next) {
+  try {
+    const { compteId, date } = req.body;
+    const EmployeTaches = await tachesAFaire.findAll({
+      where: {
+        compteId: compteId,
+
+        createdAt: {
+          [Op.gte]: new Date(date + "T00:00:00"),
+          [Op.lte]: new Date(date + "T23:59:59.999"),
+        },
+      },
+
+      include: [
+        {
+          model: sous_tache,
+          as: "sous_taches",
+        },
+      ],
+    });
+    if (EmployeTaches.length > 0) {
+      res.status(200).json({
+        status: 200,
+        message: "Liste des tâches de l'employé récupérée avec succès",
+        data: EmployeTaches,
+        error: null,
+      });
+    } else {
+      let error = new Error("Employé introuvable.");
+      error.statusCode = 404;
+      next(error);
+    }
+  } catch (error) {
+    next(error);
+  }
+}
