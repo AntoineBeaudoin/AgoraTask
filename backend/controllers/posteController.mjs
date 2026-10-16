@@ -17,14 +17,30 @@ dotenv.config();
 export async function createPoste(req, res, next) {
     const { nom, description, tasks = [] } = req.body;
 
+    const aSimilarPoste = await Poste.findOne({
+        where: {
+            nom: nom,
+            description: description
+        }
+    });
+
+    if (aSimilarPoste){
+        return res.status(409).json({
+            status: 409,
+            message: "Un poste avec un nom et une description identique existe déjà."
+        })
+    }
+
     if (!nom || !nom.trim()) {
         return res.status(400).json({
+            status: 400,
             message: "Le nom du poste est requis."
         });
     }
 
     if (!Array.isArray(tasks)) {
         return res.status(400).json({
+            status: 400,
             message: "Les tâches doivent être fournies sous forme de tableau d'dentifiants."
         });
     }
@@ -69,6 +85,20 @@ export async function createPoste(req, res, next) {
 export async function updatePoste(req, res, next) {
     const { id } = req.params;
     const { nom, description, tasks = [] } = req.body;
+
+    const aSimilarPoste = await Poste.findOne({
+        where: {
+            nom: nom,
+            description: description
+        }
+    });
+
+    if (aSimilarPoste){
+        return res.status(409).json({
+            status: 409,
+            message: "Un poste avec un nom et une description identique existe déjà."
+        })
+    }
 
     if (!nom || !nom.trim()) {
         return res.status(400).json({
@@ -128,7 +158,7 @@ export async function updatePoste(req, res, next) {
 }
 
 /**
- * Retourne tous les postes qui ne sont pas archivés, ainsi que chacune des tâches associées.
+ * Retourne les postes selon leur statut d'archivage, ainsi que les tâches associées.
  *
  * @export
  * @async
@@ -137,12 +167,19 @@ export async function updatePoste(req, res, next) {
  * @param {*} next Le prochain middleware à appeler, en cas d'erreur.
  * @returns {*} Cette fonction ne retourne rien.
  */
-export async function getAllPostes(req, res, next) {
+export async function getPostes(req, res, next) {
     try {
+        const { archived } = req.query;
+        const where = {};
+
+        if (archived === 'true') {
+            where.archived = true;
+        } else if (archived === 'false') {
+            where.archived = false;
+        }
+
         const postes = await Poste.findAll({
-            where: {
-                archived: false
-            },
+            where,
             include: [{
                 model: Task,
                 as: 'tasks',
@@ -164,7 +201,8 @@ export async function getAllPostes(req, res, next) {
             path: "/api/poste/list",
             timestamp: new Date().toISOString()
         });
-    } catch (err) {
+    } 
+    catch (err) {
         next(err);
     }
 }
@@ -191,6 +229,38 @@ export async function deletePoste(req, res, next) {
 
         if (aPoste) {
             aPoste.archived = true;
+
+            await aPoste.save();
+        }
+
+        res.status(204).json({});
+    }
+    catch (err) {
+        next(err);
+    }
+}
+
+/**
+ * Ré-active un poste de travail par son identifiant.
+ *
+ * @export
+ * @async
+ * @param {*} req La requête envoyée par le frontend.
+ * @param {*} res La réponse à retourner au frontend.
+ * @param {*} next Le prochain middleware à appeler, en cas d'erreur.
+ * @returns {*} Cette fonction ne retourne rien.
+ */
+export async function reactivatePoste(req, res, next) {
+    const id = req.params.id;
+    try {
+        const aPoste = await Poste.findOne({
+            where: {
+                id: id
+            }
+        });
+
+        if (aPoste) {
+            aPoste.archived = false;
 
             await aPoste.save();
         }
