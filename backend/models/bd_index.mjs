@@ -88,6 +88,15 @@ sous_tache.belongsToMany(tachesAFaire, {
   as: "tachesAFaires",
 });
 
+//Relation entre tacheAFaire et occurrence_de_tache
+tachesAFaire.BelongsTo(occurrence_de_tache, {
+  foreignKey: "occurrence_de_tacheId",
+  as: "occurrence_de_tache",
+});
+occurrence_de_tache.hasMany(tachesAFaire, {
+  foreignKey: "occurrence_de_tacheId",
+  as: "tachesAFaire",
+});
 export {
   Task,
   TaskImage,
