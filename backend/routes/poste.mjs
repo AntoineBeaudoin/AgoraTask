@@ -3,9 +3,10 @@ import * as posteController from "../controllers/posteController.mjs";
 
 const router = express.Router();
 
-router.get("/list", posteController.getAllPostes);
+router.get("/list", posteController.getPostes);
 router.put("/:id", posteController.updatePoste);
 router.post("/add", posteController.createPoste);
 router.delete("/:id", posteController.deletePoste);
+router.patch("/reactivate/:id", posteController.reactivatePoste);
 
 export default router;
