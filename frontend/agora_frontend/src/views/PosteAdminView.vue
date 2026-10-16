@@ -64,7 +64,7 @@
                   <button v-if="!poste.archived" class="action-btn archive-btn" @click="posteToArchive = poste">
                     Archiver
                   </button>
-                  <button v-else class="action-btn restore-btn" @click="archivePoste(poste.id, false)">
+                  <button v-else class="action-btn restore-btn" @click="reactivatePoste(poste.id)">
                     Réactiver
                   </button>
                 </div>
@@ -74,6 +74,7 @@
         </table>
       </div>
     </section>
+
     <div v-if="posteToArchive" class="dialog-overlay" @click.self="posteToArchive = null">
       <div class="confirmation-dialog">
         <h2>Confirmer l'archivage</h2>
@@ -91,6 +92,7 @@
         </div>
       </div>
     </div>
+
   </main>
 </template>
 
@@ -114,32 +116,49 @@ onMounted(() => {
 
 async function loadPostes() {
   displayTitle.value = 'Postes actifs';
-  await fetchPostes('/postes?archived=false');
+  await fetchPostes('/poste/list?archived=false');
 }
 
 async function loadArchivedPostes() {
   displayTitle.value = 'Postes archivés';
-  await fetchPostes('/postes?archived=true');
+  await fetchPostes('/poste/list?archived=true');
 }
 
 async function loadAllPostes() {
   displayTitle.value = 'Tous les postes';
-  await fetchPostes();
+  await fetchPostes('/poste/list', true);
 }
 
-async function fetchPostes() {
+async function fetchPostes(url = '/poste/list', forceRefresh = false) {
   try {
-    await posteStore.loadPostes();
+    await posteStore.loadPostes(url, forceRefresh);
 
     const postes = posteStore.postes;
-
-    console.log("LOADED POSTES: ", postes);
-
     displayedPostes.value = Array.isArray(postes) ? postes : [];
   } catch (error) {
-    console.error('Erreur lors du chargement des postes de travail :', error);
+    console.error(
+      'Erreur lors du chargement des postes de travail :',
+      error
+    );
     displayedPostes.value = [];
   }
+}
+
+async function reloadPostes(){
+   posteStore.loaded = false;
+
+    if (displayTitle.value === 'Postes actifs') {
+      await loadPostes();
+    } else if (displayTitle.value === 'Postes archivés') {
+      await loadArchivedPostes();
+    } else {
+      await loadAllPostes();
+    }
+}
+
+async function reactivatePoste(id){
+  await posteStore.reactivatePoste(id);
+  await reloadPostes();
 }
 
 async function confirmArchivePoste() {
@@ -154,15 +173,8 @@ async function confirmArchivePoste() {
 
     posteToArchive.value = null;
 
-    posteStore.loaded = false;
+    await reloadPostes();
 
-    if (displayTitle.value === 'Postes actifs') {
-      await loadPostes();
-    } else if (displayTitle.value === 'Postes archivés') {
-      await loadArchivedPostes();
-    } else {
-      await loadAllPostes();
-    }
   } catch (error) {
     console.error("Erreur lors de l'archivage du poste :", error);
   }
@@ -768,9 +780,6 @@ async function confirmArchivePoste() {
   color: #842029;
   font-size: 13px;
 }
-
-
-
 
 /* Dialogue de confirmation de suppression */
 .dialog-overlay {
