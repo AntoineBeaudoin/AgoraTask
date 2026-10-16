@@ -6,7 +6,7 @@ import {
   poste,
   occurrence_de_tache,
   sous_tache,
-  lien_poste_tache,
+  TaskPoste,
   tachesAFaire,
   sous_taches_AFaire,
 } from "../models/bd_index.mjs";
@@ -23,7 +23,7 @@ const seedDatabase = async (req, res) => {
   try {
     await sous_taches_AFaire.destroy({ where: {} });
     await tachesAFaire.destroy({ where: {} });
-    await lien_poste_tache.destroy({ where: {} });
+    await TaskPoste.destroy({ where: {} });
     await occurrence_de_tache.destroy({ where: {} });
     await sous_tache.destroy({ where: {} });
     await TaskImage.destroy({ where: {} });
@@ -34,23 +34,23 @@ const seedDatabase = async (req, res) => {
     const hashedPassword = await bcrypt.hash("Test1234!", 15);
 
     const posteAntoine = await poste.create({
-      Nom: "Préposé aux installations",
+      name: "Préposé aux installations",
       description:
         "Responsable de la préparation, du rangement et de l'entretien des installations.",
     });
 
     const posteColin = await poste.create({
-      Nom: "Administrateur principal",
+      name: "Administrateur principal",
       description: "Administration générale du système AgoraTask.",
     });
 
     const posteJulien = await poste.create({
-      Nom: "Administrateur secondaire",
+      name: "Administrateur secondaire",
       description: "Administration et gestion des utilisateurs du système.",
     });
 
     const posteMoussa = await poste.create({
-      Nom: "Coordonnateur des opérations",
+      name: "Coordonnateur des opérations",
       description: "Coordination des tâches et supervision des activités.",
     });
 
@@ -169,45 +169,45 @@ const seedDatabase = async (req, res) => {
         heureDebut: "08:30:00",
         heureFin: "09:00:00",
         journee,
-        IsRequired: true,
+        isRequired: true,
         tacheId: preparerSalle.id,
-        Priorite: 3,
+        priorite: 3,
       });
 
       await occurrence_de_tache.create({
         heureDebut: "12:00:00",
         heureFin: "12:30:00",
         journee,
-        IsRequired: true,
+        isRequired: true,
         tacheId: nettoyerVestiaires.id,
-        Priorite: 3,
+        priorite: 3,
       });
 
       await occurrence_de_tache.create({
         heureDebut: "16:00:00",
         heureFin: "16:30:00",
         journee,
-        IsRequired: true,
+        isRequired: true,
         tacheId: rangerMateriel.id,
-        Priorite: 2,
+        priorite: 2,
       });
 
       await occurrence_de_tache.create({
         heureDebut: "17:30:00",
         heureFin: "18:30:00",
         journee,
-        IsRequired: true,
+        isRequired: true,
         tacheId: nettoyerSalles.id,
-        Priorite: 4,
+        priorite: 4,
       });
 
       await occurrence_de_tache.create({
         heureDebut: "18:30:00",
         heureFin: "19:00:00",
         journee,
-        IsRequired: true,
+        isRequired: true,
         tacheId: viderPoubelles.id,
-        Priorite: 4,
+        priorite: 4,
       });
     }
 
@@ -215,9 +215,9 @@ const seedDatabase = async (req, res) => {
       heureDebut: "17:00:00",
       heureFin: "18:00:00",
       journee: "vendredi",
-      IsRequired: true,
+      isRequired: true,
       tacheId: nettoyerGymnase.id,
-      Priorite: 5,
+      priorite: 5,
     });
 
     const installerTables = await sous_tache.create({
@@ -317,32 +317,32 @@ const seedDatabase = async (req, res) => {
       description: "Installer de nouveaux sacs dans les poubelles.",
     });
 
-    await lien_poste_tache.create({
+    await TaskPoste.create({
       posteId: posteAntoine.id,
       tacheId: preparerSalle.id,
     });
 
-    await lien_poste_tache.create({
+    await TaskPoste.create({
       posteId: posteAntoine.id,
       tacheId: nettoyerVestiaires.id,
     });
 
-    await lien_poste_tache.create({
+    await TaskPoste.create({
       posteId: posteAntoine.id,
       tacheId: rangerMateriel.id,
     });
 
-    await lien_poste_tache.create({
+    await TaskPoste.create({
       posteId: posteAntoine.id,
       tacheId: nettoyerSalles.id,
     });
 
-    await lien_poste_tache.create({
+    await TaskPoste.create({
       posteId: posteAntoine.id,
       tacheId: viderPoubelles.id,
     });
 
-    await lien_poste_tache.create({
+    await TaskPoste.create({
       posteId: posteMoussa.id,
       tacheId: nettoyerGymnase.id,
     });
@@ -357,21 +357,24 @@ const seedDatabase = async (req, res) => {
     const assignationVestiaires = await tachesAFaire.create({
       tacheId: nettoyerVestiaires.id,
       compteId: antoine.id,
-      commentaire: "Nettoyage quotidien des vestiaires.",
+      commentaire:
+        "Il ne reste presque plus de savon pour la plancher, il faudrait en acheter",
       isCompleted: true,
     });
 
     const assignationPoubelles = await tachesAFaire.create({
       tacheId: viderPoubelles.id,
       compteId: antoine.id,
-      commentaire: "Vider toutes les poubelles avant la fermeture.",
+      commentaire:
+        "Il ne reste presque plus de savon pour la plancher, il faudrait en acheter",
       isCompleted: false,
     });
 
     const assignationGymnase = await tachesAFaire.create({
       tacheId: nettoyerGymnase.id,
       compteId: moussa.id,
-      commentaire: "Vérifier et effectuer le nettoyage complet du gymnase.",
+      commentaire:
+        "Il ne reste presque plus de savon pour la plancher, il faudrait en acheter",
       isCompleted: false,
     });
 

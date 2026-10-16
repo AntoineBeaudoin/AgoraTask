@@ -46,15 +46,15 @@ Compte.belongsTo(poste, {
   as: "poste",
 });
 // Relation between poste and tache
-import { lien_poste_tache } from "./lien_poste_tache.mjs";
+import { TaskPoste } from "./TaskPoste.mjs";
 poste.belongsToMany(Task, {
-  through: lien_poste_tache,
+  through: TaskPoste,
   foreignKey: "posteId",
   otherKey: "tacheId",
   as: "taches",
 });
 Task.belongsToMany(poste, {
-  through: lien_poste_tache,
+  through: TaskPoste,
   foreignKey: "tacheId",
   otherKey: "posteId",
   as: "postes",
@@ -95,7 +95,7 @@ export {
   sous_tache,
   poste,
   Compte,
-  lien_poste_tache,
+  TaskPoste,
   tachesAFaire,
   sous_taches_AFaire,
 };

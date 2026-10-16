@@ -1,6 +1,6 @@
 import { DataTypes } from "sequelize";
 import bd from "./bd.mjs";
-const lien_poste_tache = bd.define("LienPosteTache", {
+const TaskPoste = bd.define("TaskPoste", {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -15,4 +15,4 @@ const lien_poste_tache = bd.define("LienPosteTache", {
     allowNull: false,
   },
 });
-export { lien_poste_tache };
+export { TaskPoste };

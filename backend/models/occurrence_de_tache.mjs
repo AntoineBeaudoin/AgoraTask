@@ -10,11 +10,11 @@ const occurrence_de_tache = bd.define("occurence_de_tache", {
   },
   heureDebut: {
     type: DataTypes.TIME,
-    allowNull: false,
+    allowNull: true,
   },
   heureFin: {
     type: DataTypes.TIME,
-    allowNull: false,
+    allowNull: true,
   },
   journee: {
     type: DataTypes.ENUM(
@@ -28,7 +28,7 @@ const occurrence_de_tache = bd.define("occurence_de_tache", {
     ),
     allowNull: false,
   },
-  IsRequired: {
+  isRequired: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
   },
@@ -36,7 +36,7 @@ const occurrence_de_tache = bd.define("occurence_de_tache", {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  Priorite: {
+  priorite: {
     type: DataTypes.INTEGER,
     allowNull: false,
     validate: {

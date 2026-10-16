@@ -8,7 +8,7 @@ const poste = bd.define("poste", {
     autoIncrement: true,
     allowNull: false,
   },
-  Nom: {
+  name: {
     type: DataTypes.STRING(100),
     allowNull: false,
   },
