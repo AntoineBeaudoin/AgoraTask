@@ -12,7 +12,7 @@
       </button>
     </header>
 
-    <EditPasswordModal/>
+    <EditPasswordModal />
 
     <div v-if="showCreateForm" class="create-user-card">
       <div class="create-form-header">
@@ -201,7 +201,6 @@
         Aucun employé ne correspond aux filtres sélectionnés.
       </div>
 
-
       <div v-else class="table-wrapper">
         <table class="employees-table">
           <thead>
@@ -235,7 +234,7 @@
                   <select
                     v-model="pendingRoles[user.id]"
                     class="role-select"
-                    :disabled="user.IsArchived"
+                    :disabled="user.IsArchived || authStore.isConnectedUser(user.courriel)"
                   >
                     <option value="administrateur">Administrateur</option>
 
@@ -246,7 +245,8 @@
 
                   <button
                     class="btn btn-success rounded-5 confirm-role-btn"
-                    @click="editPasswordUser(user.id)">
+                    @click="editPasswordUser(user.id)"
+                  >
                     Modifier le mot de passe
                   </button>
 
@@ -287,14 +287,15 @@
   </main>
 </template>
 <script setup>
-import { ref } from 'vue';
-import { onMounted, reactive } from 'vue';
-import { apiFetch } from '../utils/api.js';
-import { useModalStore } from '@/stores/modalStore.js';
-import EditPasswordModal from '@/components/users/EditPasswordModal.vue';
+import { ref } from 'vue'
+import { onMounted, reactive } from 'vue'
+import { apiFetch } from '../utils/api.js'
+import { useModalStore } from '@/stores/modalStore.js'
+import EditPasswordModal from '@/components/users/EditPasswordModal.vue'
+import { useAuthStore } from '@/stores/auth.js'
 
-const modalStore = useModalStore();
-
+const modalStore = useModalStore()
+const authStore = useAuthStore()
 let displayTitle = ref('Employés actifs')
 let displayedRole = ref('personnel_de_terrain')
 let pendingRoles = ref({})
@@ -358,8 +359,8 @@ async function editUser(userId, newRole) {
     })
 }
 
-async function editPasswordUser(userId){
-  await modalStore.openEditPassword(userId);
+async function editPasswordUser(userId) {
+  await modalStore.openEditPassword(userId)
 }
 
 async function archiveUser(userId, IsArchived) {

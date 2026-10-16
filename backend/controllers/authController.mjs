@@ -5,7 +5,6 @@ import bcrypt from "bcrypt";
 
 dotenv.config();
 
-
 /**
  * Valide qu'un mot de passe respecte les exigences de sécurité.
  *
@@ -13,16 +12,16 @@ dotenv.config();
  * @returns {boolean} Vrai si le mot de passe est considéré comme sécuritaire, faux autrement.
  */
 const validatePassword = (password) => {
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
-    if (!passwordRegex.test(password)){
-        return false;
-    }
-    return true;
-}
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+  if (!passwordRegex.test(password)) {
+    return false;
+  }
+  return true;
+};
 
 /**
- * Créé un utilisateur avec un nom, un prénom, un courriel, un mot de passe qui sera hashé, 
- * ainsi qu'un rôle. 
+ * Créé un utilisateur avec un nom, un prénom, un courriel, un mot de passe qui sera hashé,
+ * ainsi qu'un rôle.
  *
  * @export
  * @async
@@ -65,9 +64,8 @@ export async function createUser(req, res, next) {
   }
 }
 
-
 /**
- * Authentifie un utilisateur et génère un jeton JWT que le client peut utiliser 
+ * Authentifie un utilisateur et génère un jeton JWT que le client peut utiliser
  *
  * @export
  * @async
@@ -144,67 +142,64 @@ export async function loginUser(req, res, next) {
  * @returns {unknown} Cette fonction retourne une erreur, si nécessaire.
  */
 export async function changePassword(req, res, next) {
-    const {confirmedPassword, newPassword, id } = req.body;
+  const { confirmedPassword, newPassword, id } = req.body;
 
-    try {
-        if (!confirmedPassword || !newPassword) {
-            const error = new Error(
-                "Le mot de passe et sa confirmation sont requis."
-            );
-            error.statusCode = 400;
-            throw error;
-        }
-
-        if (confirmedPassword !== newPassword) {
-            const error = new Error(
-                "Le mot de passe et sa confirmation doivent être identiques."
-            );
-            error.statusCode = 422;
-            throw error;
-        }
-
-        if (!validatePassword(newPassword)) {
-            const error = new Error(
-                "Le mot de passe doit contenir 8 caractères, dont au moins 1 majuscule, minuscule, caractère spécial et chiffre."
-            );
-            error.statusCode = 422;
-            throw error;
-        }
-
-        const user = await Compte.findOne({
-            where: { id }
-        });
-
-        if (!user) {
-            const error = new Error("Compte introuvable.");
-            error.statusCode = 404;
-            throw error;
-        }
-
-        const isSamePassword = await bcrypt.compare(
-            newPassword,
-            user.motDePasse
-        );
-
-        if (isSamePassword) {
-            const error = new Error(
-                "Le nouveau mot de passe doit être différent de l'ancien mot de passe."
-            );
-            error.statusCode = 422;
-            throw error;
-        }
-
-        user.motDePasse = await bcrypt.hash(newPassword, 15);
-
-        await user.save();
-
-        res.status(200).json({
-            status: 200,
-            message: "Mot de passe du profil mis à jour avec succès.",
-            path: "/api/account/password",
-            timestamp: new Date().toISOString()
-        });
-    } catch (err) {
-        next(err);
+  try {
+    if (!confirmedPassword || !newPassword) {
+      const error = new Error(
+        "Le mot de passe et sa confirmation sont requis.",
+      );
+      error.statusCode = 400;
+      throw error;
     }
+
+    if (confirmedPassword !== newPassword) {
+      const error = new Error(
+        "Le mot de passe et sa confirmation doivent être identiques.",
+      );
+      error.statusCode = 422;
+      throw error;
+    }
+
+    if (!validatePassword(newPassword)) {
+      const error = new Error(
+        "Le mot de passe doit contenir 8 caractères, dont au moins 1 majuscule, minuscule, caractère spécial et chiffre.",
+      );
+      error.statusCode = 422;
+      throw error;
+    }
+
+    const user = await Compte.findOne({
+      where: { id },
+    });
+
+    if (!user) {
+      const error = new Error("Compte introuvable.");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const isSamePassword = await bcrypt.compare(newPassword, user.motDePasse);
+
+    if (isSamePassword) {
+      const error = new Error(
+        "Le nouveau mot de passe doit être différent de l'ancien mot de passe.",
+      );
+      error.statusCode = 422;
+      throw error;
+    }
+
+    user.motDePasse = await bcrypt.hash(newPassword, 15);
+
+    await user.save();
+
+    res.status(200).json({
+      status: 200,
+      message: "Mot de passe du profil mis à jour avec succès.",
+      path: "/api/account/password",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    next(err);
+  }
 }
