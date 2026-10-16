@@ -66,7 +66,18 @@ export async function getEmployeTaches(req, res, next) {
           [Op.lte]: new Date(date + "T23:59:59.999"),
         },
       },
-
+      include: [
+        {
+          model: occurrence_de_tache,
+          as: "occurrence_de_tache",
+          include: [
+            {
+              model: Task,
+              as: "task",
+            },
+          ],
+        },
+      ],
       include: [
         {
           model: sous_tache,
