@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
 import { apiFetch } from '@/utils/api';
-import { isNumber } from '@/utils/checks';
 
 export const usePosteStore = defineStore("postes", {
   state: () => ({
     postes: [],
-    loaded: false
+    loaded: false,
+    lastErrorStatus: 400
   }),
 
   actions: {
@@ -13,22 +13,25 @@ export const usePosteStore = defineStore("postes", {
       return this.postes.find((poste) => poste.id == id);
     },
 
-    async loadPostes() {
-      if (this.loaded) return;
+    async loadPostes(url = '/poste/list', forceRefresh = false) {
+      if (this.loaded && !forceRefresh && url === '/poste/list') return;
 
       try {
-        const response = await apiFetch('/poste/list');
+        const response = await apiFetch(url);
 
         console.log('get postes response:', response);
 
-        if (response.status !== 200) {
-          throw new Error(`HTTP ${response.status}`);
+        this.lastErrorStatus = response.status;
+
+        if (this.lastErrorStatus !== 200)
+        {
+            throw new Error(`HTTP ${this.lastErrorStatus}`);
         }
 
         this.postes = response.data;
         this.loaded = true;
       } catch (err) {
-        console.error(`Error loading postes: ${err}`);
+        console.error('Error loading postes:', err);
       }
     },
 
@@ -36,6 +39,9 @@ export const usePosteStore = defineStore("postes", {
       try {
         const response = await apiFetch('/poste/add', {
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify({
             nom: poste.nom,
             description: poste.description ?? '',
@@ -43,21 +49,15 @@ export const usePosteStore = defineStore("postes", {
           })
         });
 
-        console.log('create poste response:', response);
+        this.lastErrorStatus = response.status || 200;
 
-        if (isNumber(response)) {
-          if (response === 409) {
-            return false;
-          }
-
-          throw new Error(`HTTP ${response}`);
+        if (this.lastErrorStatus !== 200)
+        {
+            throw new Error(`HTTP ${this.lastErrorStatus}`);
         }
 
-        const returnedPoste = response.data;
+        await this.loadPostes('/poste/list', true);
 
-        this.postes.push(returnedPoste);
-
-        console.log('create poste success');
         return true;
       } catch (err) {
         console.error('create poste error:', err);
@@ -79,14 +79,12 @@ export const usePosteStore = defineStore("postes", {
           })
         });
 
-        console.log('update poste response:', response);
 
-        if (isNumber(response)) {
-          if (response === 409) {
-            return false;
-          }
+        this.lastErrorStatus = response.status;
 
-          throw new Error(`HTTP ${response}`);
+        if (this.lastErrorStatus !== 200)
+        {
+            throw new Error(`HTTP ${this.lastErrorStatus}`);
         }
 
         const updatedPoste = response.data;
@@ -96,7 +94,6 @@ export const usePosteStore = defineStore("postes", {
           this.postes[index] = updatedPoste;
         }
 
-        console.log('update poste success');
         return true;
       } catch (err) {
         console.error('update poste error:', err);
@@ -112,7 +109,25 @@ export const usePosteStore = defineStore("postes", {
           method: "DELETE"
         });
 
-        console.log("response after delete poste: ", response);
+
+        if (response !== null) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        else {
+          return true;
+        }
+      } catch (err) {
+        console.log(`HTTP ${err}`);
+        return false;
+      }
+    },
+
+    async reactivatePoste(id) {
+      try {
+        console.log("poste id:", id);
+        const response = await apiFetch("/poste/reactivate/" + id, {
+          method: "PATCH"
+        });
 
         if (response !== null) {
           throw new Error(`HTTP ${response.status}`);

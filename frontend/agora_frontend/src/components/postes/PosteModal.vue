@@ -100,6 +100,8 @@
                 Maintenez Ctrl (Windows/Linux) ou Cmd (Mac) pour sélectionner
                 plusieurs tâches.
               </small>
+
+              <p class="text-danger">{{ posteError }}</p>
             </div>
 
             <div class="modal-footer">
@@ -141,6 +143,7 @@ const description = ref('');
 const tasksSelectionnees = ref([]);
 const loadingTasks = ref(false);
 const tasksError = ref('');
+const posteError = ref('');
 const saving = ref(false);
 
 const isEditing = computed(() => !!modalStore.editingPoste);
@@ -177,9 +180,9 @@ async function loadTasks() {
   try {
     await taskStore.loadTasks();
   } catch (error) {
-    console.error('Erreur lors du chargement des tâches :', error);
+    console.error('Erreur lors du chargement des postes :', error);
     tasksError.value =
-      'Une erreur est survenue lors du chargement des tâches.';
+      'Une erreur est survenue lors du chargement des postes.';
   } finally {
     loadingTasks.value = false;
   }
@@ -219,6 +222,7 @@ function markInvalidInputs() {
 
 async function submit() {
   if (saving.value) return;
+  posteError.value = "";
 
   if (!formIsValid()) {
     markInvalidInputs();
@@ -234,16 +238,34 @@ async function submit() {
   };
 
   try {
+    let result = true;
+
     if (isEditing.value) {
-      await posteStore.updatePoste({
+      result = await posteStore.updatePoste({
         ...modalStore.editingPoste,
         ...poste
       });
     } else {
-      await posteStore.addPoste(poste);
+      result = await posteStore.addPoste(poste);
     }
 
-    close();
+    console.log("RESULT OF OPERATION", result);
+
+    if (result === false)
+    {
+      if (posteStore.$state.lastErrorStatus === 409)
+      {
+        posteError.value = "Un poste avec le même nom et la même description existe déjà.";
+      }
+      else
+      {
+        posteError.value = "Un poste doit minimalement contenir un nom et une description.";
+      }
+    }
+    else
+    {
+      close();
+    }
   } catch (error) {
     console.error('Erreur lors de l’enregistrement du poste :', error);
   } finally {
