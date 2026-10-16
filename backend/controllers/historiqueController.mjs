@@ -60,12 +60,12 @@ export async function getEmployeTaches(req, res, next) {
     const EmployeTaches = await tachesAFaire.findAll({
       where: {
         compteId: compteId,
-
         createdAt: {
           [Op.gte]: new Date(date + "T00:00:00"),
           [Op.lte]: new Date(date + "T23:59:59.999"),
         },
       },
+
       include: [
         {
           model: occurrence_de_tache,
@@ -77,8 +77,6 @@ export async function getEmployeTaches(req, res, next) {
             },
           ],
         },
-      ],
-      include: [
         {
           model: sous_tache,
           as: "sous_taches",

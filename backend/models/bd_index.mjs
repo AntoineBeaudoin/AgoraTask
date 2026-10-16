@@ -63,7 +63,7 @@ Task.belongsToMany(poste, {
 import { tachesAFaire } from "./tachesAFaire.mjs";
 Compte.belongsToMany(Task, {
   through: tachesAFaire,
-  foreignKey: "compteId ",
+  foreignKey: "compteId",
   otherKey: "tacheId",
   as: "taches",
 });
@@ -89,7 +89,7 @@ sous_tache.belongsToMany(tachesAFaire, {
 });
 
 //Relation entre tacheAFaire et occurrence_de_tache
-tachesAFaire.BelongsTo(occurrence_de_tache, {
+tachesAFaire.belongsTo(occurrence_de_tache, {
   foreignKey: "occurrence_de_tacheId",
   as: "occurrence_de_tache",
 });
