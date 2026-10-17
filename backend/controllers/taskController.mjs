@@ -383,3 +383,24 @@ export async function deleteTask(req, res, next) {
     next(err);
   }
 }
+export async function getTasksByMotCle(req, res, next) {
+  const { motCle } = req.query;
+  try {
+    const tasks = await Task.findAll({
+      where: {
+        archived: false,
+        title: {
+          [Op.like]: `%${motCle}%`,
+        },
+      },
+      include: { model: TaskImage, as: "images" },
+    });
+    return res.status(200).json({
+      status: 200,
+      message: "Tâches trouvées.",
+      data: tasks,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
