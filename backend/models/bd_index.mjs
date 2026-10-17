@@ -14,7 +14,7 @@ TaskImage.belongsTo(Task, {
 import { occurrence_de_tache } from "./occurrence_de_tache.mjs";
 Task.hasMany(occurrence_de_tache, {
   foreignKey: "tacheId",
-  as: "occurences",
+  as: "occurrences",
   onDelete: "CASCADE",
 });
 occurrence_de_tache.belongsTo(Task, {
@@ -63,14 +63,14 @@ Task.belongsToMany(poste, {
 import { tachesAFaire } from "./tachesAFaire.mjs";
 Compte.belongsToMany(Task, {
   through: tachesAFaire,
-  foreignKey: "compteId ",
+  foreignKey: "compteId",
   otherKey: "tacheId",
   as: "taches",
 });
 Task.belongsToMany(Compte, {
   through: tachesAFaire,
   foreignKey: "tacheId",
-  otherKey: "compteId ",
+  otherKey: "compteId",
   as: "comptes",
 });
 // relation between tacheafaire and sous_tache
