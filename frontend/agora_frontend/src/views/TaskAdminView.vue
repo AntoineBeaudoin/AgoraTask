@@ -39,7 +39,7 @@
 import { useModalStore } from '@/stores/modalStore'
 import { useTaskStore } from '@/stores/taskStore'
 import TaskModal from '@/components/tasks/TaskModal.vue'
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { switchIsButtonActiveById } from '@/utils/dom-manipulation'
 
 const taskStore = useTaskStore()
