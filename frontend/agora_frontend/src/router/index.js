@@ -32,16 +32,20 @@ const router = createRouter({
       },
     },
     {
-      path: "/GestionDesTaches",
-      name: "taskAdmin",
+      path: '/GestionDesTaches',
+      name: 'taskAdmin',
       component: TaskAdminView,
-      meta: { title: "Portail de tâche pour les administrateurs", requireAuth: true, role: "administrateur" }
+      meta: {
+        title: 'Portail de tâche pour les administrateurs',
+        requireAuth: true,
+        role: 'administrateur',
+      },
     },
     {
-      path: "/admin",
+      path: '/admin',
       name: 'admin',
       component: AdminView,
-      meta: {title: 'Portail administrateur', requireAuth: true, role: 'administrateur'},
+      meta: { title: 'Portail administrateur', requireAuth: true, role: 'administrateur' },
     },
     {
       path: '/coordo',
@@ -65,6 +69,16 @@ const router = createRouter({
       path: '/error',
       name: 'error',
       component: () => import('../views/GlobalErrorView.vue'),
+    },
+    {
+      path: '/history',
+      name: 'history',
+      component: () => import('../views/Historique.vue'),
+      meta: {
+        title: 'Historique des tâches',
+        requireAuth: true,
+        role: 'administrateur/coordonnateur',
+      },
     },
     //404
     {
@@ -111,7 +125,7 @@ router.beforeEach((to, from, next) => {
     })
   }
 
-  if (to.meta.role && authStore.getRole() !== to.meta.role) {
+  if (to.meta.role && to.meta.role.includes(authStore.getRole()) === false) {
     return next({ name: 'home' })
   }
   if (to.name === 'not-found') {
