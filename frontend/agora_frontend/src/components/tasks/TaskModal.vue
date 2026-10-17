@@ -74,7 +74,7 @@
                 <p class="text-muted small mb-3">Définissez les moments de la semaine où cette tâche doit être
                   effectuée.</p>
                 <div v-if="occurrences.length === 0" class="alert alert-secondary py-2 small text-center mb-3">
-                  Aucun horaire défini (optionnel).
+                  Aucun horaire défini.
                 </div>
                 <div v-for="(occ, index) in occurrences" :key="index"
                   class="card card-body bg-light mb-3 position-relative p-3">
@@ -124,6 +124,9 @@
                     sous-tâche</button>
                 </div>
                 <p class="text-muted small mb-3">Étapes ou sous-tâches associées.</p>
+                <div v-if="subTasks.length === 0" class="alert alert-secondary py-2 small text-center mb-3">
+                  Aucune sous-tâche définie.
+                </div>
                 <div v-for="(st, index) in subTasks" :key="index"
                   class="card card-body bg-light mb-2 p-2 position-relative">
                   <button type="button" class="btn-close position-absolute top-0 end-0 m-2" aria-label="Supprimer"
@@ -131,6 +134,7 @@
                   <div class="mb-2 pe-4">
                     <input type="text" v-model="st.titre" placeholder="Titre de la sous-tâche *"
                       class="form-control form-control-sm mb-1" required />
+                    <div class="invalid-feedback">Le titre de la sous-tâche est requis.</div>
                     <textarea v-model="st.description" placeholder="Description (optionnel)"
                       class="form-control form-control-sm" rows="1"></textarea>
                   </div>
@@ -254,7 +258,9 @@ function removeSubTask(index) {
 }
 
 function formIsValid() {
-  return title.value.trim() !== '' && room.value.trim() !== '';
+  return title.value.trim() !== '' &&
+    room.value.trim() !== '' &&
+    subTasks.value.every(st => st.titre?.trim() !== '');
 }
 
 function markInvalidInputs() {
@@ -267,6 +273,14 @@ function markInvalidInputs() {
   if (!room.value.trim()) {
     document.querySelector('#room').classList.add('is-invalid');
   }
+  subTasks.value.forEach((st, index) => {
+    if (!st.titre?.trim()) {
+      document
+        .querySelectorAll('#taskModal .card.card-body.bg-light.mb-2')[index]
+        ?.querySelector('input')
+        ?.classList.add('is-invalid');
+    }
+  });
 }
 
 async function submit() {
