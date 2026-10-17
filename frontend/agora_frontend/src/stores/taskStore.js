@@ -10,28 +10,20 @@ export const useTaskStore = defineStore('tasks', {
   }),
 
   actions: {
-
     async getTaskById(id) {
       return this.tasks.find((task) => task.id == id);
     },
-
     async loadTasks() {
       if (this.loaded) {
         return;
       }
-
       try {
         const response = await apiFetch('/task/list');
-
-        console.log('get tasks response:', response);
-
         if (response.status !== 200) {
           throw new Error(`HTTP ${response.status}`);
         }
-
         this.tasks = response.data;
         this.loaded = true;
-
       } catch (err) {
         console.log(`HTTP ${err}`);
       }
@@ -74,11 +66,10 @@ export const useTaskStore = defineStore('tasks', {
       formData.append('title', task.title);
       formData.append('room', task.room);
       formData.append('description', task.description ?? '');
-      formData.append('startTime', task.startTime);
-      formData.append('endTime', task.endTime);
       formData.append('recurring', task.recurring);
-      formData.append('frequency', task.frequency || 'daily');
       formData.append('automaticAssignment', task.automaticAssignment);
+      formData.append('occurrences', JSON.stringify(task.occurrences ?? []));
+      formData.append('subTasks', JSON.stringify(task.subTasks ?? []));
 
       const existingImageIds = (task.images ?? [])
         .filter(img => !img.file && img.id)
@@ -95,7 +86,6 @@ export const useTaskStore = defineStore('tasks', {
           method: 'PUT',
           body: formData
         });
-        console.log('update task response:', response);
         if (isNumber(response)) {
           if (response === 409) {
             return false;
@@ -107,7 +97,6 @@ export const useTaskStore = defineStore('tasks', {
         if (index !== -1) {
           this.tasks[index] = updatedTask;
         }
-        console.log('update task success');
         return true;
       } catch (err) {
         console.log(`HTTP ${err}`);
@@ -131,17 +120,12 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
 
-
     async deleteTask(id) {
       this.tasks = this.tasks.filter(task => task.id !== id);
       try {
-        console.log("task id:", id);
         const response = await apiFetch("/task/" + id, {
           method: "DELETE"
         });
-
-        console.log("response after delete task: ", response);
-
         if (response !== null) {
           throw new Error(`HTTP ${response.status}`);
         }

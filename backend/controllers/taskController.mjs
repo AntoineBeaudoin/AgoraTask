@@ -9,8 +9,6 @@ dotenv.config();
  * Valide qu'une tâche n'existe pas déjà. Si la tâche existe déjà lance une erreur 409
  * @param {*} title Titre de la tâche
  * @param {*} room Local de la tâche
- * @param {*} startTime Heure de début de la tâche
- * @param {*} endTime Heure de fin de la tâche
  * @param {*} taskId Id de la tâche (-1 par défaut)
  * @returns 
  */
@@ -221,51 +219,65 @@ export async function getAllTasks(req, res, next) {
 
 export async function replaceTask(req, res, next) {
     const id = req.params.id;
-    const {
-        title, room, description, startTime, endTime, recurring, frequency, automaticAssignment
-    } = req.body;
+    const { title, room, description, recurring, automaticAssignment } = req.body;
     try {
-        const task = await Task.findOne({
-            where: {
-                id: id,
-                archived: false
-            }
-        });
+        const task = await Task.findOne({ where: { id, archived: false } });
         if (!task) {
             return res.status(404).json({
                 status: 404,
                 message: "Tâche introuvable."
             });
         }
-        let taskExists = await validateTaskDoesNotAlreadyExist(title, room, id);
+        const taskExists = await validateTaskDoesNotAlreadyExist(title, room, id);
         if (taskExists) {
             return res.status(409).json({
                 status: 409,
                 message: "Une tâche identique existe déjà."
             });
         }
-        await task.update({
-            title,
-            room,
-            description: description ?? null,
-            startTime,
-            endTime,
-            recurring,
-            theFrequency: frequency || "daily",
-            automaticAssignment
-        });
+        await task.update({ title, room, description: description ?? null, recurring, automaticAssignment });
+        if (req.body.occurrences !== undefined) {
+            const occurrences = typeof req.body.occurrences === "string" ? JSON.parse(req.body.occurrences) : req.body.occurrences;
+            await occurrence_de_tache.destroy({ where: { tacheId: task.id } });
+            await Promise.all(
+                occurrences.map(occ =>
+                    occurrence_de_tache.create({
+                        tacheId: task.id,
+                        journee: occ.journee,
+                        heureDebut: occ.heureDebut || null,
+                        heureFin: occ.heureFin || null,
+                        priorite: occ.priorite ?? 3,
+                        isRequired: occ.isRequired ?? true
+                    })
+                )
+            );
+        }
+        if (req.body.subTasks !== undefined) {
+            const subTasks = typeof req.body.subTasks === "string" ? JSON.parse(req.body.subTasks) : req.body.subTasks;
+            console.log(subTasks)
+            await sous_tache.destroy({
+                where: { tacheId: task.id }
+            });
+            await Promise.all(
+                subTasks.map(st =>
+                    sous_tache.create({
+                        tacheId: task.id,
+                        titre: st.titre,
+                        description: st.description || null
+                    })
+                )
+            );
+        }
         await syncExistingImages(req, task.id);
         await addTaskImages(req, task);
         const updatedTask = await Task.findOne({
-            where: {
-                id: task.id
-            },
+            where: { id: task.id },
             include: [
-                { model: TaskImage, as: 'images' },
-                { model: occurrence_de_tache, as: 'occurrences' },
-                { model: sous_tache, as: 'sous_taches' }
+                { model: TaskImage, as: "images" },
+                { model: occurrence_de_tache, as: "occurrences" },
+                { model: sous_tache, as: "sous_taches" }
             ]
-        })
+        });
         return res.status(200).json({
             status: 200,
             message: "Tâche modifiée avec succès.",
@@ -360,13 +372,10 @@ export async function deleteTask(req, res, next) {
                 id: id
             }
         });
-
         if (aTask) {
             aTask.archived = true;
-
             await aTask.save();
         }
-
         res.status(204).json({});
     }
     catch (err) {
