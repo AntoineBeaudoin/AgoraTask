@@ -351,17 +351,40 @@ export async function duplicateTask(req, res, next) {
 }
 
 async function createDuplicatedTaskObject(newTitle, originalTask) {
-    return await Task.create({
+    const newTask = await Task.create({
         title: newTitle,
         room: originalTask.room,
         description: originalTask.description,
-        startTime: originalTask.startTime,
-        endTime: originalTask.endTime,
         recurring: originalTask.recurring,
-        theFrequency: originalTask.theFrequency,
         automaticAssignment: originalTask.automaticAssignment,
         archived: false
     });
+    if (originalTask.occurrences?.length > 0) {
+        await Promise.all(
+            originalTask.occurrences.map(occ =>
+                occurrence_de_tache.create({
+                    tacheId: newTask.id,
+                    journee: occ.journee,
+                    heureDebut: occ.heureDebut,
+                    heureFin: occ.heureFin,
+                    priorite: occ.priorite,
+                    isRequired: occ.isRequired
+                })
+            )
+        );
+    }
+    if (originalTask.sous_taches?.length > 0) {
+        await Promise.all(
+            originalTask.sous_taches.map(st =>
+                sous_tache.create({
+                    tacheId: newTask.id,
+                    titre: st.titre,
+                    description: st.description
+                })
+            )
+        );
+    }
+    return newTask;
 }
 
 export async function deleteTask(req, res, next) {
