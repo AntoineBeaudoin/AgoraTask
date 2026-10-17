@@ -39,44 +39,29 @@ export const useTaskStore = defineStore('tasks', {
 
     async addTask(task) {
       const formData = new FormData();
-
       formData.append('title', task.title);
       formData.append('room', task.room);
       formData.append('description', task.description ?? '');
-      formData.append('startTime', task.startTime);
-      formData.append('endTime', task.endTime);
       formData.append('recurring', task.recurring);
-      formData.append('frequency', task.frequency || "daily");
       formData.append('automaticAssignment', task.automaticAssignment);
-
+      formData.append('occurrences', JSON.stringify(task.occurrences ?? []));
+      formData.append('subTasks', JSON.stringify(task.subTasks ?? []));
       for (const image of task.images ?? []) {
         if (image.file) {
           formData.append('images', image.file);
         }
       }
-
       try {
         const response = await apiFetchFormData('/task/add', {
           method: 'POST',
           body: formData
         });
-
-        console.log('createtask response:', response);
-
         if (isNumber(response)) {
-          if (response === 409) {
-            return false;
-          }
-
+          if (response === 409) return false;
           throw new Error(`HTTP ${response}`);
         }
-
         const returnedTask = response.data;
-
         this.tasks.push(returnedTask);
-
-        console.log('create task success');
-
         return true;
       } catch (err) {
         console.log(`HTTP ${err}`);

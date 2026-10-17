@@ -1,4 +1,4 @@
-import { Task, TaskImage } from '../models/bd_index.mjs';
+import { Task, TaskImage, occurrence_de_tache, sous_tache } from '../models/bd_index.mjs';
 import { put, del } from "@vercel/blob";
 import { Op } from 'sequelize';
 import dotenv from "dotenv";
@@ -14,13 +14,11 @@ dotenv.config();
  * @param {*} taskId Id de la tâche (-1 par défaut)
  * @returns 
  */
-async function validateTaskDoesNotAlreadyExist(title, room, startTime, endTime, taskId = -1) {
+async function validateTaskDoesNotAlreadyExist(title, room, taskId = -1) {
     const anotherTask = await Task.findOne({
         where: {
             title: title,
             room: room,
-            startTime: startTime,
-            endTime: endTime
         }
     });
     if (taskId !== -1) {
@@ -42,7 +40,7 @@ async function validateTaskDoesNotAlreadyExist(title, room, startTime, endTime, 
  * @param {*} task La tâche dont les images appartiennent
  */
 async function addTaskImages(req, task) {
-    if (req.files) {
+    if (req.files.length > 0) {
         for (const file of req.files) {
             const blob = await put(
                 `task/${task.id}/${file.originalname}`,
@@ -128,40 +126,51 @@ async function syncExistingImages(req, taskId) {
  * @returns {unknown} Retourne le prochain résultat au middleware, en cas d'erreur.
  */
 export async function createTask(req, res, next) {
-    const { title, room, description, startTime,
-        endTime, recurring, frequency,
-        automaticAssignment } = req.body;
+    const { title, room, description, recurring, automaticAssignment } = req.body;
+    const occurrences = req.body.occurrences ? JSON.parse(req.body.occurrences) : [];
+    const subTasks = req.body.subTasks ? JSON.parse(req.body.subTasks) : [];
     try {
-        let taskExists = await validateTaskDoesNotAlreadyExist(title, room, startTime, endTime);
-        if (taskExists) {
-            return res.status(409).json({
-                status: 409,
-                message: "Une tâche identique existe déjà."
-            });
-        }
-        const theFrequency = frequency || "daily";
         const aTask = await Task.create({
             title,
             room,
             description: description ?? null,
-            startTime,
-            endTime,
             recurring,
-            theFrequency,
             automaticAssignment
         });
+        if (occurrences.length > 0) {
+            await Promise.all(occurrences.map(occ =>
+                occurrence_de_tache.create({
+                    tacheId: aTask.id,
+                    journee: occ.journee,
+                    heureDebut: occ.heureDebut || null,
+                    heureFin: occ.heureFin || null,
+                    priorite: occ.priorite || 3,
+                    isRequired: occ.isRequired ?? true
+                })
+            ));
+        }
+        if (subTasks.length > 0) {
+            await Promise.all(subTasks.map(st =>
+                sous_tache.create({
+                    tacheId: aTask.id,
+                    titre: st.titre,
+                    description: st.description || null
+                })
+            ));
+        }
         await addTaskImages(req, aTask);
-
         const theCreatedTask = await Task.findOne({
-            where: {
-                id: aTask.id
-            },
-            include: { model: TaskImage, as: 'images' }
+            where: { id: aTask.id },
+            include: [
+                { model: TaskImage, as: 'images' },
+                { model: occurrence_de_tache, as: 'occurrences' },
+                { model: sous_tache, as: 'sous_taches' }
+            ]
         });
         res.location(`/api/tasks/${aTask.id}`);
         res.status(201).json({
             status: 201,
-            message: "Tâche ajoutée",
+            message: "Tâche ajoutée avec succès",
             data: theCreatedTask,
             path: `/api/task/${aTask.id}`,
             timestamp: new Date().toISOString()
@@ -189,7 +198,11 @@ export async function getAllTasks(req, res, next) {
             where: {
                 archived: false
             },
-            include: { model: TaskImage, as: 'images' }
+            include: [
+                { model: TaskImage, as: 'images' },
+                { model: occurrence_de_tache, as: 'occurrences' },
+                { model: sous_tache, as: 'sous_taches' }
+            ]
         });
 
         res.status(200).json(
@@ -224,7 +237,7 @@ export async function replaceTask(req, res, next) {
                 message: "Tâche introuvable."
             });
         }
-        let taskExists = await validateTaskDoesNotAlreadyExist(title, room, startTime, endTime, id);
+        let taskExists = await validateTaskDoesNotAlreadyExist(title, room, id);
         if (taskExists) {
             return res.status(409).json({
                 status: 409,
@@ -247,7 +260,11 @@ export async function replaceTask(req, res, next) {
             where: {
                 id: task.id
             },
-            include: { model: TaskImage, as: 'images' }
+            include: [
+                { model: TaskImage, as: 'images' },
+                { model: occurrence_de_tache, as: 'occurrences' },
+                { model: sous_tache, as: 'sous_taches' }
+            ]
         })
         return res.status(200).json({
             status: 200,
@@ -266,7 +283,11 @@ export async function duplicateTask(req, res, next) {
     try {
         const originalTask = await Task.findOne({
             where: { id, archived: false },
-            include: { model: TaskImage, as: 'images' }
+            include: [
+                { model: TaskImage, as: 'images' },
+                { model: occurrence_de_tache, as: 'occurrences' },
+                { model: sous_tache, as: 'sous_taches' }
+            ]
         });
         if (!originalTask) {
             return res.status(404).json({
@@ -294,12 +315,16 @@ export async function duplicateTask(req, res, next) {
         }
         const nextCopyNumber = highestCopyNumber + 1;
         const newTitle = `${baseTitle} - Copie #${nextCopyNumber}`;
-        await validateTaskDoesNotAlreadyExist(newTitle, originalTask.room, originalTask.startTime, originalTask.endTime);
+        await validateTaskDoesNotAlreadyExist(newTitle, originalTask.room);
         const newTask = await createDuplicatedTaskObject(newTitle, originalTask);
         await copyExistingImages(originalTask, newTask);
         const createdTask = await Task.findOne({
             where: { id: newTask.id },
-            include: { model: TaskImage, as: 'images' }
+            include: [
+                { model: TaskImage, as: 'images' },
+                { model: occurrence_de_tache, as: 'occurrences' },
+                { model: sous_tache, as: 'sous_taches' }
+            ]
         });
         return res.status(201).json({
             status: 201,
