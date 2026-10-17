@@ -11,7 +11,6 @@ const upload = multer({
     fileSize: 5242880,
   },
 });
-router.get("/listCherchee", taskController.getTasksByMotCle);
 router.get("/list", taskController.getAllTasks);
 router.post("/add", upload.array("images", 5), taskController.createTask);
 router.put("/:id", upload.array("images", 5), taskController.replaceTask);
