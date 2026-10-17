@@ -21,7 +21,10 @@
                 <div class="form-group mb-3">
                   <label for="room" class="form-label">Local *</label>
                   <input v-model="room" id="room" class="form-control" type="text" placeholder="Ex: Local 102"
-                    required />
+                    list="roomSuggestions" autocomplete="off" required />
+                  <datalist id="roomSuggestions">
+                    <option v-for="suggestedRoom in roomSuggestions" :key="suggestedRoom" :value="suggestedRoom" />
+                  </datalist>
                   <div id="roomError" class="invalid-feedback">Le local est requis.</div>
                 </div>
                 <div class="form-group mb-3">
@@ -205,6 +208,15 @@ watch(
   },
   { immediate: true }
 );
+
+const roomSuggestions = computed(() => {
+  const tasks = taskStore.tasks ?? [];
+  return [...new Set(
+    tasks
+      .map(task => task.room?.trim())
+      .filter(Boolean)
+  )].sort((a, b) => a.localeCompare(b, 'fr'));
+});
 
 function resetForm() {
   images.value.forEach(image => {
