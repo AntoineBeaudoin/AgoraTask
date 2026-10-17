@@ -33,6 +33,47 @@ async function validateTaskDoesNotAlreadyExist(title, room, taskId = -1) {
 }
 
 /**
+ * Crée les occurrences d'une tâche
+ * @param {*} taskId Id de la tâche 
+ * @param {*} occurrences JSON des occurences de la tâche
+ * @returns 
+ */
+async function createOccurrences(taskId, occurrences) {
+    if (occurrences.length < 1) return;
+    await Promise.all(
+        occurrences.map(occ =>
+            occurrence_de_tache.create({
+                tacheId: taskId,
+                journee: occ.journee,
+                heureDebut: occ.heureDebut || null,
+                heureFin: occ.heureFin || null,
+                priorite: occ.priorite ?? 3,
+                isRequired: occ.isRequired ?? true
+            })
+        )
+    );
+}
+
+/**
+ * Crée les sous tâches
+ * @param {*} taskId Id de la tâche
+ * @param {*} subTasks JSON des sous tâches de la tâche
+ * @returns 
+ */
+async function createSubTasks(taskId, subTasks) {
+    if (subTasks.length < 1) return;
+    await Promise.all(
+        subTasks.map(st =>
+            sous_tache.create({
+                tacheId: taskId,
+                titre: st.titre,
+                description: st.description || null
+            })
+        )
+    );
+}
+
+/**
  * Ajoute les images d'une tâche à la bd (Blob)
  * @param {*} req La requête
  * @param {*} task La tâche dont les images appartiennent
@@ -135,27 +176,8 @@ export async function createTask(req, res, next) {
             recurring,
             automaticAssignment
         });
-        if (occurrences.length > 0) {
-            await Promise.all(occurrences.map(occ =>
-                occurrence_de_tache.create({
-                    tacheId: aTask.id,
-                    journee: occ.journee,
-                    heureDebut: occ.heureDebut || null,
-                    heureFin: occ.heureFin || null,
-                    priorite: occ.priorite || 3,
-                    isRequired: occ.isRequired ?? true
-                })
-            ));
-        }
-        if (subTasks.length > 0) {
-            await Promise.all(subTasks.map(st =>
-                sous_tache.create({
-                    tacheId: aTask.id,
-                    titre: st.titre,
-                    description: st.description || null
-                })
-            ));
-        }
+        await createOccurrences(aTask.id, occurrences);
+        await createSubTasks(aTask.id, subTasks);
         await addTaskImages(req, aTask);
         const theCreatedTask = await Task.findOne({
             where: { id: aTask.id },
@@ -239,34 +261,12 @@ export async function replaceTask(req, res, next) {
         if (req.body.occurrences !== undefined) {
             const occurrences = typeof req.body.occurrences === "string" ? JSON.parse(req.body.occurrences) : req.body.occurrences;
             await occurrence_de_tache.destroy({ where: { tacheId: task.id } });
-            await Promise.all(
-                occurrences.map(occ =>
-                    occurrence_de_tache.create({
-                        tacheId: task.id,
-                        journee: occ.journee,
-                        heureDebut: occ.heureDebut || null,
-                        heureFin: occ.heureFin || null,
-                        priorite: occ.priorite ?? 3,
-                        isRequired: occ.isRequired ?? true
-                    })
-                )
-            );
+            await createOccurrences(task.id, occurrences);
         }
         if (req.body.subTasks !== undefined) {
             const subTasks = typeof req.body.subTasks === "string" ? JSON.parse(req.body.subTasks) : req.body.subTasks;
-            console.log(subTasks)
-            await sous_tache.destroy({
-                where: { tacheId: task.id }
-            });
-            await Promise.all(
-                subTasks.map(st =>
-                    sous_tache.create({
-                        tacheId: task.id,
-                        titre: st.titre,
-                        description: st.description || null
-                    })
-                )
-            );
+            await sous_tache.destroy({ where: { tacheId: task.id } });
+            await createSubTasks(task.id, subTasks);
         }
         await syncExistingImages(req, task.id);
         await addTaskImages(req, task);
@@ -359,42 +359,15 @@ async function createDuplicatedTaskObject(newTitle, originalTask) {
         automaticAssignment: originalTask.automaticAssignment,
         archived: false
     });
-    if (originalTask.occurrences?.length > 0) {
-        await Promise.all(
-            originalTask.occurrences.map(occ =>
-                occurrence_de_tache.create({
-                    tacheId: newTask.id,
-                    journee: occ.journee,
-                    heureDebut: occ.heureDebut,
-                    heureFin: occ.heureFin,
-                    priorite: occ.priorite,
-                    isRequired: occ.isRequired
-                })
-            )
-        );
-    }
-    if (originalTask.sous_taches?.length > 0) {
-        await Promise.all(
-            originalTask.sous_taches.map(st =>
-                sous_tache.create({
-                    tacheId: newTask.id,
-                    titre: st.titre,
-                    description: st.description
-                })
-            )
-        );
-    }
+    await createOccurrences(newTask.id, originalTask.occurrences);
+    await createSubTasks(newTask.id, originalTask.sous_taches);
     return newTask;
 }
 
 export async function deleteTask(req, res, next) {
     const id = req.params.id;
     try {
-        const aTask = await Task.findOne({
-            where: {
-                id: id
-            }
-        });
+        const aTask = await Task.findOne({ where: { id: id } });
         if (aTask) {
             aTask.archived = true;
             await aTask.save();
