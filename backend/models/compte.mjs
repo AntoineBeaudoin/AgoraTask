@@ -39,6 +39,11 @@ const Compte = bd.define("Compte", {
     allowNull: false,
     defaultValue: "personnel_de_terrain",
   },
+  posteId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    unique: true,
+  },
   IsArchived: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,

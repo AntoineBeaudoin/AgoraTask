@@ -1,6 +1,5 @@
 import { Task } from "./task.mjs";
 import TaskPoste from "./task_poste.mjs"
-import ComptePoste from "./compte_poste.mjs"
 import { TaskImage } from "./task_image.mjs";
 import Compte from "./compte.mjs";
 import Poste from "./poste.mjs";
@@ -21,18 +20,14 @@ Poste.belongsToMany(Task, {
     onDelete: "CASCADE"
 });
 
-Poste.belongsToMany(Compte, {
-    through: ComptePoste,
+Compte.belongsTo(Poste, {
     foreignKey: "posteId",
-    otherKey: "compteId",
-    as: "employes"
+    as: "poste"
 });
 
-Compte.belongsToMany(Poste, {
-    through: ComptePoste,
-    foreignKey: "compteId",
-    otherKey: "posteId",
-    as: "postes"
+Poste.hasMany(Compte, {
+    foreignKey: "posteId",
+    as: "employes"
 });
 
 Task.hasMany(TaskImage, {
@@ -49,5 +44,6 @@ TaskImage.belongsTo(Task, {
 export {
   Task,
   TaskImage,
-  Poste
+  Poste,
+  Compte
 };
