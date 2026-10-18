@@ -10,7 +10,7 @@
       </button>
     </header>
 
-    <PosteModal />
+    <PosteModal @saved="reloadPostes"/>
 
     <div class="status-filters">
       <button class="status-filter-btn" :class="{ active: displayTitle === 'Postes actifs' }" @click="loadPostes">
@@ -97,7 +97,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useModalStore } from '@/stores/modalStore.js';
 import PosteModal from '@/components/postes/PosteModal.vue';
 import { usePosteStore } from '@/stores/posteStore.js';
@@ -155,6 +155,15 @@ async function reloadPostes(){
       await loadAllPostes();
     }
 }
+
+watch(
+  () => modalStore.posteModalOpen,
+  async (isOpen, wasOpen) => {
+    if (wasOpen && !isOpen) {
+      await reloadPostes();
+    }
+  }
+);
 
 async function reactivatePoste(id){
   await posteStore.reactivatePoste(id);

@@ -104,6 +104,56 @@
               <p class="text-danger">{{ posteError }}</p>
             </div>
 
+            <div class="form-group mb-3">
+              <label for="posteComptes" class="form-label">
+                Employés assignés
+              </label>
+
+              <div v-if="loadingComptes" class="text-muted">
+                Chargement des employés...
+              </div>
+
+              <div v-else-if="comptesError" class="text-danger">
+                {{ comptesError }}
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary ms-2"
+                  @click="loadComptes"
+                >
+                  Réessayer
+                </button>
+              </div>
+
+              <div
+                v-else-if="comptesDisponibles.length === 0"
+                class="text-muted"
+              >
+                Aucun employé disponible.
+              </div>
+
+              <select
+                v-else
+                id="posteComptes"
+                v-model="comptesSelectionnes"
+                class="form-select"
+                multiple
+                size="6"
+              >
+                <option
+                  v-for="compte in comptesDisponibles"
+                  :key="compte.id"
+                  :value="compte.id"
+                >
+                  {{ compte.prenom }} {{ compte.nom }} ({{ compte.courriel }})
+                </option>
+              </select>
+
+              <small class="form-text text-muted">
+                Maintenez Ctrl (Windows/Linux) ou Cmd (Mac) pour sélectionner
+                plusieurs employés.
+              </small>
+            </div>
+
             <div class="modal-footer">
               <button
                 type="button"
@@ -112,13 +162,20 @@
               >
                 Annuler
               </button>
+
               <button
                 id="posteSubmitBtn"
                 type="submit"
                 class="btn btn-success"
-                :disabled="saving || loadingTasks"
+                :disabled="saving || loadingTasks || loadingComptes"
               >
-                {{ saving ? 'Enregistrement...' : isEditing ? 'Modifier' : 'Ajouter' }}
+                {{
+                  saving
+                    ? 'Enregistrement...'
+                    : isEditing
+                      ? 'Modifier'
+                      : 'Ajouter'
+                }}
               </button>
             </div>
           </form>
@@ -133,10 +190,14 @@ import { computed, ref, watch } from 'vue';
 import { usePosteStore } from '@/stores/posteStore';
 import { useModalStore } from '@/stores/modalStore';
 import { useTaskStore } from '@/stores/taskStore';
+import { useAuthStore } from '@/stores/auth';
 
 const posteStore = usePosteStore();
+const authStore = useAuthStore();
 const modalStore = useModalStore();
 const taskStore = useTaskStore();
+
+const emit = defineEmits(['saved']);
 
 const nom = ref('');
 const description = ref('');
@@ -146,11 +207,54 @@ const tasksError = ref('');
 const posteError = ref('');
 const saving = ref(false);
 
+const comptesDisponibles = ref([]);
+const comptesSelectionnes = ref([]);
+const loadingComptes = ref(false);
+const comptesError = ref('');
+
 const isEditing = computed(() => !!modalStore.editingPoste);
 
 const tasksDisponibles = computed(() =>
   taskStore.tasks.filter(task => !task.IsArchived)
 );
+
+async function loadComptes() {
+  loadingComptes.value = true;
+  comptesError.value = '';
+
+  try {
+    const result = await authStore.getEmployes();
+
+    if (Array.isArray(result)) {
+      comptesDisponibles.value = result;
+    } else {
+      comptesDisponibles.value = authStore.employes ?? [];
+    }
+
+    console.log('Employés disponibles :', comptesDisponibles.value);
+  } catch (error) {
+    console.error('Erreur lors du chargement des employés :', error);
+    comptesError.value =
+      'Une erreur est survenue lors du chargement des employés.';
+  } finally {
+    loadingComptes.value = false;
+  }
+}
+
+async function loadTasks() {
+  loadingTasks.value = true;
+  tasksError.value = '';
+
+  try {
+    await taskStore.loadTasks();
+  } catch (error) {
+    console.error('Erreur lors du chargement des tâches :', error);
+    tasksError.value =
+      'Une erreur est survenue lors du chargement des tâches.';
+  } finally {
+    loadingTasks.value = false;
+  }
+}
 
 watch(
   () => modalStore.posteModalOpen,
@@ -158,7 +262,11 @@ watch(
     if (!isOpen) return;
 
     resetForm();
-    await loadTasks();
+
+    await Promise.all([
+      loadTasks(),
+      loadComptes()
+    ]);
 
     const poste = modalStore.editingPoste;
 
@@ -169,30 +277,21 @@ watch(
       tasksSelectionnees.value = (poste.tasks ?? []).map(
         task => typeof task === 'object' ? task.id : task
       );
+
+      comptesSelectionnes.value = comptesDisponibles.value.filter(compte => String(compte.posteId) === String(poste.id))
+        .map(compte => compte.id);
     }
   }
 );
-
-async function loadTasks() {
-  loadingTasks.value = true;
-  tasksError.value = '';
-
-  try {
-    await taskStore.loadTasks();
-  } catch (error) {
-    console.error('Erreur lors du chargement des postes :', error);
-    tasksError.value =
-      'Une erreur est survenue lors du chargement des postes.';
-  } finally {
-    loadingTasks.value = false;
-  }
-}
 
 function resetForm() {
   nom.value = '';
   description.value = '';
   tasksSelectionnees.value = [];
+  comptesSelectionnes.value = [];
   tasksError.value = '';
+  comptesError.value = '';
+  posteError.value = '';
 
   document.querySelectorAll('#posteModal .is-invalid').forEach(input => {
     input.classList.remove('is-invalid');
@@ -222,7 +321,8 @@ function markInvalidInputs() {
 
 async function submit() {
   if (saving.value) return;
-  posteError.value = "";
+
+  posteError.value = '';
 
   if (!formIsValid()) {
     markInvalidInputs();
@@ -238,36 +338,58 @@ async function submit() {
   };
 
   try {
-    let result = true;
+    let result;
+    let posteId;
 
     if (isEditing.value) {
+      posteId = modalStore.editingPoste.id;
+
       result = await posteStore.updatePoste({
         ...modalStore.editingPoste,
         ...poste
       });
     } else {
       result = await posteStore.addPoste(poste);
-    }
 
-    console.log("RESULT OF OPERATION", result);
-
-    if (result === false)
-    {
-      if (posteStore.$state.lastErrorStatus === 409)
-      {
-        posteError.value = "Un poste avec le même nom et la même description existe déjà.";
-      }
-      else
-      {
-        posteError.value = "Un poste doit minimalement contenir un nom et une description.";
+      if (result) {
+        posteId = typeof result === 'number' ? result : null;
       }
     }
-    else
-    {
-      close();
+
+    if (result === false) {
+      if (posteStore.lastErrorStatus === 409) {
+        posteError.value =
+          'Un poste avec le même nom et la même description existe déjà.';
+      } else {
+        posteError.value =
+          'Une erreur est survenue lors de l’enregistrement du poste.';
+      }
+      return;
     }
+
+    if (posteId == null) {
+      posteError.value =
+        'Le poste a été enregistré, mais son identifiant est introuvable. Les employés n’ont pas été assignés.';
+      return;
+    }
+
+    const assignmentResult = await posteStore.assignPosteToEmployees(
+      posteId,
+      comptesSelectionnes.value
+    );
+
+    if (!assignmentResult) {
+      posteError.value =
+        'Le poste a été enregistré, mais une erreur est survenue lors de l’assignation des employés.';
+      return;
+    }
+
+    emit('saved');
+    close();
   } catch (error) {
     console.error('Erreur lors de l’enregistrement du poste :', error);
+    posteError.value =
+      'Une erreur est survenue lors de l’enregistrement du poste.';
   } finally {
     saving.value = false;
   }
