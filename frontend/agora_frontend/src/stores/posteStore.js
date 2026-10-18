@@ -23,9 +23,8 @@ export const usePosteStore = defineStore("postes", {
 
         this.lastErrorStatus = response.status;
 
-        if (this.lastErrorStatus !== 200)
-        {
-            throw new Error(`HTTP ${this.lastErrorStatus}`);
+        if (this.lastErrorStatus !== 200) {
+          throw new Error(`HTTP ${this.lastErrorStatus}`);
         }
 
         this.postes = response.data;
@@ -51,14 +50,13 @@ export const usePosteStore = defineStore("postes", {
 
         this.lastErrorStatus = response.status || 200;
 
-        if (this.lastErrorStatus !== 200)
-        {
-            throw new Error(`HTTP ${this.lastErrorStatus}`);
+        if (this.lastErrorStatus !== 200) {
+          throw new Error(`HTTP ${this.lastErrorStatus}`);
         }
 
         await this.loadPostes('/poste/list', true);
 
-        return true;
+        return response.poste?.id ?? true;
       } catch (err) {
         console.error('create poste error:', err);
         return false;
@@ -82,9 +80,8 @@ export const usePosteStore = defineStore("postes", {
 
         this.lastErrorStatus = response.status;
 
-        if (this.lastErrorStatus !== 200)
-        {
-            throw new Error(`HTTP ${this.lastErrorStatus}`);
+        if (this.lastErrorStatus !== 200) {
+          throw new Error(`HTTP ${this.lastErrorStatus}`);
         }
 
         const updatedPoste = response.data;
@@ -97,6 +94,33 @@ export const usePosteStore = defineStore("postes", {
         return true;
       } catch (err) {
         console.error('update poste error:', err);
+        return false;
+      }
+    },
+
+    async assignPosteToEmployees(posteId, comptes) {
+      try {
+        const response = await apiFetch(`/poste/${posteId}/employes`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            comptes
+          })
+        });
+
+        this.lastErrorStatus = response.status;
+
+        if (response.status !== 200) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        await this.loadPostes('/poste/list', true);
+
+        return true;
+      } catch (err) {
+        console.error('assign employees to poste error:', err);
         return false;
       }
     },
