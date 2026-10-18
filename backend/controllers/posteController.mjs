@@ -1,6 +1,7 @@
-import { Task, Poste } from '../models/bd_index.mjs';
+import { Task, Poste, Compte } from '../models/bd_index.mjs';
 import bd from "../models/bd.mjs";
 import dotenv from "dotenv";
+import { Op } from 'sequelize';
 
 dotenv.config();
 
@@ -88,6 +89,7 @@ export async function updatePoste(req, res, next) {
 
     const aSimilarPoste = await Poste.findOne({
         where: {
+            id: { [Op.ne]: id },
             nom: nom,
             description: description
         }
@@ -204,6 +206,107 @@ export async function getPostes(req, res, next) {
     } 
     catch (err) {
         next(err);
+    }
+}
+
+export async function assignPosteToEmployees(req, res, next) {
+    const { id } = req.params;
+    const { comptes } = req.body;
+
+    if (!Array.isArray(comptes)) {
+    return res.status(400).json({
+    status: 400,
+    message: "Les employés doivent être fournis sous forme de tableau d'identifiants."
+    });
+    }
+
+    const comptesIds = [...new Set(comptes)];
+
+    if (comptesIds.some(compteId =>
+    !Number.isInteger(Number(compteId)) ||
+    Number(compteId) <= 0
+    )) {
+    return res.status(400).json({
+    status: 400,
+    message: "Un ou plusieurs identifiants d'employés sont invalides."
+    });
+    }
+
+    const transaction = await bd.transaction();
+
+    try {
+    const poste = await Poste.findByPk(id, { transaction });
+
+    if (!poste) {
+        await transaction.rollback();
+
+        return res.status(404).json({
+            status: 404,
+            message: "Le poste est introuvable."
+        });
+    }
+
+    const employes = await Compte.findAll({
+        where: {
+            id: comptesIds.map(Number)
+        },
+        transaction
+    });
+
+    if (employes.length !== comptesIds.length) {
+        await transaction.rollback();
+
+        return res.status(404).json({
+            status: 404,
+            message: "Un ou plusieurs employés sont introuvables."
+        });
+    }
+
+    await Compte.update(
+        { posteId: null },
+        {
+            where: { posteId: poste.id },
+            transaction
+        }
+    );
+
+    if (comptesIds.length > 0) {
+        await Compte.update(
+            { posteId: poste.id },
+            {
+                where: {
+                    id: comptesIds.map(Number)
+                },
+                transaction
+            }
+        );
+    }
+
+    await transaction.commit();
+
+    const posteMisAJour = await Poste.findByPk(poste.id, {
+        include: [{
+            model: Compte,
+            as: "employes",
+            attributes: ["id", "prenom", "nom", "courriel"]
+        }]
+    });
+
+    return res.status(200).json({
+        status: 200,
+        message: "Les employés ont été assignés au poste avec succès.",
+        data: posteMisAJour,
+        path: `/api/poste/${id}/employes`,
+        timestamp: new Date().toISOString()
+    });
+
+    } catch (error) {
+    if (!transaction.finished) {
+        await transaction.rollback();
+    }
+
+    next(error);
+
     }
 }
 
