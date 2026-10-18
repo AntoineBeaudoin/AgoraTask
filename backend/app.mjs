@@ -52,8 +52,6 @@ bd.authenticate()
         return bd.sync({ force: false });
     })
     .then(async () => {
-        console.log("Test accounts created");
-
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
         });

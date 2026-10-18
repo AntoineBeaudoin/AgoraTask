@@ -1,6 +1,6 @@
-import Compte from "../models/compte.mjs"
 import bcrypt from "bcrypt";
-import { Task } from '../models/bd_index.mjs';
+import { Task, TaskImage, Poste, Compte } from '../models/bd_index.mjs';
+import TaskPoste from "../models/task_poste.mjs";
 
 
 /**
@@ -12,10 +12,35 @@ import { Task } from '../models/bd_index.mjs';
  * @returns {*} Cette fonction ne retourne rien.
  */
 const seedDatabase = async (req, res) => {
+    console.log("!!! RUNNING UPDATED DATABASE SEEDER !!!");
     try {
+        console.log("HELLO THERE! SEEDING THE DB!")
+        await TaskPoste.destroy({ where: {} });
         await Compte.destroy({ where: {} });
+        await TaskImage.destroy({ where: {} });
         await Task.destroy({ where: {} });
+        await Poste.destroy({ where: {} });
         const hashedPassword = await bcrypt.hash("Test1234!", 15);
+
+        const posteAntoine = await Poste.create({
+            nom: "Préposé aux installations",
+            description: "Responsable de la préparation, du rangement et de l'entretien des installations.",
+        });
+
+        const posteColin = await Poste.create({
+            nom: "Administrateur principal",
+            description: "Administration générale du système AgoraTask.",
+        });
+
+        const posteJulien = await Poste.create({
+            nom: "Administrateur secondaire",
+            description: "Administration et gestion des utilisateurs du système.",
+        });
+
+        const posteMoussa = await Poste.create({
+            nom: "Coordonnateur des opérations",
+            description: "Coordination des tâches et supervision des activités.",
+        });
 
         await Compte.create(
             {
@@ -23,7 +48,8 @@ const seedDatabase = async (req, res) => {
                 nom: "Beaudoin",
                 courriel: "antoinebeaudoin@icloud.com",
                 motDePasse: hashedPassword,
-                role: "personnel_de_terrain"
+                role: "personnel_de_terrain",
+                posteId: posteAntoine.id
             });
 
         await Compte.create(
@@ -32,7 +58,8 @@ const seedDatabase = async (req, res) => {
                 nom: "Giguère",
                 courriel: "admin@admin.com",
                 motDePasse: hashedPassword,
-                role: "administrateur"
+                role: "administrateur",
+                posteId: posteColin.id
             });
 
         await Compte.create(
@@ -41,7 +68,8 @@ const seedDatabase = async (req, res) => {
                 nom: "Morel",
                 courriel: "rebcoana@gmail.com",
                 motDePasse: hashedPassword,
-                role: "administrateur"
+                role: "administrateur",
+                posteId: posteJulien.id
             });
 
         await Compte.create(
@@ -50,7 +78,8 @@ const seedDatabase = async (req, res) => {
                 nom: "Dembélé",
                 courriel: "coordo@coordo.com",
                 motDePasse: hashedPassword,
-                role: "coordonnateur"
+                role: "coordonnateur",
+                posteId: posteMoussa.id
             });
 
         await Task.create({
