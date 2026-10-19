@@ -1,10 +1,13 @@
 import bcrypt from "bcrypt";
 import { Task, TaskImage, Poste, Compte } from '../models/bd_index.mjs';
 import TaskPoste from "../models/task_poste.mjs";
+import bd from "../models/bd.mjs";
 
 
 /**
  * Remplit la base de données avec des données de test.
+ * Tout le seedage est exécuté dans une transaction : si une seule étape
+ * échoue, rien n'est écrit dans la BD.
  *
  * @async
  * @param {*} req La requête envoyée par le frontend.
@@ -13,44 +16,48 @@ import TaskPoste from "../models/task_poste.mjs";
  */
 const seedDatabase = async (req, res) => {
     console.log("!!! RUNNING UPDATED DATABASE SEEDER !!!");
+    const transaction = await bd.transaction();
+
     try {
         console.log("HELLO THERE! SEEDING THE DB!")
-        await TaskPoste.destroy({ where: {} });
-        await Compte.destroy({ where: {} });
-        await TaskImage.destroy({ where: {} });
-        await Task.destroy({ where: {} });
-        await Poste.destroy({ where: {} });
-        const hashedPassword = await bcrypt.hash("Test1234!", 15);
+
+        await TaskPoste.destroy({ where: {}, transaction });
+        await Compte.destroy({ where: {}, transaction });
+        await TaskImage.destroy({ where: {}, transaction });
+        await Task.destroy({ where: {}, transaction });
+        await Poste.destroy({ where: {}, transaction });
+
+        const hashedPassword = await bcrypt.hash("Test1234!", 12);
 
         const posteAntoine = await Poste.create({
             nom: "Préposé aux installations",
             description: "Responsable de la préparation, du rangement et de l'entretien des installations.",
-        });
+        }, { transaction });
 
         const posteColin = await Poste.create({
             nom: "Administrateur principal",
             description: "Administration générale du système AgoraTask.",
-        });
+        }, { transaction });
 
         const posteJulien = await Poste.create({
             nom: "Administrateur secondaire",
             description: "Administration et gestion des utilisateurs du système.",
-        });
+        }, { transaction });
 
         const posteMoussa = await Poste.create({
             nom: "Coordonnateur des opérations",
             description: "Coordination des tâches et supervision des activités.",
-        });
+        }, { transaction });
 
         await Compte.create(
             {
-                prenom: "Antoine",
+                prenom: "Ana babfvehgveafhueshngreogotoine",
                 nom: "Beaudoin",
                 courriel: "antoinebeaudoin@icloud.com",
                 motDePasse: hashedPassword,
                 role: "personnel_de_terrain",
                 posteId: posteAntoine.id
-            });
+            }, { transaction });
 
         await Compte.create(
             {
@@ -60,7 +67,7 @@ const seedDatabase = async (req, res) => {
                 motDePasse: hashedPassword,
                 role: "administrateur",
                 posteId: posteColin.id
-            });
+            }, { transaction });
 
         await Compte.create(
             {
@@ -70,7 +77,7 @@ const seedDatabase = async (req, res) => {
                 motDePasse: hashedPassword,
                 role: "administrateur",
                 posteId: posteJulien.id
-            });
+            }, { transaction });
 
         await Compte.create(
             {
@@ -80,7 +87,7 @@ const seedDatabase = async (req, res) => {
                 motDePasse: hashedPassword,
                 role: "coordonnateur",
                 posteId: posteMoussa.id
-            });
+            }, { transaction });
 
         await Task.create({
             title: "Préparer la salle polyvalente",
@@ -91,7 +98,7 @@ const seedDatabase = async (req, res) => {
             recurring: true,
             frequency: "daily",
             automaticAssignment: true
-        });
+        }, { transaction });
 
         await Task.create({
             title: "Nettoyer les vestiaires",
@@ -102,7 +109,7 @@ const seedDatabase = async (req, res) => {
             recurring: true,
             frequency: "daily",
             automaticAssignment: true
-        });
+        }, { transaction });
 
         await Task.create({
             title: "Ranger le matériel sportif",
@@ -113,7 +120,7 @@ const seedDatabase = async (req, res) => {
             recurring: true,
             frequency: "daily",
             automaticAssignment: true
-        });
+        }, { transaction });
 
         await Task.create({
             title: "Nettoyage complet du gymnase",
@@ -124,7 +131,7 @@ const seedDatabase = async (req, res) => {
             recurring: true,
             frequency: "weekly",
             automaticAssignment: false
-        });
+        }, { transaction });
 
         await Task.create({
             title: "Nettoyer les salles après les activités",
@@ -135,7 +142,7 @@ const seedDatabase = async (req, res) => {
             recurring: true,
             frequency: "daily",
             automaticAssignment: true
-        });
+        }, { transaction });
 
         await Task.create({
             title: "Vider les poubelles",
@@ -146,14 +153,22 @@ const seedDatabase = async (req, res) => {
             recurring: true,
             frequency: "daily",
             automaticAssignment: true
-        });
+        }, { transaction });
+
+        await transaction.commit();
 
         res.status(200).json({
             message:
                 "La base de données a été intialisée avec succès.",
+            details: {
+                postesCrees: 4,
+                comptesCrees: 4,
+                tachesCreees: 6
+            }
         });
     }
     catch (e) {
+        await transaction.rollback();
         res
             .status(500)
             .json({ error: "Internal Server Error", message: e.message });
