@@ -15,12 +15,9 @@ import bd from "../models/bd.mjs";
  * @returns {*} Cette fonction ne retourne rien.
  */
 const seedDatabase = async (req, res) => {
-    console.log("!!! RUNNING UPDATED DATABASE SEEDER !!!");
     const transaction = await bd.transaction();
 
     try {
-        console.log("HELLO THERE! SEEDING THE DB!")
-
         await TaskPoste.destroy({ where: {}, transaction });
         await Compte.destroy({ where: {}, transaction });
         await TaskImage.destroy({ where: {}, transaction });
