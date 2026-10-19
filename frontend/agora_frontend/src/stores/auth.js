@@ -203,7 +203,7 @@ export const useAuthStore = defineStore('auth', () => {
   const changePassword = async(userId, newPassword, confirmedPassword) => {
     try {
       const response = await apiFetch('/account/password', {
-        method: 'POST',
+        method: 'PATCH',
         body: JSON.stringify({
           id: userId,
           newPassword: newPassword.value,
