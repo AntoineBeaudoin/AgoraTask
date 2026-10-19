@@ -157,11 +157,6 @@ const seedDatabase = async (req, res) => {
         res.status(200).json({
             message:
                 "La base de données a été intialisée avec succès.",
-            details: {
-                postesCrees: 4,
-                comptesCrees: 4,
-                tachesCreees: 6
-            }
         });
     }
     catch (e) {
