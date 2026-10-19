@@ -70,7 +70,7 @@ Compte.belongsToMany(Task, {
 Task.belongsToMany(Compte, {
   through: tachesAFaire,
   foreignKey: "tacheId",
-  otherKey: "compteId ",
+  otherKey: "compteId",
   as: "comptes",
 });
 // relation between tacheafaire and sous_tache
