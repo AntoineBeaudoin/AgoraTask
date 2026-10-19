@@ -1,19 +1,19 @@
 import { DataTypes } from "sequelize";
-import bd  from "./bd.mjs";
-
-export const TaskPoste = bd.define("TaskPoste", {
-    taskId: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        references: { model: "Tasks", key: "id" }
-    },
-    posteId: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        references: { model: "Postes", key: "id" }
-    }
-}, {
-    timestamps: false
+import bd from "./bd.mjs";
+const TaskPoste = bd.define("TaskPoste", {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  },
+  tacheId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  posteId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
 });
 
-export default TaskPoste;
+export default TaskPoste ;

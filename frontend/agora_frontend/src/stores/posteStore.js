@@ -19,8 +19,6 @@ export const usePosteStore = defineStore("postes", {
       try {
         const response = await apiFetch(url);
 
-        console.log('get postes response:', response);
-
         this.lastErrorStatus = response.status;
 
         if (this.lastErrorStatus !== 200) {
@@ -128,11 +126,9 @@ export const usePosteStore = defineStore("postes", {
     async deletePoste(id) {
       this.postes = this.postes.filter(poste => poste.id !== id);
       try {
-        console.log("poste id:", id);
         const response = await apiFetch("/poste/" + id, {
           method: "DELETE"
         });
-
 
         if (response !== null) {
           throw new Error(`HTTP ${response.status}`);

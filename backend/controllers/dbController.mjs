@@ -3,7 +3,7 @@ import {
   Compte,
   Task,
   TaskImage,
-  poste,
+  Poste,
   occurrence_de_tache,
   sous_tache,
   TaskPoste,
@@ -31,28 +31,28 @@ const seedDatabase = async (req, res) => {
     await TaskImage.destroy({ where: {} });
     await Compte.destroy({ where: {} });
     await Task.destroy({ where: {} });
-    await poste.destroy({ where: {} });
+    await Poste.destroy({ where: {} });
 
     const hashedPassword = await bcrypt.hash("Test1234!", 15);
 
-    const posteAntoine = await poste.create({
-      name: "Préposé aux installations",
+    const posteAntoine = await Poste.create({
+      nom: "Préposé aux installations",
       description:
         "Responsable de la préparation, du rangement et de l'entretien des installations.",
     });
 
-    const posteColin = await poste.create({
-      name: "Administrateur principal",
+    const posteColin = await Poste.create({
+      nom: "Administrateur principal",
       description: "Administration générale du système AgoraTask.",
     });
 
-    const posteJulien = await poste.create({
-      name: "Administrateur secondaire",
+    const posteJulien = await Poste.create({
+      nom: "Administrateur secondaire",
       description: "Administration et gestion des utilisateurs du système.",
     });
 
-    const posteMoussa = await poste.create({
-      name: "Coordonnateur des opérations",
+    const posteMoussa = await Poste.create({
+      nom: "Coordonnateur des opérations",
       description: "Coordination des tâches et supervision des activités.",
     });
 
