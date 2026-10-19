@@ -48,7 +48,7 @@ const seedDatabase = async (req, res) => {
 
         await Compte.create(
             {
-                prenom: "Ana babfvehgveafhueshngreogotoine",
+                prenom: "Antoine",
                 nom: "Beaudoin",
                 courriel: "antoinebeaudoin@icloud.com",
                 motDePasse: hashedPassword,
