@@ -66,7 +66,7 @@ export async function createUser(req, res, next) {
 }
 
 /**
- * Retourne toutes les tâches qui ne sont pas archivés, ainsi que chacune des urls des images qui lui sont associés.
+ * Retourne toutes les employés qui ne sont pas archivés, ainsi que chacune des urls des images qui lui sont associés.
  *
  * @export
  * @async
@@ -75,7 +75,7 @@ export async function createUser(req, res, next) {
  * @param {*} next Le prochain middlware à appeler, en cas d'erreur.
  * @returns {*} Cette fonction ne retourne rien.
  */
-export async function getAllEmployees(req, res, next) {
+export async function getAllFieldEmployees(req, res, next) {
     try {
         let employees = await Compte.findAll({
             where: {
