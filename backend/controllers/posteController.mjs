@@ -216,7 +216,7 @@ export async function assignPosteToEmployees(req, res, next) {
     if (!Array.isArray(comptes)) {
         return res.status(400).json({
             status: 400,
-            message: "Les employés doivent être fournis sous forme de tableau d'identifiants."
+            message: "Les tâches doivent être fournis sous forme de tableau d'identifiants."
         });
     }
     const comptesIds = [...new Set(comptes)];
