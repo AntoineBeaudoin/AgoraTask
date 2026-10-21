@@ -25,7 +25,7 @@ export async function createPoste(req, res, next) {
         }
     });
 
-    if (aSimilarPoste){
+    if (aSimilarPoste) {
         return res.status(409).json({
             status: 409,
             message: "Un poste avec un nom et une description identique existe déjà."
@@ -95,7 +95,7 @@ export async function updatePoste(req, res, next) {
         }
     });
 
-    if (aSimilarPoste){
+    if (aSimilarPoste) {
         return res.status(409).json({
             status: 409,
             message: "Un poste avec un nom et une description identique existe déjà."
@@ -203,7 +203,7 @@ export async function getPostes(req, res, next) {
             path: "/api/poste/list",
             timestamp: new Date().toISOString()
         });
-    } 
+    }
     catch (err) {
         next(err);
     }
@@ -214,99 +214,89 @@ export async function assignPosteToEmployees(req, res, next) {
     const { comptes } = req.body;
 
     if (!Array.isArray(comptes)) {
-    return res.status(400).json({
-    status: 400,
-    message: "Les employés doivent être fournis sous forme de tableau d'identifiants."
-    });
+        return res.status(400).json({
+            status: 400,
+            message: "Les employés doivent être fournis sous forme de tableau d'identifiants."
+        });
     }
-
     const comptesIds = [...new Set(comptes)];
-
     if (comptesIds.some(compteId =>
-    !Number.isInteger(Number(compteId)) ||
-    Number(compteId) <= 0
+        !Number.isInteger(Number(compteId)) ||
+        Number(compteId) <= 0
     )) {
-    return res.status(400).json({
-    status: 400,
-    message: "Un ou plusieurs identifiants d'employés sont invalides."
-    });
+        return res.status(400).json({
+            status: 400,
+            message: "Un ou plusieurs identifiants d'employés sont invalides."
+        });
     }
-
     const transaction = await bd.transaction();
-
     try {
-    const poste = await Poste.findByPk(id, { transaction });
+        const poste = await Poste.findByPk(id, { transaction });
+        if (!poste) {
+            await transaction.rollback();
 
-    if (!poste) {
-        await transaction.rollback();
-
-        return res.status(404).json({
-            status: 404,
-            message: "Le poste est introuvable."
-        });
-    }
-
-    const employes = await Compte.findAll({
-        where: {
-            id: comptesIds.map(Number)
-        },
-        transaction
-    });
-
-    if (employes.length !== comptesIds.length) {
-        await transaction.rollback();
-
-        return res.status(404).json({
-            status: 404,
-            message: "Un ou plusieurs employés sont introuvables."
-        });
-    }
-
-    await Compte.update(
-        { posteId: null },
-        {
-            where: { posteId: poste.id },
-            transaction
+            return res.status(404).json({
+                status: 404,
+                message: "Le poste est introuvable."
+            });
         }
-    );
 
-    if (comptesIds.length > 0) {
+        const employes = await Compte.findAll({
+            where: {
+                id: comptesIds.map(Number)
+            },
+            transaction
+        });
+
+        if (employes.length !== comptesIds.length) {
+            await transaction.rollback();
+
+            return res.status(404).json({
+                status: 404,
+                message: "Un ou plusieurs employés sont introuvables."
+            });
+        }
+
         await Compte.update(
-            { posteId: poste.id },
+            { posteId: null },
             {
-                where: {
-                    id: comptesIds.map(Number)
-                },
+                where: { posteId: poste.id },
                 transaction
             }
         );
-    }
 
-    await transaction.commit();
+        if (comptesIds.length > 0) {
+            await Compte.update(
+                { posteId: poste.id },
+                {
+                    where: {
+                        id: comptesIds.map(Number)
+                    },
+                    transaction
+                }
+            );
+        }
+        await transaction.commit();
+        const posteMisAJour = await Poste.findByPk(poste.id, {
+            include: [{
+                model: Compte,
+                as: "employes",
+                attributes: ["id", "prenom", "nom", "courriel"]
+            }]
+        });
 
-    const posteMisAJour = await Poste.findByPk(poste.id, {
-        include: [{
-            model: Compte,
-            as: "employes",
-            attributes: ["id", "prenom", "nom", "courriel"]
-        }]
-    });
-
-    return res.status(200).json({
-        status: 200,
-        message: "Les employés ont été assignés au poste avec succès.",
-        data: posteMisAJour,
-        path: `/api/poste/${id}/employes`,
-        timestamp: new Date().toISOString()
-    });
-
+        return res.status(200).json({
+            status: 200,
+            message: "Les employés ont été assignés au poste avec succès.",
+            data: posteMisAJour,
+            path: `/api/poste/${id}/employes`,
+            timestamp: new Date().toISOString()
+        });
     } catch (error) {
-    if (!transaction.finished) {
-        await transaction.rollback();
-    }
-
-    next(error);
-
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 }
 
@@ -344,7 +334,7 @@ export async function deletePoste(req, res, next) {
 }
 
 /**
- * Ré-active un poste de travail par son identifiant.
+ * Réactiver un poste de travail par son identifiant.
  *
  * @export
  * @async
