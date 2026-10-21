@@ -231,9 +231,7 @@ async function loadComptes() {
       comptesDisponibles.value = authStore.employes ?? [];
     }
 
-    console.log('Employés disponibles :', comptesDisponibles.value);
-  } catch (error) {
-    console.error('Erreur lors du chargement des employés :', error);
+  } catch {
     comptesError.value =
       'Une erreur est survenue lors du chargement des employés.';
   } finally {
@@ -247,8 +245,7 @@ async function loadTasks() {
 
   try {
     await taskStore.loadTasks();
-  } catch (error) {
-    console.error('Erreur lors du chargement des tâches :', error);
+  } catch {
     tasksError.value =
       'Une erreur est survenue lors du chargement des tâches.';
   } finally {
@@ -386,8 +383,7 @@ async function submit() {
 
     emit('saved');
     close();
-  } catch (error) {
-    console.error('Erreur lors de l’enregistrement du poste :', error);
+  } catch {
     posteError.value =
       'Une erreur est survenue lors de l’enregistrement du poste.';
   } finally {
