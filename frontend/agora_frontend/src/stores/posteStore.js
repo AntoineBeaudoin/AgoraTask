@@ -144,8 +144,7 @@ export const usePosteStore = defineStore("postes", {
 
     async reactivatePoste(id) {
       try {
-        console.log("poste id:", id);
-        const response = await apiFetch("/poste/reactivate/" + id, {
+        const response = await apiFetch("/poste/" + id + "/reactivate", {
           method: "PATCH"
         });
 
