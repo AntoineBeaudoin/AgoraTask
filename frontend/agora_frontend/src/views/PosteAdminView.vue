@@ -190,7 +190,7 @@ async function confirmArchivePoste() {
 }
 </script>
 
-<style scoped>
+<!-- <style scoped>
 .gestion-container {
   width: 100%;
   max-width: 1200px;
@@ -854,4 +854,4 @@ async function confirmArchivePoste() {
 .confirm-archive-btn:hover {
     background: #bb2d3b;
 }
-</style>
+</style> -->
