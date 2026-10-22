@@ -2,6 +2,7 @@ import { Task, Poste, Compte } from '../models/bd_index.mjs';
 import bd from "../models/bd.mjs";
 import dotenv from "dotenv";
 import { Op } from 'sequelize';
+import { emptyString } from '../utils/checks.mjs';
 
 dotenv.config();
 
@@ -17,6 +18,13 @@ dotenv.config();
  */
 export async function createPoste(req, res, next) {
     const { nom, description, tasks = [] } = req.body;
+
+    if (emptyString(nom) || emptyString(description)){
+        return res.status(400).json({
+            status: 400,
+            message: "Le poste spécifié doit contenir un nom et une description."
+        })
+    }
 
     const aSimilarPoste = await Poste.findOne({
         where: {
@@ -86,6 +94,13 @@ export async function createPoste(req, res, next) {
 export async function updatePoste(req, res, next) {
     const { id } = req.params;
     const { nom, description, tasks = [] } = req.body;
+
+    if ( !id || emptyString(nom) || emptyString(description)){
+        return res.status(400).json({
+            status: 400,
+            message: "Le poste spécifié doit contenir un nom et une description."
+        })
+    }
 
     const aSimilarPoste = await Poste.findOne({
         where: {
@@ -209,6 +224,17 @@ export async function getPostes(req, res, next) {
     }
 }
 
+
+/**
+ * Assigne un poste de travail à des employés.
+ *
+ * @export
+ * @async
+ * @param {*} req La requête envoyée par le frontend.
+ * @param {*} res La réponse à retourner au frontend.
+ * @param {*} next Le prochain middleware à appeler, en cas d'erreur.
+ * @returns {unknown} Retourne le statut de la requête en JSON.
+ */
 export async function assignPosteToEmployees(req, res, next) {
     const { id } = req.params;
     const { comptes } = req.body;
@@ -358,7 +384,7 @@ export async function reactivatePoste(req, res, next) {
             await aPoste.save();
         }
 
-        res.status(204).json({});
+        res.status(200).json({});
     }
     catch (err) {
         next(err);
