@@ -7,6 +7,7 @@
   "type": "commonjs",
   "main": "app.mjs",
   "scripts": {
+    "test": "vitest",
     "start": "node app.mjs",
     "start:local": "node --env-file=.env app.mjs",
     "dev": "nodemon --exec \"node -r dotenv/config\" app.mjs",

@@ -7,7 +7,10 @@ export const useModalStore = defineStore('modal', {
     editingTask: null,
 
     passwordModalOpen: false,
-    editingUser: null
+    editingUser: null,
+
+    posteModalOpen: false,
+    editingPoste: null
   }),
 
   actions: {
@@ -34,6 +37,21 @@ export const useModalStore = defineStore('modal', {
     closePasswordModal() {
        this.passwordModalOpen = false
        this.editingUser = null
+    },
+
+    openAddPoste(){
+      this.editingPoste = null;
+      this.posteModalOpen = true;
+    },
+
+    openEditPoste(poste){
+      this.editingPoste = poste;
+      this.posteModalOpen = true;
+    },
+
+    closePosteModal(){
+      this.editingPoste = null;
+      this.posteModalOpen = false;
     }
   }
 })

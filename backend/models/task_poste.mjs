@@ -15,4 +15,5 @@ const TaskPoste = bd.define("TaskPoste", {
     allowNull: false,
   },
 });
-export { TaskPoste };
+
+export default TaskPoste ;
