@@ -86,6 +86,33 @@ const seedDatabase = async (req, res) => {
       posteId: posteJulien.id,
     });
 
+     await Compte.create({
+      prenom: "Bob",
+      nom: "Marley",
+      courriel: "bmarley@gmail.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+    });
+
+     await Compte.create({
+      prenom: "Michael",
+      nom: "Jackson",
+      courriel: "mjackson@test.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+    });
+
+    await Compte.create({
+      prenom: "Raphael",
+      nom: "Pouliot",
+      courriel: "rpouliot@agoratask.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+    });
+
     const moussa = await Compte.create({
       prenom: "Moussa",
       nom: "Dembélé",
