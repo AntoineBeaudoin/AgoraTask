@@ -712,3 +712,35 @@
 .confirm-archive-btn:hover {
     background: #bb2d3b;
 }
+
+.drop-zone {
+   min-height: 180px;
+   max-height: 260px;
+   overflow-y: auto;
+   padding: 8px;
+   border: 2px dashed #ced4da;
+   border-radius: 8px;
+   background: #f8f9fa;
+}
+
+.drag-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  margin-bottom: 6px;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  cursor: grab;
+}
+
+.drag-item:active {
+  cursor: grabbing;
+}
+
+.item-text {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}

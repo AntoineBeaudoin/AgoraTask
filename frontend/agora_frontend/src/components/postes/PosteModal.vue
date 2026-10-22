@@ -52,107 +52,43 @@
               ></textarea>
             </div>
 
-            <div class="form-group mb-3">
-              <label for="posteTasks" class="form-label">
-                Tâches associées
-              </label>
-
-              <div v-if="loadingTasks" class="text-muted">
-                Chargement des tâches...
+            <div class="form-group mb-4" v-for="group in assignmentGroups" :key="group.type">
+              <label class="form-label fw-semibold">{{ group.title }}</label>
+              <div v-if="group.loading" class="text-muted">Chargement...</div>
+              <div v-else-if="group.error" class="text-danger">
+                {{ group.error }}
+                <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
+                  @click="group.type === 'task' ? loadTasks() : loadComptes()">Réessayer</button>
               </div>
-
-              <div v-else-if="tasksError" class="text-danger">
-                {{ tasksError }}
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-secondary ms-2"
-                  @click="loadTasks"
-                >
-                  Réessayer
-                </button>
+              <div v-else class="row g-3">
+                <div class="col-6">
+                  <label class="form-label small">Disponibles ({{ group.available.length }})</label>
+                  <div class="drop-zone" @dragover.prevent @drop.prevent="dropItem(group.type, false, $event)">
+                    <div v-for="item in group.available" :key="item.id" class="drag-item"
+                      draggable="true" @dragstart="startDrag(group.type, item.id, $event)"
+                      @dragend="draggedItem = null" @dblclick="moveItem(group.type, item.id, true)"
+                      :title="'Double-cliquer pour assigner'">
+                      <span class="item-text">{{ group.format(item) }}</span><span aria-hidden="true">⠿</span>
+                    </div>
+                    <div v-if="!group.available.length" class="text-muted small p-2">Aucun élément disponible</div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <label class="form-label small">Assignés ({{ group.selected.length }})</label>
+                  <div class="drop-zone" @dragover.prevent @drop.prevent="dropItem(group.type, true, $event)">
+                    <div v-for="item in group.selected" :key="item.id" class="drag-item"
+                      draggable="true" @dragstart="startDrag(group.type, item.id, $event)"
+                      @dragend="draggedItem = null" @dblclick="moveItem(group.type, item.id, false)"
+                      :title="'Double-cliquer pour retirer'">
+                      <span class="item-text">{{ group.format(item) }}</span><span aria-hidden="true">⠿</span>
+                    </div>
+                    <div v-if="!group.selected.length" class="text-muted small p-2">Glissez des éléments ici</div>
+                  </div>
+                </div>
               </div>
-
-              <div
-                v-else-if="tasksDisponibles.length === 0"
-                class="text-muted"
-              >
-                Aucune tâche disponible.
-              </div>
-
-              <select
-                v-else
-                id="posteTasks"
-                v-model="tasksSelectionnees"
-                class="form-select"
-                multiple
-                size="6"
-              >
-                <option
-                  v-for="task in tasksDisponibles"
-                  :key="task.id"
-                  :value="task.id"
-                >
-                  {{ task.title }}
-                </option>
-              </select>
-
-              <small class="form-text text-muted">
-                Maintenez Ctrl (Windows/Linux) ou Cmd (Mac) pour sélectionner
-                plusieurs tâches.
-              </small>
-
-              <p class="text-danger">{{ posteError }}</p>
+              <small class="text-muted">Glissez les éléments entre les colonnes ou double-cliquez dessus.</small>
             </div>
-
-            <div class="form-group mb-3">
-              <label for="posteComptes" class="form-label">
-                Employés assignés
-              </label>
-
-              <div v-if="loadingComptes" class="text-muted">
-                Chargement des employés...
-              </div>
-
-              <div v-else-if="comptesError" class="text-danger">
-                {{ comptesError }}
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-secondary ms-2"
-                  @click="loadComptes"
-                >
-                  Réessayer
-                </button>
-              </div>
-
-              <div
-                v-else-if="comptesDisponibles.length === 0"
-                class="text-muted"
-              >
-                Aucun employé disponible.
-              </div>
-
-              <select
-                v-else
-                id="posteComptes"
-                v-model="comptesSelectionnes"
-                class="form-select"
-                multiple
-                size="6"
-              >
-                <option
-                  v-for="compte in comptesDisponibles"
-                  :key="compte.id"
-                  :value="compte.id"
-                >
-                  {{ compte.prenom }} {{ compte.nom }} ({{ compte.courriel }})
-                </option>
-              </select>
-
-              <small class="form-text text-muted">
-                Maintenez Ctrl (Windows/Linux) ou Cmd (Mac) pour sélectionner
-                plusieurs employés.
-              </small>
-            </div>
+            <p class="text-danger">{{ posteError }}</p>
 
             <div class="modal-footer">
               <button
@@ -215,8 +151,46 @@ const comptesError = ref('');
 const isEditing = computed(() => !!modalStore.editingPoste);
 
 const tasksDisponibles = computed(() =>
-  taskStore.tasks.filter(task => !task.IsArchived)
+  taskStore.tasks.filter(task => !task.IsArchived && !task.archived)
 );
+
+const assignmentGroups = computed(() => [
+  {
+    type: 'task', title: 'Tâches associées', loading: loadingTasks.value,
+    error: tasksError.value,
+    available: tasksDisponibles.value.filter(t => !tasksSelectionnees.value.some(id => String(id) === String(t.id))),
+    selected: tasksDisponibles.value.filter(t => tasksSelectionnees.value.some(id => String(id) === String(t.id))),
+    format: t => `${t.title} (${t.room})`
+  },
+  {
+    type: 'compte', title: 'Employés assignés', loading: loadingComptes.value,
+    error: comptesError.value,
+    available: comptesDisponibles.value.filter(c => !comptesSelectionnes.value.some(id => String(id) === String(c.id))),
+    selected: comptesDisponibles.value.filter(c => comptesSelectionnes.value.some(id => String(id) === String(c.id))),
+    format: c => `${c.prenom} ${c.nom} (${c.courriel})`
+  }
+]);
+
+const draggedItem = ref(null);
+
+function startDrag(type, id, event) {
+  draggedItem.value = { type, id };
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', `${type}:${id}`);
+}
+
+function moveItem(type, id, assign) {
+  const selection = type === 'task' ? tasksSelectionnees : comptesSelectionnes;
+  const exists = selection.value.some(value => String(value) === String(id));
+  if (assign && !exists) selection.value = [...selection.value, id];
+  else if (!assign && exists) selection.value = selection.value.filter(value => String(value) !== String(id));
+}
+
+function dropItem(type, assign) {
+  const item = draggedItem.value;
+  if (item && item.type === type) moveItem(type, item.id, assign);
+  draggedItem.value = null;
+}
 
 async function loadComptes() {
   loadingComptes.value = true;
@@ -275,8 +249,11 @@ watch(
         task => typeof task === 'object' ? task.id : task
       );
 
-      comptesSelectionnes.value = comptesDisponibles.value.filter(compte => String(compte.posteId) === String(poste.id))
-        .map(compte => compte.id);
+      const assigned = poste.employes ?? poste.comptes;
+      comptesSelectionnes.value = Array.isArray(assigned)
+        ? assigned.map(compte => typeof compte === 'object' ? compte.id : compte)
+        : comptesDisponibles.value.filter(compte => String(compte.posteId) === String(poste.id))
+            .map(compte => compte.id);
     }
   }
 );
