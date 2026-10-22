@@ -14,10 +14,14 @@
         placeholder="Rechercher une tâche"
         @keyup.enter="filterTasks"
       />
-      <button @click="filterTasks" class="btn btn-primary">Rechercher</button>
     </div>
 
-    <div v-for="task in tasksDisplayed" :key="task.id" class="card mb-3 shadow-sm">
+    <div
+      v-for="task in tasksDisplayed"
+      :key="task.id"
+      class="card mb-3 shadow-sm"
+      v-if="tasksDisplayed?.length != 0"
+    >
       <div class="card-body">
         <h2 class="card-title h4 mb-2">{{ task.title }}</h2>
 
@@ -32,6 +36,7 @@
         </div>
       </div>
     </div>
+    <p v-else class="text-center text-muted">Aucune tâche ne correspond à votre recherche.</p>
   </section>
 </template>
 
@@ -39,13 +44,16 @@
 import { useModalStore } from '@/stores/modalStore'
 import { useTaskStore } from '@/stores/taskStore'
 import TaskModal from '@/components/tasks/TaskModal.vue'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { switchIsButtonActiveById } from '@/utils/dom-manipulation'
 
 const taskStore = useTaskStore()
 const modalStore = useModalStore()
 let motCle = ref('')
 let tasksDisplayed = ref([])
+watch(motCle, () => {
+  filterTasks()
+})
 function filterTasks() {
   if (motCle.value.trim() !== '') {
     tasksDisplayed.value = taskStore.tasks.filter((task) =>
