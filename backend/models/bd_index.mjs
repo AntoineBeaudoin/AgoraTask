@@ -67,15 +67,15 @@ Task.belongsToMany(Poste, {
 // Relation between employe and tache
 
 Compte.belongsToMany(Task, {
-  through: tachesAFaire,
-  foreignKey: "compteId ",
+  through: { model: tachesAFaire, unique: false },
+  foreignKey: "compteId",
   otherKey: "tacheId",
   as: "taches",
 });
 Task.belongsToMany(Compte, {
-  through: tachesAFaire,
+  through: { model: tachesAFaire, unique: false },
   foreignKey: "tacheId",
-  otherKey: "compteId ",
+  otherKey: "compteId",
   as: "comptes",
 });
 // relation between tacheafaire and sous_tache
@@ -93,6 +93,15 @@ sous_tache.belongsToMany(tachesAFaire, {
   as: "tachesAFaires",
 });
 
+//Relation entre tacheAFaire et occurrence_de_tache
+tachesAFaire.belongsTo(occurrence_de_tache, {
+  foreignKey: "occurrence_de_tacheId",
+  as: "occurrence_de_tache",
+});
+occurrence_de_tache.hasMany(tachesAFaire, {
+  foreignKey: "occurrence_de_tacheId",
+  as: "tachesAFaire",
+});
 export {
   Task,
   TaskImage,

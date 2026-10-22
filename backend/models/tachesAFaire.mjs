@@ -14,6 +14,10 @@ const tachesAFaire = bd.define("TachesAFaire", {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
+  occurrence_de_tacheId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
   commentaire: {
     type: DataTypes.TEXT,
     allowNull: true,

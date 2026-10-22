@@ -1,6 +1,6 @@
 {
   "name": "agora_backend",
-  "version": "2.2.0",
+  "version": "2.4.0",
   "description": "API d'AgoraTask permettant de gérer les tâches et les employés à l'aide de requêtes HTTP.",
   "license": "ISC",
   "author": "Julien Morel,Antoine Beaudoin,Moussa Dembélé, Evan",
@@ -10,7 +10,8 @@
     "test": "vitest",
     "start": "node app.mjs",
     "start:local": "node --env-file=.env app.mjs",
-    "dev": "nodemon --exec \"node -r dotenv/config\" app.mjs"
+    "dev": "nodemon --exec \"node -r dotenv/config\" app.mjs",
+    "test": "vitest"
   },
   "dependencies": {
     "@vercel/blob": "^2.8.0",
@@ -23,7 +24,9 @@
     "nodemon": "^3.1.14",
     "pg": "^8.23.0",
     "pg-hstore": "^2.3.4",
-    "sequelize": "^6.37.8",
+    "sequelize": "^6.37.8"
+  },
+  "devDependencies": {
     "vitest": "^5.0.5"
   }
 }

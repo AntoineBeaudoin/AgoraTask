@@ -192,9 +192,10 @@ const seedDatabase = async (req, res) => {
       "samedi",
       "dimanche",
     ];
-
+    let idOccurrence = {};
+    let occurence;
     for (const journee of jours) {
-      await occurrence_de_tache.create({
+      occurence = await occurrence_de_tache.create({
         heureDebut: "08:30:00",
         heureFin: "09:00:00",
         journee,
@@ -202,8 +203,11 @@ const seedDatabase = async (req, res) => {
         tacheId: preparerSalle.id,
         priorite: 3,
       });
+      if (idOccurrence.preparerSalle_id === undefined) {
+        idOccurrence.preparerSalle_id = occurence.id;
+      }
 
-      await occurrence_de_tache.create({
+      occurence = await occurrence_de_tache.create({
         heureDebut: "12:00:00",
         heureFin: "12:30:00",
         journee,
@@ -211,8 +215,10 @@ const seedDatabase = async (req, res) => {
         tacheId: nettoyerVestiaires.id,
         priorite: 3,
       });
-
-      await occurrence_de_tache.create({
+      if (idOccurrence.nettoyerVestiaires_id === undefined) {
+        idOccurrence.nettoyerVestiaires_id = occurence.id;
+      }
+      occurence = await occurrence_de_tache.create({
         heureDebut: "16:00:00",
         heureFin: "16:30:00",
         journee,
@@ -220,8 +226,10 @@ const seedDatabase = async (req, res) => {
         tacheId: rangerMateriel.id,
         priorite: 2,
       });
-
-      await occurrence_de_tache.create({
+      if (idOccurrence.rangerMateriel_id === undefined) {
+        idOccurrence.rangerMateriel_id = occurence.id;
+      }
+      occurence = await occurrence_de_tache.create({
         heureDebut: "17:30:00",
         heureFin: "18:30:00",
         journee,
@@ -229,8 +237,10 @@ const seedDatabase = async (req, res) => {
         tacheId: nettoyerSalles.id,
         priorite: 4,
       });
-
-      await occurrence_de_tache.create({
+      if (idOccurrence.nettoyerSalles_id === undefined) {
+        idOccurrence.nettoyerSalles_id = occurence.id;
+      }
+      occurence = await occurrence_de_tache.create({
         heureDebut: "18:30:00",
         heureFin: "19:00:00",
         journee,
@@ -238,9 +248,12 @@ const seedDatabase = async (req, res) => {
         tacheId: viderPoubelles.id,
         priorite: 4,
       });
+      if (idOccurrence.viderPoubelles_id === undefined) {
+        idOccurrence.viderPoubelles_id = occurence.id;
+      }
     }
 
-    await occurrence_de_tache.create({
+    occurence = await occurrence_de_tache.create({
       heureDebut: "17:00:00",
       heureFin: "18:00:00",
       journee: "vendredi",
@@ -248,6 +261,7 @@ const seedDatabase = async (req, res) => {
       tacheId: nettoyerGymnase.id,
       priorite: 5,
     });
+    idOccurrence.nettoyerGymnase_id = occurence.id;
 
     const installerTables = await sous_tache.create({
       tacheId: preparerSalle.id,
@@ -379,12 +393,15 @@ const seedDatabase = async (req, res) => {
     const assignationSalle = await tachesAFaire.create({
       tacheId: preparerSalle.id,
       compteId: antoine.id,
-      commentaire: "Préparer la salle avant le début des activités.",
+      commentaire:
+        "la reunion a commencé plutot que prévu, j'ai pas eu le temps de tout installer.",
       isCompleted: false,
+      occurrence_de_tacheId: idOccurrence.preparerSalle_id,
     });
 
     const assignationVestiaires = await tachesAFaire.create({
       tacheId: nettoyerVestiaires.id,
+      occurrence_de_tacheId: idOccurrence.nettoyerVestiaires_id,
       compteId: antoine.id,
       commentaire:
         "Il ne reste presque plus de savon pour la plancher, il faudrait en acheter",
@@ -393,6 +410,7 @@ const seedDatabase = async (req, res) => {
 
     const assignationPoubelles = await tachesAFaire.create({
       tacheId: viderPoubelles.id,
+      occurrence_de_tacheId: idOccurrence.viderPoubelles_id,
       compteId: antoine.id,
       commentaire:
         "Il ne reste presque plus de savon pour la plancher, il faudrait en acheter",
@@ -401,6 +419,7 @@ const seedDatabase = async (req, res) => {
 
     const assignationGymnase = await tachesAFaire.create({
       tacheId: nettoyerGymnase.id,
+      occurrence_de_tacheId: idOccurrence.nettoyerGymnase_id,
       compteId: moussa.id,
       commentaire:
         "Il ne reste presque plus de savon pour la plancher, il faudrait en acheter",

@@ -26,7 +26,7 @@ const occurrence_de_tache = bd.define("occurence_de_tache", {
       "samedi",
       "dimanche",
     ),
-    allowNull: false,
+    allowNull: true,
   },
   isRequired: {
     type: DataTypes.BOOLEAN,

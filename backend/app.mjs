@@ -9,6 +9,7 @@ import bd from "./models/bd.mjs";
 import { get404, getErrors } from "./controllers/errorController.mjs";
 import adminRoutes from "./routes/admin.mjs";
 import "./models/bd_index.mjs";
+import histRoutes from "./routes/hist.mjs";
 
 dotenv.config();
 
@@ -31,7 +32,7 @@ app.use("/bd", bdRoutes);
 app.use("/api/users", adminRoutes);
 app.use("/api/task", taskRoutes);
 app.use("/api/poste", posteRoutes);
-
+app.use("/api/historique", histRoutes);
 app.get("/", (req, res) => {
   res.status(200).json({
     message: "Agora API disponible",
