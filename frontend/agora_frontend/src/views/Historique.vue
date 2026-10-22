@@ -16,8 +16,6 @@
 
           <input id="dateHistorique" v-model="dateHistorique" type="date" />
         </div>
-
-        <button class="btn-refresh" @click="rafraichirHistorique">Rafraîchir</button>
       </div>
     </section>
 
@@ -94,6 +92,10 @@
               <span>
                 {{ dateHistorique }}
               </span>
+
+              <div class="mt-1">
+                <strong>{{ EmployeTaches.length }}</strong> tâche(s) assignée(s)
+              </div>
             </div>
           </div>
 
@@ -102,7 +104,37 @@
           </div>
 
           <div v-else class="liste-taches">
-            <article v-for="tache in EmployeTaches" :key="tache.id" class="carte-tache">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <span class="text-secondary">
+                Tâche {{ indexTache + 1 }} / {{ EmployeTaches.length }}
+              </span>
+
+              <div class="d-flex gap-2">
+                <button
+                  class="btn btn-outline-dark btn-sm"
+                  :disabled="indexTache === 0"
+                  aria-label="Tâche précédente"
+                  @click="indexTache--"
+                >
+                  ←
+                </button>
+
+                <button
+                  class="btn btn-outline-dark btn-sm"
+                  :disabled="indexTache >= EmployeTaches.length - 1"
+                  aria-label="Tâche suivante"
+                  @click="indexTache++"
+                >
+                  →
+                </button>
+              </div>
+            </div>
+
+            <article
+              v-for="tache in EmployeTaches.slice(indexTache, indexTache + 1)"
+              :key="tache.id"
+              class="carte-tache"
+            >
               <div class="tache-entete">
                 <div>
                   <h3>
@@ -196,14 +228,20 @@
     </section>
   </main>
 </template>
+
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { apiFetch } from '../utils/api.js'
 
 const dateHistorique = ref('')
 const EmployeEnService = ref([])
 const EmployeTaches = ref([])
 const employeSelectionne = ref(null)
+const indexTache = ref(0)
+
+watch(dateHistorique, async (newDate) => {
+  rafraichirHistorique()
+})
 
 async function getEmployeEnService() {
   try {
@@ -242,14 +280,14 @@ async function getEmployeTaches(compteId) {
 
 async function selectionnerEmploye(employe) {
   employeSelectionne.value = employe
-
+  indexTache.value = 0
   await getEmployeTaches(employe.id)
 }
 
 async function rafraichirHistorique() {
   employeSelectionne.value = null
   EmployeTaches.value = []
-
+  indexTache.value = 0
   await getEmployeEnService()
 }
 </script>
