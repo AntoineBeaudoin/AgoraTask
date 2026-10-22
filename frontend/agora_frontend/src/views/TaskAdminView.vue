@@ -3,6 +3,7 @@
     <h1>Gestion de tâches administrative</h1>
     <button @click="addTask" data-target="#taskModal" class="btn btn-secondary mx-auto m-3">Ajouter une tâche</button>
     <TaskModal />
+    <TaskDescriptionModal />
 
     <div v-for="task in taskStore.tasks" :key="task.id" class="card mb-3 shadow-sm">
       <div class="card-body">
@@ -14,7 +15,7 @@
           <button @click="updateTask(task.id)" class="btn btn-primary">Modifier la tâche</button>
           <button @click="duplicateTask(task.id)" v-bind:id="task.id" class="btn btn-secondary">Dupliquer</button>
           <button @click="taskStore.deleteTask(task.id)" class="btn btn-danger">Supprimer</button>
-          <button @click="taskDetails(task.id)" class="btn btn-danger">Voir details</button>
+          <button @click="taskDetails(task.id)" class="btn btn-danger">Voir détails</button>
         </div>
       </div>
     </div>
@@ -25,6 +26,7 @@
 import { useModalStore } from "@/stores/modalStore";
 import { useTaskStore } from "@/stores/taskStore";
 import TaskModal from '@/components/tasks/TaskModal.vue';
+import TaskDescriptionModal from "@/components/tasks/TaskDescriptionModal.vue";
 import { onMounted } from "vue";
 import { switchIsButtonActiveById } from '@/utils/dom-manipulation';
 
@@ -52,7 +54,7 @@ async function addTask() {
 }
 
 async function taskDetails(id) {
-  taskStore.tasks = taskStore.getTaskById(id);
-  modalStore.openTaskDescription();
+  const observableTask = await taskStore.getTaskById(id);
+  modalStore.openTaskDescription(observableTask);
 }
 </script>

@@ -1,11 +1,32 @@
 <template>
   <Teleport to="body">
-    <div v-if="modalStore.taskModalOpen" class="modal fade p-5 bd-example-modal-lg" @click.self="close" id="taskModal"
-      tabindex="-1" role="dialog" aria-labelledby="taskModalLabel" aria-hidden="true">
+    <div v-if="modalStore.taskDescriptionModalOpen" class="modal fade p-5 bd-example-modal-lg" @click.self="close"
+      id="taskModal" tabindex="-1" role="dialog" aria-labelledby="taskModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-xl">
         <div class="modal-content mt-3 ps-3 pe-3">
           <div class="modal-header ps-0">
-            <h2 class="modal-title">{{ task.title }}</h2>
+            <h2 class="modal-title">Description de la tâche</h2>
+            <button type="button" class="bg-transparent border-0 ms-auto p-3 btn btn-close" @click="close"></button>
+          </div>
+          <div class="row g-4">
+            <div class="col-lg-6">
+              <h3 class="fs-5 mb-3 text-primary">Informations de la tâche</h3>
+              <h4>{{ task.title }}</h4>
+              <p>Local: {{ task.room }}</p>
+              <h4>Description:</h4>
+              <p>{{ task.description }}</p>
+              <h3 class="fs-5 mb-2 text-primary">Images</h3>
+            </div>
+            <div class="col-lg-6">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h3 class="fs-5 text-primary m-0">Horaires & Fréquence (Occurrences)</h3>
+              </div>
+              <div class="alert alert-secondary py-2 small text-center mb-3">Aucun horaire défini.</div>
+              <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+                <h3 class="fs-5 text-primary m-0">Sous-tâches</h3>
+              </div>
+              <div class="alert alert-secondary py-2 small text-center mb-3">Aucune sous-tâche définie.</div>
+            </div>
           </div>
         </div>
       </div>
@@ -14,15 +35,22 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useTaskStore } from '@/stores/taskStore';
+import { watch, ref } from 'vue';
 import { useModalStore } from '@/stores/modalStore';
 
-const taskStore = useTaskStore();
 const modalStore = useModalStore();
+const task = ref('');
 
-const task = computed(() => !!taskStore.tasks);
-
+watch(
+  () => modalStore.observableTask,
+  (observableTask) => {
+    console.log("the task to modify: ", observableTask);
+    if (observableTask) {
+      task.value = observableTask;
+    }
+  },
+  { immediate: true }
+)
 
 function close() {
   modalStore.closeTaskModal();
