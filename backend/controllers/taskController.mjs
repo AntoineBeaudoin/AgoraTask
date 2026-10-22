@@ -108,8 +108,8 @@ async function addTaskImages(req, task) {
 }
 
 async function copyExistingImages(originalTask, newTask) {
-    for (const image of originalTask.images ?? []) {
-        const imageResponse = await fetch(image.path);
+  for (const image of originalTask.images ?? []) {
+    const imageResponse = await fetch(image.path);
 
         if (!imageResponse.ok) {
             throw new Error(`Impossible de récupérer l'image ${image.filename}`);
@@ -131,6 +131,23 @@ async function copyExistingImages(originalTask, newTask) {
             mimeType: image.mimeType,
         });
     }
+
+    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+    const blob = await put(
+      `task/${newTask.id}/${image.filename}`,
+      imageBuffer,
+      {
+        access: "public",
+        contentType: image.mimeType,
+      },
+    );
+    await TaskImage.create({
+      taskId: newTask.id,
+      filename: image.filename,
+      path: blob.url,
+      mimeType: image.mimeType,
+    });
+  }
 }
 
 /**
@@ -138,8 +155,20 @@ async function copyExistingImages(originalTask, newTask) {
  * les images qui ne figurent plus dans la liste conservée (`existingImageIds`).
  */
 async function syncExistingImages(req, taskId) {
-    let existingIds = [];
-    if (req.body.existingImageIds) {
+  let existingIds = [];
+  if (req.body.existingImageIds) {
+    try {
+      existingIds = JSON.parse(req.body.existingImageIds).map((id) =>
+        Number(id),
+      );
+    } catch {
+      existingIds = [];
+    }
+  }
+  const currentImages = await TaskImage.findAll({ where: { taskId } });
+  for (const image of currentImages) {
+    if (!existingIds.includes(image.id)) {
+      if (image.path) {
         try {
             existingIds = JSON.parse(req.body.existingImageIds).map((id) =>
                 Number(id),
@@ -160,7 +189,10 @@ async function syncExistingImages(req, taskId) {
             }
             await image.destroy();
         }
+      }
+      await image.destroy();
     }
+  }
 }
 
 /**

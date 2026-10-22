@@ -3,7 +3,7 @@ import {
   Compte,
   Task,
   TaskImage,
-  Poste,
+  poste,
   occurrence_de_tache,
   sous_tache,
   TaskPoste,
