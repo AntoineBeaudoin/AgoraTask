@@ -16,8 +16,6 @@
 
           <input id="dateHistorique" v-model="dateHistorique" type="date" />
         </div>
-
-        <button class="btn-refresh" @click="rafraichirHistorique">Rafraîchir</button>
       </div>
     </section>
 
@@ -197,13 +195,17 @@
   </main>
 </template>
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { apiFetch } from '../utils/api.js'
 
 const dateHistorique = ref('')
 const EmployeEnService = ref([])
 const EmployeTaches = ref([])
 const employeSelectionne = ref(null)
+
+watch(dateHistorique, async (newDate) => {
+  rafraichirHistorique()
+})
 
 async function getEmployeEnService() {
   try {
