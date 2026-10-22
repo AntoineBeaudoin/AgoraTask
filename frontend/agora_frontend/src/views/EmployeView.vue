@@ -5,7 +5,7 @@
     <p v-if="taskStore.loaded && taskStore.tasks.length === 0" class="text-center text-muted">
       Aucune tâche ne vous est assignée.
     </p>
-    
+
     <form v-else action="" class="mx-auto">
       <div v-for="task in taskStore.tasks" :key="task.id" class="card mb-3">
         <div class="card-body d-flex justify-content-between align-items-center">
@@ -13,10 +13,23 @@
             <input class="form-check-input" type="checkbox" :id="'task-' + task.id" />
             <label class="form-check-label" :for="'task-' + task.id">
               {{ task.title }}
-              <span class="badge bg-secondary ms-2">{{ task.room }}</span>
+              <span class="badge bg-secondary ms-2">{{ task.startTime }}</span>
+              <span class="badge bg-secondary ms-2">{{ task.endTime }}</span>
             </label>
           </div>
-          <button type="button" @click="taskDetails(task.id)" class="btn btn-info">Détails</button>
+
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm"
+            @click="toggleDetails(task.id)"
+          >
+            {{ detailledTasks.has(task.id) ? 'Moins de détails' : 'Plus de détails' }}
+          </button>
+        </div>
+
+        <div v-if="detailledTasks.has(task.id)" class="card-footer bg-light">
+          <p class="mb-1"><strong>Local :</strong> {{ task.room }}</p>
+          <p class="mb-1"><strong>Description :</strong> {{ task.description }}</p>
         </div>
       </div>
 
@@ -29,20 +42,21 @@
 </template>
 
 <script setup>
-import TaskDescriptionModal from '@/components/tasks/TaskDescriptionModal.vue';
-import { onMounted } from 'vue';
-import { useTaskStore } from '@/stores/taskStore.js';
-import { useModalStore } from '@/stores/modalStore';
+import { onMounted, reactive } from 'vue'
+import { useTaskStore } from '@/stores/taskStore.js'
 
-const taskStore = useTaskStore();
-const modalStore = useModalStore();
+const taskStore = useTaskStore()
+const detailledTasks = reactive(new Set())
 
-async function taskDetails(id) {
-  const observableTask = await taskStore.getTaskById(id);
-  modalStore.openTaskDescription(observableTask);
+function toggleDetails(id) {
+  if (detailledTasks.has(id)) {
+    detailledTasks.delete(id)
+  } else {
+    detailledTasks.add(id)
+  }
 }
 
 onMounted(() => {
-  taskStore.loadTasks();
-});
+  taskStore.loadTasks()
+})
 </script>
