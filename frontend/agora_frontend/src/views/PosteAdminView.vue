@@ -58,7 +58,7 @@
               </td>
               <td>
                 <div class="role-editor">
-                  <button class="confirm-role-btn" @click="modalStore.openEditPoste(poste)">
+                  <button v-if="!poste.archived" class="confirm-role-btn" @click="modalStore.openEditPoste(poste)">
                     Modifier
                   </button>
                   <button v-if="!poste.archived" class="action-btn archive-btn" @click="posteToArchive = poste">
