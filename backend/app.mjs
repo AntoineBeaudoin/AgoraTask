@@ -13,6 +13,8 @@ import adminRoutes from "./routes/admin.mjs";
 import "./models/bd_index.mjs";
 import histRoutes from "./routes/hist.mjs";
 
+dotenv.config();
+
 const app = express();
 
 app.get("/", (req, res) => {

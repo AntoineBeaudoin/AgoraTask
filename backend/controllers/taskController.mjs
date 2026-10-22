@@ -1,4 +1,4 @@
-import { Task, TaskImage, occurrence_de_tache, sous_tache } from '../models/bd_index.mjs';
+import { Task, TaskImage } from "../models/bd_index.mjs";
 import { put, del } from "@vercel/blob";
 import { Op } from "sequelize";
 import dotenv from "dotenv";
@@ -12,20 +12,32 @@ dotenv.config();
  * @param {*} taskId Id de la tâche (-1 par défaut)
  * @returns
  */
-async function validateTaskDoesNotAlreadyExist(title, room, taskId = -1) {
-    const anotherTask = await Task.findOne({
-        where: {
-            title: title,
-            room: room,
-        }
-    });
-    if (anotherTask && Number(anotherTask.id) !== Number(taskId)) {
-        const error = new Error("Une tâche identique existe déjà.");
-        error.statusCode = 409;
-        throw error;
+async function validateTaskDoesNotAlreadyExist(
+  title,
+  room,
+  startTime,
+  endTime,
+  taskId = -1,
+) {
+  const anotherTask = await Task.findOne({
+    where: {
+      title: title,
+      room: room,
+      startTime: startTime,
+      endTime: endTime,
+    },
+  });
+  if (taskId !== -1) {
+    if (anotherTask?.id !== taskId) {
+      return false;
     }
-
     return true;
+  }
+  if (anotherTask) {
+    const error = new Error("Une tâche identique existe déjà.");
+    error.statusCode = 409;
+    throw error;
+  }
 }
 
 /**
@@ -75,24 +87,24 @@ async function createSubTasks(taskId, subTasks) {
  * @param {*} task La tâche dont les images appartiennent
  */
 async function addTaskImages(req, task) {
-    if (req.files.length > 0) {
-        for (const file of req.files) {
-            const blob = await put(
-                `task/${task.id}/${file.originalname}`,
-                file.buffer,
-                {
-                    access: "public",
-                    contentType: file.mimetype
-                }
-            );
-            await TaskImage.create({
-                taskId: task.id,
-                filename: file.originalname,
-                path: blob.url,
-                mimeType: file.mimetype
-            });
-        }
+  if (req.files) {
+    for (const file of req.files) {
+      const blob = await put(
+        `task/${task.id}/${file.originalname}`,
+        file.buffer,
+        {
+          access: "public",
+          contentType: file.mimetype,
+        },
+      );
+      await TaskImage.create({
+        taskId: task.id,
+        filename: file.originalname,
+        path: blob.url,
+        mimeType: file.mimetype,
+      });
     }
+  }
 }
 
 async function copyExistingImages(originalTask, newTask) {
@@ -162,40 +174,59 @@ async function syncExistingImages(req, taskId) {
  * @returns {unknown} Retourne le prochain résultat au middleware, en cas d'erreur.
  */
 export async function createTask(req, res, next) {
-    const { title, room, description, recurring, automaticAssignment } = req.body;
-    const occurrences = req.body.occurrences ? JSON.parse(req.body.occurrences) : [];
-    const subTasks = req.body.subTasks ? JSON.parse(req.body.subTasks) : [];
-    try {
-        const aTask = await Task.create({
-            title,
-            room,
-            description: description ?? null,
-            recurring,
-            automaticAssignment
-        });
-        await createOccurrences(aTask.id, occurrences);
-        await createSubTasks(aTask.id, subTasks);
-        await addTaskImages(req, aTask);
-        const theCreatedTask = await Task.findOne({
-            where: { id: aTask.id },
-            include: [
-                { model: TaskImage, as: 'images' },
-                { model: occurrence_de_tache, as: 'occurrences' },
-                { model: sous_tache, as: 'sous_taches' }
-            ]
-        });
-        res.location(`/api/tasks/${aTask.id}`);
-        res.status(201).json({
-            status: 201,
-            message: "Tâche ajoutée avec succès",
-            data: theCreatedTask,
-            path: `/api/task/${aTask.id}`,
-            timestamp: new Date().toISOString()
-        });
+  const {
+    title,
+    room,
+    description,
+    startTime,
+    endTime,
+    recurring,
+    frequency,
+    automaticAssignment,
+  } = req.body;
+  try {
+    let taskExists = await validateTaskDoesNotAlreadyExist(
+      title,
+      room,
+      startTime,
+      endTime,
+    );
+    if (taskExists) {
+      return res.status(409).json({
+        status: 409,
+        message: "Une tâche identique existe déjà.",
+      });
     }
-    catch (err) {
-        next(err);
-    }
+    const theFrequency = frequency || "daily";
+    const aTask = await Task.create({
+      title,
+      room,
+      description: description ?? null,
+      startTime,
+      endTime,
+      recurring,
+      theFrequency,
+      automaticAssignment,
+    });
+    await addTaskImages(req, aTask);
+
+    const theCreatedTask = await Task.findOne({
+      where: {
+        id: aTask.id,
+      },
+      include: { model: TaskImage, as: "images" },
+    });
+    res.location(`/api/tasks/${aTask.id}`);
+    res.status(201).json({
+      status: 201,
+      message: "Tâche ajoutée",
+      data: theCreatedTask,
+      path: `/api/task/${aTask.id}`,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    next(err);
+  }
 }
 
 /**
@@ -209,17 +240,13 @@ export async function createTask(req, res, next) {
  * @returns {*} Cette fonction ne retourne rien.
  */
 export async function getAllTasks(req, res, next) {
-    try {
-        let tasks = await Task.findAll({
-            where: {
-                archived: false
-            },
-            include: [
-                { model: TaskImage, as: 'images' },
-                { model: occurrence_de_tache, as: 'occurrences' },
-                { model: sous_tache, as: 'sous_taches' }
-            ]
-        });
+  try {
+    let tasks = await Task.findAll({
+      where: {
+        archived: false,
+      },
+      include: { model: TaskImage, as: "images" },
+    });
 
         res.status(200).json({
             status: 200,
@@ -234,167 +261,161 @@ export async function getAllTasks(req, res, next) {
 }
 
 export async function replaceTask(req, res, next) {
-    const id = req.params.id;
-    const { title, room, description, recurring, automaticAssignment } = req.body;
-    try {
-        const task = await Task.findOne({ where: { id, archived: false } });
-        if (!task) {
-            return res.status(404).json({
-                status: 404,
-                message: "Tâche introuvable."
-            });
-        }
-        await validateTaskDoesNotAlreadyExist(title, room, id);
-        await task.update({ title, room, description: description ?? null, recurring, automaticAssignment });
-        if (req.body.occurrences !== undefined) {
-            const occurrences = typeof req.body.occurrences === "string" ? JSON.parse(req.body.occurrences) : req.body.occurrences;
-            const existingOccurrences = await occurrence_de_tache.findAll({ where: { tacheId: task.id } });
-            const existingById = new Map(existingOccurrences.map(occ => [Number(occ.id), occ]));
-            const retainedIds = [];
-            for (const occ of occurrences) {
-                const occurrenceId = Number(occ.id);
-                const existing = existingById.get(occurrenceId);
-                if (existing) {
-                    await existing.update({
-                        journee: occ.journee,
-                        heureDebut: occ.heureDebut || null,
-                        heureFin: occ.heureFin || null,
-                        priorite: occ.priorite ?? 3,
-                        isRequired: occ.isRequired ?? true
-                    });
-                    retainedIds.push(existing.id);
-                } else {
-                    const created = await occurrence_de_tache.create({
-                        tacheId: task.id,
-                        journee: occ.journee,
-                        heureDebut: occ.heureDebut || null,
-                        heureFin: occ.heureFin || null,
-                        priorite: occ.priorite ?? 3,
-                        isRequired: occ.isRequired ?? true
-                    });
-                    retainedIds.push(created.id);
-                }
-            }
-            const removedOccurrences = existingOccurrences.filter(occ => !retainedIds.includes(occ.id));
-            for (const occ of removedOccurrences) {
-                const referenceCount = await TachesAFaires.count({ where: { occurrence_de_tacheId: occ.id } });
-                if (referenceCount === 0) {
-                    await occ.destroy();
-                }
-            }
-        }
-        if (req.body.subTasks !== undefined) {
-            const subTasks = typeof req.body.subTasks === "string" ? JSON.parse(req.body.subTasks) : req.body.subTasks;
-            await sous_tache.destroy({ where: { tacheId: task.id } });
-            await createSubTasks(task.id, subTasks);
-        }
-        await syncExistingImages(req, task.id);
-        await addTaskImages(req, task);
-        const updatedTask = await Task.findOne({
-            where: { id: task.id },
-            include: [
-                { model: TaskImage, as: "images" },
-                { model: occurrence_de_tache, as: "occurrences" },
-                { model: sous_tache, as: "sous_taches" }
-            ]
-        });
-        return res.status(200).json({
-            status: 200,
-            message: "Tâche modifiée avec succès.",
-            data: updatedTask,
-            path: `/api/task/${task.id}`,
-            timestamp: new Date().toISOString()
-        });
-    } catch (err) {
-        next(err);
+  const id = req.params.id;
+  const {
+    title,
+    room,
+    description,
+    startTime,
+    endTime,
+    recurring,
+    frequency,
+    automaticAssignment,
+  } = req.body;
+  try {
+    const task = await Task.findOne({
+      where: {
+        id: id,
+        archived: false,
+      },
+    });
+    if (!task) {
+      return res.status(404).json({
+        status: 404,
+        message: "Tâche introuvable.",
+      });
     }
+    let taskExists = await validateTaskDoesNotAlreadyExist(
+      title,
+      room,
+      startTime,
+      endTime,
+      id,
+    );
+    if (taskExists) {
+      return res.status(409).json({
+        status: 409,
+        message: "Une tâche identique existe déjà.",
+      });
+    }
+    await task.update({
+      title,
+      room,
+      description: description ?? null,
+      startTime,
+      endTime,
+      recurring,
+      theFrequency: frequency || "daily",
+      automaticAssignment,
+    });
+    await syncExistingImages(req, task.id);
+    await addTaskImages(req, task);
+    const updatedTask = await Task.findOne({
+      where: {
+        id: task.id,
+      },
+      include: { model: TaskImage, as: "images" },
+    });
+    return res.status(200).json({
+      status: 200,
+      message: "Tâche modifiée avec succès.",
+      data: updatedTask,
+      path: `/api/task/${task.id}`,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    next(err);
+  }
 }
 
 export async function duplicateTask(req, res, next) {
-    const id = req.params.id;
-    try {
-        const originalTask = await Task.findOne({
-            where: { id, archived: false },
-            include: [
-                { model: TaskImage, as: 'images' },
-                { model: occurrence_de_tache, as: 'occurrences' },
-                { model: sous_tache, as: 'sous_taches' }
-            ]
-        });
-        if (!originalTask) {
-            return res.status(404).json({
-                status: 404,
-                message: "Tâche introuvable."
-            });
-        }
-        // Retire le suffixe " - Copie #N" du titre afin de retrouver le titre original.
-        // Exemple : "Nettoyage - Copie #3" devient "Nettoyage".
-        const baseTitle = originalTask.title.replace(/\s-\sCopie\s#\d+$/, '');
-        const copies = await Task.findAll({
-            where: { title: { [Op.like]: `${baseTitle} - Copie #%` } }
-        });
-        let highestCopyNumber = 0;
-        for (const copy of copies) {
-            // Extrait le numéro de copie à la fin du titre.
-            // Exemple : "Nettoyage - Copie #12" retourne "12".
-            const match = copy.title.match(/\s-\sCopie\s#(\d+)$/);
-            if (match) {
-                const copyNumber = Number(match[1]);
-                if (copyNumber > highestCopyNumber) {
-                    highestCopyNumber = copyNumber;
-                }
-            }
-        }
-        const nextCopyNumber = highestCopyNumber + 1;
-        const newTitle = `${baseTitle} - Copie #${nextCopyNumber}`;
-        await validateTaskDoesNotAlreadyExist(newTitle, originalTask.room);
-        const newTask = await createDuplicatedTaskObject(newTitle, originalTask);
-        await copyExistingImages(originalTask, newTask);
-        const createdTask = await Task.findOne({
-            where: { id: newTask.id },
-            include: [
-                { model: TaskImage, as: 'images' },
-                { model: occurrence_de_tache, as: 'occurrences' },
-                { model: sous_tache, as: 'sous_taches' }
-            ]
-        });
-        return res.status(201).json({
-            status: 201,
-            message: "Tâche dupliquée avec succès.",
-            data: createdTask,
-            path: `/api/task/${newTask.id}`,
-            timestamp: new Date().toISOString()
-        });
-    } catch (err) {
-        next(err);
+  const id = req.params.id;
+  try {
+    const originalTask = await Task.findOne({
+      where: { id, archived: false },
+      include: { model: TaskImage, as: "images" },
+    });
+    if (!originalTask) {
+      return res.status(404).json({
+        status: 404,
+        message: "Tâche introuvable.",
+      });
     }
+    // Retire le suffixe " - Copie #N" du titre afin de retrouver le titre original.
+    // Exemple : "Nettoyage - Copie #3" devient "Nettoyage".
+    const baseTitle = originalTask.title.replace(/\s-\sCopie\s#\d+$/, "");
+    const copies = await Task.findAll({
+      where: { title: { [Op.like]: `${baseTitle} - Copie #%` } },
+    });
+    let highestCopyNumber = 0;
+    for (const copy of copies) {
+      // Extrait le numéro de copie à la fin du titre.
+      // Exemple : "Nettoyage - Copie #12" retourne "12".
+      const match = copy.title.match(/\s-\sCopie\s#(\d+)$/);
+      if (match) {
+        const copyNumber = Number(match[1]);
+        if (copyNumber > highestCopyNumber) {
+          highestCopyNumber = copyNumber;
+        }
+      }
+    }
+    const nextCopyNumber = highestCopyNumber + 1;
+    const newTitle = `${baseTitle} - Copie #${nextCopyNumber}`;
+    await validateTaskDoesNotAlreadyExist(
+      newTitle,
+      originalTask.room,
+      originalTask.startTime,
+      originalTask.endTime,
+    );
+    const newTask = await createDuplicatedTaskObject(newTitle, originalTask);
+    await copyExistingImages(originalTask, newTask);
+    const createdTask = await Task.findOne({
+      where: { id: newTask.id },
+      include: { model: TaskImage, as: "images" },
+    });
+    return res.status(201).json({
+      status: 201,
+      message: "Tâche dupliquée avec succès.",
+      data: createdTask,
+      path: `/api/task/${newTask.id}`,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    next(err);
+  }
 }
 
 async function createDuplicatedTaskObject(newTitle, originalTask) {
-    const newTask = await Task.create({
-        title: newTitle,
-        room: originalTask.room,
-        description: originalTask.description,
-        recurring: originalTask.recurring,
-        automaticAssignment: originalTask.automaticAssignment,
-        archived: false
-    });
-    await createOccurrences(newTask.id, originalTask.occurrences);
-    await createSubTasks(newTask.id, originalTask.sous_taches);
-    return newTask;
+  return await Task.create({
+    title: newTitle,
+    room: originalTask.room,
+    description: originalTask.description,
+    startTime: originalTask.startTime,
+    endTime: originalTask.endTime,
+    recurring: originalTask.recurring,
+    theFrequency: originalTask.theFrequency,
+    automaticAssignment: originalTask.automaticAssignment,
+    archived: false,
+  });
 }
 
 export async function deleteTask(req, res, next) {
-    const id = req.params.id;
-    try {
-        const aTask = await Task.findOne({ where: { id: id } });
-        if (aTask) {
-            aTask.archived = true;
-            await aTask.save();
-        }
-        res.status(204).json({});
+  const id = req.params.id;
+  try {
+    const aTask = await Task.findOne({
+      where: {
+        id: id,
+      },
+    });
+
+    if (aTask) {
+      aTask.archived = true;
+
+      await aTask.save();
     }
-    catch (err) {
-        next(err);
-    }
+
+    res.status(204).json({});
+  } catch (err) {
+    next(err);
+  }
 }
