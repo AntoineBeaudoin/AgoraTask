@@ -12,7 +12,7 @@
       </button>
     </header>
 
-    <EditPasswordModal/>
+    <EditPasswordModal />
 
     <div v-if="showCreateForm" class="create-user-card">
       <div class="create-form-header">
@@ -146,7 +146,6 @@
       </button>
     </div>
 
-    <!-- LISTE DES EMPLOYÉS -->
     <section class="employees-card">
       <div class="card-header">
         <div>
@@ -160,7 +159,6 @@
         <div class="employee-count">{{ displayedUsers.length }} résultat(s)</div>
       </div>
 
-      <!-- FILTRE PAR RÔLE -->
       <div class="role-filters">
         <span class="role-label"> Filtrer par rôle : </span>
 
@@ -200,7 +198,6 @@
       <div v-if="displayedUsers.length === 0" class="empty-state">
         Aucun employé ne correspond aux filtres sélectionnés.
       </div>
-
 
       <div v-else class="table-wrapper">
         <table class="employees-table">
@@ -246,7 +243,8 @@
 
                   <button
                     class="btn btn-success rounded-5 confirm-role-btn"
-                    @click="editPasswordUser(user.id)">
+                    @click="editPasswordUser(user.id)"
+                  >
                     Modifier le mot de passe
                   </button>
 
@@ -287,13 +285,13 @@
   </main>
 </template>
 <script setup>
-import { ref } from 'vue';
-import { onMounted, reactive } from 'vue';
-import { apiFetch } from '../utils/api.js';
-import { useModalStore } from '@/stores/modalStore.js';
-import EditPasswordModal from '@/components/users/EditPasswordModal.vue';
+import { ref } from 'vue'
+import { onMounted, reactive } from 'vue'
+import { apiFetch } from '../utils/api.js'
+import { useModalStore } from '@/stores/modalStore.js'
+import EditPasswordModal from '@/components/users/EditPasswordModal.vue'
 
-const modalStore = useModalStore();
+const modalStore = useModalStore()
 
 let displayTitle = ref('Employés actifs')
 let displayedRole = ref('personnel_de_terrain')
@@ -358,8 +356,8 @@ async function editUser(userId, newRole) {
     })
 }
 
-async function editPasswordUser(userId){
-  await modalStore.openEditPassword(userId);
+async function editPasswordUser(userId) {
+  await modalStore.openEditPassword(userId)
 }
 
 async function archiveUser(userId, IsArchived) {

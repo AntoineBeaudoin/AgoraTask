@@ -1,6 +1,6 @@
 import { Task, TaskImage, occurrence_de_tache, sous_tache } from '../models/bd_index.mjs';
 import { put, del } from "@vercel/blob";
-import { Op } from 'sequelize';
+import { Op } from "sequelize";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -10,7 +10,7 @@ dotenv.config();
  * @param {*} title Titre de la tâche
  * @param {*} room Local de la tâche
  * @param {*} taskId Id de la tâche (-1 par défaut)
- * @returns 
+ * @returns
  */
 async function validateTaskDoesNotAlreadyExist(title, room, taskId = -1) {
     const anotherTask = await Task.findOne({
@@ -100,29 +100,29 @@ async function addTaskImages(req, task) {
 }
 
 async function copyExistingImages(originalTask, newTask) {
-    for (const image of originalTask.images ?? []) {
-        const imageResponse = await fetch(image.path);
+  for (const image of originalTask.images ?? []) {
+    const imageResponse = await fetch(image.path);
 
-        if (!imageResponse.ok) {
-            throw new Error(`Impossible de récupérer l'image ${image.filename}`);
-        }
-
-        const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-        const blob = await put(
-            `task/${newTask.id}/${image.filename}`,
-            imageBuffer,
-            {
-                access: "public",
-                contentType: image.mimeType
-            }
-        );
-        await TaskImage.create({
-            taskId: newTask.id,
-            filename: image.filename,
-            path: blob.url,
-            mimeType: image.mimeType
-        });
+    if (!imageResponse.ok) {
+      throw new Error(`Impossible de récupérer l'image ${image.filename}`);
     }
+
+    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+    const blob = await put(
+      `task/${newTask.id}/${image.filename}`,
+      imageBuffer,
+      {
+        access: "public",
+        contentType: image.mimeType,
+      },
+    );
+    await TaskImage.create({
+      taskId: newTask.id,
+      filename: image.filename,
+      path: blob.url,
+      mimeType: image.mimeType,
+    });
+  }
 }
 
 /**
@@ -130,29 +130,33 @@ async function copyExistingImages(originalTask, newTask) {
  * les images qui ne figurent plus dans la liste conservée (`existingImageIds`).
  */
 async function syncExistingImages(req, taskId) {
-    let existingIds = [];
-    if (req.body.existingImageIds) {
+  let existingIds = [];
+  if (req.body.existingImageIds) {
+    try {
+      existingIds = JSON.parse(req.body.existingImageIds).map((id) =>
+        Number(id),
+      );
+    } catch {
+      existingIds = [];
+    }
+  }
+  const currentImages = await TaskImage.findAll({ where: { taskId } });
+  for (const image of currentImages) {
+    if (!existingIds.includes(image.id)) {
+      if (image.path) {
         try {
-            existingIds = JSON.parse(req.body.existingImageIds).map(id => Number(id));
-        } catch {
-            existingIds = [];
+          await del(image.path);
+        } catch (err) {
+          console.error(
+            `Erreur lors de la suppression sur Vercel Blob (${image.path}):`,
+            err,
+          );
         }
+      }
+      await image.destroy();
     }
-    const currentImages = await TaskImage.findAll({ where: { taskId } });
-    for (const image of currentImages) {
-        if (!existingIds.includes(image.id)) {
-            if (image.path) {
-                try {
-                    await del(image.path);
-                } catch (err) {
-                    console.error(`Erreur lors de la suppression sur Vercel Blob (${image.path}):`, err);
-                }
-            }
-            await image.destroy();
-        }
-    }
+  }
 }
-
 
 /**
  * Créé une tâche avec ses propriétés associés.
@@ -201,7 +205,6 @@ export async function createTask(req, res, next) {
     }
 }
 
-
 /**
  * Retourne toutes les tâches qui ne sont pas archivés, ainsi que chacune des urls des images qui lui sont associés.
  *
@@ -225,18 +228,16 @@ export async function getAllTasks(req, res, next) {
             ]
         });
 
-        res.status(200).json(
-            {
-                status: 200,
-                message: "Tâches récupérés avec succès.",
-                data: tasks,
-                path: `/api/task/list`,
-                timestamp: new Date().toISOString()
-            }
-        )
-    } catch (err) {
-        next(err);
-    }
+    res.status(200).json({
+      status: 200,
+      message: "Tâches récupérés avec succès.",
+      data: tasks,
+      path: `/api/task/list`,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    next(err);
+  }
 }
 
 export async function replaceTask(req, res, next) {
