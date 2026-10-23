@@ -14,7 +14,7 @@ TaskImage.belongsTo(Task, {
 import { occurrence_de_tache } from "./occurrence_de_tache.mjs";
 Task.hasMany(occurrence_de_tache, {
   foreignKey: "tacheId",
-  as: "occurences",
+  as: "occurrences",
   onDelete: "CASCADE",
 });
 occurrence_de_tache.belongsTo(Task, {
