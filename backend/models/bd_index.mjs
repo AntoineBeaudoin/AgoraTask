@@ -42,7 +42,7 @@ sous_tache.belongsTo(Task, {
 // Relation between poste and compte
 
 
-Poste.hasOne(Compte, {
+Poste.hasMany(Compte, {
   foreignKey: "posteId",
   as: "employes",
   onDelete: "SET NULL",
@@ -51,6 +51,7 @@ Compte.belongsTo(Poste, {
   foreignKey: "posteId",
   as: "poste",
 });
+
 // Relation between poste and tache
 Poste.belongsToMany(Task, {
   through: TaskPoste,
