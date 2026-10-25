@@ -744,3 +744,7 @@
   overflow-wrap: anywhere;
   min-width: 0;
 }
+
+.employees-card > .card-header {
+  padding: 27px 26px 24px;
+}
