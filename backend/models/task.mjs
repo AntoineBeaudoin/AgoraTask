@@ -17,7 +17,7 @@ const Task = bd.define("Task", {
     allowNull: false,
   },
   description: {
-    type: DataTypes.TEXT(255),
+    type: DataTypes.TEXT,
     allowNull: true,
   },
   recurring: {

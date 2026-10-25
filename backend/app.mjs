@@ -1,5 +1,7 @@
-import express from "express";
 import dotenv from "dotenv";
+dotenv.config();
+
+import express from "express";
 import authRoutes from "./routes/auth.mjs";
 import taskRoutes from "./routes/task.mjs";
 import posteRoutes from "./routes/poste.mjs";
@@ -10,8 +12,6 @@ import { get404, getErrors } from "./controllers/errorController.mjs";
 import adminRoutes from "./routes/admin.mjs";
 import "./models/bd_index.mjs";
 import histRoutes from "./routes/hist.mjs";
-
-dotenv.config();
 
 const app = express();
 
