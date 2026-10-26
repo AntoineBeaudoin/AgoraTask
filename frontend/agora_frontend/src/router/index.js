@@ -8,6 +8,7 @@ import CoordoView from '@/views/CoordoView.vue'
 import TaskAdminView from '@/views/TaskAdminView.vue'
 import GestionEmployesView from '@/views/GestionEmployesView.vue'
 import AdminView from '@/views/AdminView.vue'
+import PosteAdminView from '@/views/PosteAdminView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -64,6 +65,12 @@ const router = createRouter({
       name: 'GestionEmployes',
       component: GestionEmployesView,
       meta: { title: 'Gestion des employés', requireAuth: true, role: 'administrateur' },
+    },
+    {
+      path: '/GestionPostes',
+      name: 'GestionPostes',
+      component: PosteAdminView,
+      meta: { title: 'Gestion des postes de travail', requireAuth: true, roles: ['administrateur', 'coordonnateur'] },
     },
     {
       path: '/error',
@@ -125,9 +132,14 @@ router.beforeEach((to, from, next) => {
     })
   }
 
+  if (to.meta.roles && !to.meta.roles.includes(authStore.getRole())) {
+    return next({ name: 'home' })
+  }
+
   if (to.meta.role && to.meta.role.includes(authStore.getRole()) === false) {
     return next({ name: 'home' })
   }
+
   if (to.name === 'not-found') {
     const errorStore = useErrorStore()
     errorStore.setError(404, "cette page n'existe pas ou a été supprimée.")
