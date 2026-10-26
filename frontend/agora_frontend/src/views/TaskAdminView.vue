@@ -26,6 +26,7 @@
             <button @click="updateTask(task.id)" class="btn btn-primary">Modifier la tâche</button>
             <button @click="duplicateTask(task.id)" v-bind:id="task.id" class="btn btn-secondary">Dupliquer</button>
             <button @click="deleteTask(task.id)" class="btn btn-danger">Supprimer</button>
+            <button @click="taskDetails(task.id)" class="btn btn-danger">Détails</button>
           </div>
       </div>
     </div>
