@@ -1,7 +1,15 @@
-import { Task, TaskImage, tachesAFaire, occurrence_de_tache } from "../models/bd_index.mjs";
+import {
+  Task,
+  TaskImage,
+  tachesAFaire,
+  occurrence_de_tache,
+  sous_tache,
+  sous_taches_AFaire,
+} from "../models/bd_index.mjs";
 import { put, del } from "@vercel/blob";
 import { Op } from "sequelize";
 import dotenv from "dotenv";
+import bd from "../models/bd.mjs";
 
 dotenv.config();
 
@@ -42,43 +50,43 @@ async function validateTaskDoesNotAlreadyExist(
 
 /**
  * Crée les occurrences d'une tâche
- * @param {*} taskId Id de la tâche 
+ * @param {*} taskId Id de la tâche
  * @param {*} occurrences JSON des occurences de la tâche
- * @returns 
+ * @returns
  */
 async function createOccurrences(taskId, occurrences) {
-    if (occurrences.length < 1) return;
-    await Promise.all(
-        occurrences.map(occ =>
-            occurrence_de_tache.create({
-                tacheId: taskId,
-                journee: occ.journee,
-                heureDebut: occ.heureDebut || null,
-                heureFin: occ.heureFin || null,
-                priorite: occ.priorite ?? 3,
-                isRequired: occ.isRequired ?? true
-            })
-        )
-    );
+  if (occurrences.length < 1) return;
+  await Promise.all(
+    occurrences.map((occ) =>
+      occurrence_de_tache.create({
+        tacheId: taskId,
+        journee: occ.journee,
+        heureDebut: occ.heureDebut || null,
+        heureFin: occ.heureFin || null,
+        priorite: occ.priorite ?? 3,
+        isRequired: occ.isRequired ?? true,
+      }),
+    ),
+  );
 }
 
 /**
  * Crée les sous tâches
  * @param {*} taskId Id de la tâche
  * @param {*} subTasks JSON des sous tâches de la tâche
- * @returns 
+ * @returns
  */
 async function createSubTasks(taskId, subTasks) {
-    if (subTasks.length < 1) return;
-    await Promise.all(
-        subTasks.map(st =>
-            sous_tache.create({
-                tacheId: taskId,
-                titre: st.titre,
-                description: st.description || null
-            })
-        )
-    );
+  if (subTasks.length < 1) return;
+  await Promise.all(
+    subTasks.map((st) =>
+      sous_tache.create({
+        tacheId: taskId,
+        titre: st.titre,
+        description: st.description || null,
+      }),
+    ),
+  );
 }
 
 /**
@@ -263,7 +271,7 @@ export async function getAllTasks(req, res, next) {
   }
 }
 
-export async function getMyTasks(req, res, next){
+export async function getMyTasks(req, res, next) {
   try {
     const assignments = await tachesAFaire.findAll({
       where: { compteId: req.user.id },
@@ -285,10 +293,37 @@ export async function getMyTasks(req, res, next){
       tasksById[tasks[i].id] = tasks[i];
     }
 
+    const subTasks = await sous_tache.findAll({ where: { tacheId: taskIds } });
+
+    const assignmentIds = [];
+    for (let i = 0; i < assignments.length; i++) {
+      assignmentIds.push(assignments[i].id);
+    }
+    const progressRows = await sous_taches_AFaire.findAll({
+      where: { tacheAFaireId: assignmentIds },
+    });
+    const progress = {};
+    for (let i = 0; i < progressRows.length; i++) {
+      progress[
+        progressRows[i].tacheAFaireId + "-" + progressRows[i].sousTacheId
+      ] = progressRows[i].isCompleted;
+    }
+
     const data = [];
     for (let i = 0; i < assignments.length; i++) {
       const a = assignments[i];
       const task = tasksById[a.tacheId];
+      const mySubTasks = [];
+      for (let j = 0; j < subTasks.length; j++) {
+        if (subTasks[j].tacheId === a.tacheId) {
+          mySubTasks.push({
+            id: subTasks[j].id,
+            titre: subTasks[j].titre,
+            description: subTasks[j].description,
+            isCompleted: progress[a.id + "-" + subTasks[j].id] === true,
+          });
+        }
+      }
       if (!task) continue;
       data.push({
         ...task.toJSON(),
@@ -296,7 +331,9 @@ export async function getMyTasks(req, res, next){
         isCompleted: a.isCompleted,
         commentaire: a.commentaire,
         journee: a.occurrence_de_tache ? a.occurrence_de_tache.journee : null,
-        heureDebut: a.occurrence_de_tache ? a.occurrence_de_tache.heureDebut : null,
+        heureDebut: a.occurrence_de_tache
+          ? a.occurrence_de_tache.heureDebut
+          : null,
         heureFin: a.occurrence_de_tache ? a.occurrence_de_tache.heureFin : null,
       });
     }
@@ -313,26 +350,56 @@ export async function getMyTasks(req, res, next){
   }
 }
 
-export async function completeTasks(req, res, next) {
+export async function saveProgress(req, res, next) {
   try {
-    const ids = req.body.ids;
-    if (!Array.isArray(ids) || ids.length === 0) {
+    const items = req.body.tasks;
+    if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         status: 400,
         message: "Aucune tâche à enregistrer.",
       });
     }
 
-    const [updated] = await tachesAFaire.update(
-      { isCompleted: true },
-      { where: { id: ids, compteId: req.user.id } },
-    );
+    await bd.transaction(async function (t) {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+
+        const assignment = await tachesAFaire.findOne({
+          where: { id: item.tacheAFaireId, compteId: req.user.id },
+          transaction: t,
+        });
+        if (!assignment) continue;
+
+        await assignment.update(
+          { isCompleted: item.isCompleted === true },
+          { transaction: t },
+        );
+
+        const subs = Array.isArray(item.sousTaches) ? item.sousTaches : [];
+        for (let j = 0; j < subs.length; j++) {
+          const sub = await sous_tache.findOne({
+            where: { id: subs[j].id, tacheId: assignment.tacheId },
+            transaction: t,
+          });
+          if (!sub) continue;
+
+          const result = await sous_taches_AFaire.findOrCreate({
+            where: { tachesAFaireId: assignment.id, sousTacheId: sub.id },
+            defaults: { isCompleted: false },
+            transaction: t,
+          });
+          await result[0].update(
+            { isCompleted: subs[j].isCompleted === true },
+            { transaction: t },
+          );
+        }
+      }
+    });
 
     res.status(200).json({
       status: 200,
-      message: "Tâches enregistrées.",
-      data: { updated: updated },
-      path: "/api/task/complete",
+      message: "Progression enregistrée.",
+      path: "/api/task/progress",
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
