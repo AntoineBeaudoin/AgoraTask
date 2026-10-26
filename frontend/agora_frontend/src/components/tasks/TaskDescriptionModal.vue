@@ -32,25 +32,29 @@
                 <p class="text-muted small mb-3">Fréquence et occurrences de la tâche.</p>
                 <div v-for="(occ, index) in task.occurrences" :key="index"
                   class="card card-body bg-light mb-3 position-relative p-3">
-                  <p><strong>Journée: </strong>{{ occ.journee ? occ.journee.charAt(0).toUpperCase() +
-                    occ.journee.slice(1) : 'Non définie' }}</p>
-                  <div class="d-flex justify-content-between">
-                    <p><strong>Priorité:</strong> {{ occ.priorite ?? 'Non définie' }}</p>
-                    <i class="ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                      title="Indique le niveau de priorité : 1 = très élevée, 2 = élevé, 3 = moyenne, 4 = basse, 5 = très basse."
-                      style="cursor: help;">
-                      <img src="../../assets/images/info-circle.svg" alt="">
-                    </i>
-                  </div>
-                  <p><strong>Heure début:</strong> {{ occ.heureDebut || 'Non définie' }}</p>
-                  <p><strong>Heure fin:</strong> {{ occ.heureFin || 'Non définie' }}</p>
-                  <div class="col-12 mt-2">
-                    <div class="form-check">
-                      <input type="checkbox" :checked="occ.isRequired" class="form-check-input" :id="`req-${index}`"
-                        disabled />
-                      <label class="form-check-label small" :for="`req-${index}`">
-                        Est obligatoire
-                      </label>
+                  <div class="row">
+                    <div class="col-sm-6">
+                      <p><strong>Journée: </strong>{{ occ.journee ? occ.journee.charAt(0).toUpperCase() +
+                        occ.journee.slice(1) : 'Non définie' }}</p>
+                      <div class="d-flex justify-content-between">
+                        <p><strong>Priorité:</strong> {{ occ.priorite ?? 'Non définie' }}</p>
+                        <i class="ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
+                          title="Indique le niveau de priorité : 1 = très élevée, 2 = élevé, 3 = moyenne, 4 = basse, 5 = très basse."
+                          style="cursor: help;">
+                          <img src="../../assets/images/info-circle.svg" alt="">
+                        </i>
+                      </div>
+                    </div>
+                    <div class="col-sm-6 border-1 border-dark border-start">
+                      <p><strong>Heure début:</strong> {{ occ.heureDebut || 'Non définie' }}</p>
+                      <p><strong>Heure fin:</strong> {{ occ.heureFin || 'Non définie' }}</p>
+                    </div>
+                    <div class="col-12 mt-2">
+                      <div class="form-check">
+                        <input type="checkbox" :checked="occ.isRequired" class="form-check-input" :id="`req-${index}`"
+                          disabled />
+                        <label class="form-check-label small" :for="`req-${index}`">Est obligatoire</label>
+                      </div>
                     </div>
                   </div>
                 </div>
