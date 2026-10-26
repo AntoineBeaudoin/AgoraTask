@@ -329,7 +329,7 @@ export async function getMyTasks(req, res, next) {
       assignmentIds.push(assignments[i].id);
     }
     const progressRows = await sous_taches_AFaire.findAll({
-      where: { tacheAFaireId: assignmentIds },
+      where: { tachesAFaireId: assignmentIds },
     });
     const progress = {};
     for (let i = 0; i < progressRows.length; i++) {

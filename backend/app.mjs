@@ -13,8 +13,6 @@ import adminRoutes from "./routes/admin.mjs";
 import "./models/bd_index.mjs";
 import histRoutes from "./routes/hist.mjs";
 
-dotenv.config();
-
 const app = express();
 
 app.get("/", (req, res) => {
@@ -51,16 +49,16 @@ bd.authenticate()
   .then(() => {
     console.log("Connected to PostgreSQL");
 
-        // mettre force à true pour réinitialiser la structure de la BD.
-        return bd.sync({ force: false });
-    })
-    .then(async () => {
-        app.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
-        });
-    })
-    .catch(error => {
-        console.error("Database connection failed:", error);
+    // mettre force à true pour réinitialiser la structure de la BD.
+    return bd.sync({ force: false });
+  })
+  .then(async () => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
     });
+  })
+  .catch((error) => {
+    console.error("Database connection failed:", error);
+  });
 
 export default app;
