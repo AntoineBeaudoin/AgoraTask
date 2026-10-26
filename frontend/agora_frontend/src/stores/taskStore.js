@@ -6,7 +6,9 @@ import { isNumber } from '@/utils/checks';
 export const useTaskStore = defineStore('tasks', {
   state: () => ({
     tasks: [],
-    loaded: false
+    loaded: false,
+    myTasks: [],
+    myTasksLoaded: false
   }),
 
   actions: {
@@ -26,6 +28,40 @@ export const useTaskStore = defineStore('tasks', {
         this.loaded = true;
       } catch (err) {
         console.log(`HTTP ${err}`);
+      }
+    },
+
+    async loadMyTasks() {
+      try {
+        const response = await apiFetch('/task/mine');
+        if (!response || response.status !== 200) {
+          throw new Error(`HTTP ${response ? response.status : 'erreur'}`);
+        }
+        this.myTasks = response.data;
+        this.myTasksLoaded = true;
+      } catch (err) {
+        console.log(`HTTP ${err}`);
+      }
+    },
+
+    async saveCompleted(ids) {
+      try {
+        const response = await apiFetch('/task/complete', {
+          method: 'PATCH',
+          body: JSON.stringify({ ids: ids })
+        });
+        if (!response || response.status !== 200) {
+          throw new Error(`HTTP ${response ? response.status : 'erreur'}`);
+        }
+        for (let i = 0; i < this.myTasks.length; i++) {
+          if (ids.includes(this.myTasks[i].tacheAFaireId)) {
+            this.myTasks[i].isCompleted = true;
+          }
+        }
+        return true;
+      } catch (err) {
+        console.log(`HTTP ${err}`);
+        return false;
       }
     },
 

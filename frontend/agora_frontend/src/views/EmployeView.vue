@@ -6,17 +6,20 @@
       Aucune tâche ne vous est assignée.
     </p>
 
-    <form v-else action="" class="mx-auto">
-      <div v-for="task in taskStore.tasks" :key="task.id" class="card mb-3">
+    <form v-else action="" class="mx-auto" @submit.prevent="save" @reset.prevent="checkedIds = []">
+      <div v-for="task in taskStore.myTasks" :key="task.tacheAFaireId" class="card mb-3">
         <div class="card-body d-flex justify-content-between align-items-center">
           <div class="form-check d-flex align-items-center gap-2">
-            <input class="form-check-input" type="checkbox" :id="'task-' + task.id" />
-            <label class="form-check-label" :for="'task-' + task.id">
-              {{ task.title }}
-              <span class="badge bg-secondary ms-2">{{ task.startTime }}</span>
-              <span class="badge bg-secondary ms-2">{{ task.endTime }}</span>
-            </label>
-          </div>
+            <input v-if="task.isCompleted" class="form-check-input" type="checkbox" checked disabled />
+        <input v-else class="form-check-input" type="checkbox"
+               :id="'task-' + task.tacheAFaireId"
+               :value="task.tacheAFaireId" v-model="checkedIds" />
+        <label class="form-check-label" :for="'task-' + task.tacheAFaireId">
+          {{ task.title }}
+          <span class="badge bg-secondary ms-2">{{ task.heureDebut }}</span>
+          <span class="badge bg-secondary ms-2">{{ task.heureFin }}</span>
+        </label>
+      </div>
 
           <button
             type="button"
@@ -34,7 +37,7 @@
       </div>
 
       <div class="d-flex justify-content-center gap-2 mt-4">
-        <button type="button" class="btn btn-primary">Sauvegarder</button>
+        <button type="submit" class="btn btn-primary" :disabled="saving">Sauvegarder</button>
         <button type="reset" class="btn btn-danger">Réinitialiser</button>
       </div>
     </form>
@@ -42,11 +45,13 @@
 </template>
 
 <script setup>
-import { onMounted, reactive } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useTaskStore } from '@/stores/taskStore.js'
 
 const taskStore = useTaskStore()
 const detailledTasks = reactive(new Set())
+const checkedIds = ref([])
+const saving = ref(false)
 
 function toggleDetails(id) {
   if (detailledTasks.has(id)) {
@@ -56,7 +61,19 @@ function toggleDetails(id) {
   }
 }
 
+async function save() {
+  if (checkedIds.value.length === 0) return
+  saving.value = true
+  try {
+    const ok = await taskStore.saveCompleted(checkedIds.value)
+    if (ok) checkedIds.value = []
+  } finally {
+    saving.value = false
+  }
+}
+
 onMounted(() => {
   taskStore.loadTasks()
+  taskStore.loadMyTasks()
 })
 </script>
