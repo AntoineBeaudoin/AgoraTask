@@ -399,8 +399,15 @@ export async function saveProgress(req, res, next) {
         });
         if (!assignment) continue;
 
+        const comment = item.commentaire
+          ? String(item.commentaire).trim().slice(0, 1000)
+          : null;
+
         await assignment.update(
-          { isCompleted: item.isCompleted === true },
+          {
+            isCompleted: item.isCompleted === true,
+            commentaire: comment || null,
+          },
           { transaction: t },
         );
 
