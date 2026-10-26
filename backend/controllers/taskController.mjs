@@ -1,4 +1,4 @@
-import { Task, TaskImage } from "../models/bd_index.mjs";
+import { Task, TaskImage, tachesAFaire, occurrence_de_tache } from "../models/bd_index.mjs";
 import { put, del } from "@vercel/blob";
 import { Op } from "sequelize";
 import dotenv from "dotenv";
@@ -256,6 +256,83 @@ export async function getAllTasks(req, res, next) {
       message: "Tâches récupérés avec succès.",
       data: tasks,
       path: `/api/task/list`,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getMyTasks(req, res, next){
+  try {
+    const assignments = await tachesAFaire.findAll({
+      where: { compteId: req.user.id },
+      include: { model: occurrence_de_tache, as: "occurrence_de_tache" },
+    });
+
+    const taskIds = [];
+    for (let i = 0; i < assignments.length; i++) {
+      taskIds.push(assignments[i].tacheId);
+    }
+
+    const tasks = await Task.findAll({
+      where: { id: taskIds, archived: false },
+      include: { model: TaskImage, as: "images" },
+    });
+
+    const tasksById = {};
+    for (let i = 0; i < tasks.length; i++) {
+      tasksById[tasks[i].id] = tasks[i];
+    }
+
+    const data = [];
+    for (let i = 0; i < assignments.length; i++) {
+      const a = assignments[i];
+      const task = tasksById[a.tacheId];
+      if (!task) continue;
+      data.push({
+        ...task.toJSON(),
+        tacheAFaireId: a.id,
+        isCompleted: a.isCompleted,
+        commentaire: a.commentaire,
+        journee: a.occurrence_de_tache ? a.occurrence_de_tache.journee : null,
+        heureDebut: a.occurrence_de_tache ? a.occurrence_de_tache.heureDebut : null,
+        heureFin: a.occurrence_de_tache ? a.occurrence_de_tache.heureFin : null,
+      });
+    }
+
+    res.status(200).json({
+      status: 200,
+      message: "Tâches récupérées avec succès.",
+      data: data,
+      path: "/api/task/mine",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function completeTasks(req, res, next) {
+  try {
+    const ids = req.body.ids;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        status: 400,
+        message: "Aucune tâche à enregistrer.",
+      });
+    }
+
+    const [updated] = await tachesAFaire.update(
+      { isCompleted: true },
+      { where: { id: ids, compteId: req.user.id } },
+    );
+
+    res.status(200).json({
+      status: 200,
+      message: "Tâches enregistrées.",
+      data: { updated: updated },
+      path: "/api/task/complete",
       timestamp: new Date().toISOString(),
     });
   } catch (err) {

@@ -1,6 +1,7 @@
 import express from "express";
 import multer from "multer";
 import * as taskController from "../controllers/taskController.mjs";
+import { isConnected } from "../middleware/isConnected.mjs";
 
 const router = express.Router();
 
@@ -12,6 +13,8 @@ const upload = multer({
   },
 });
 router.get("/list", taskController.getAllTasks);
+router.get("/mine", isConnected, taskController.getMyTasks);
+router.patch("/complete", isConnected, taskController.completeTasks);
 router.post("/add", upload.array("images", 5), taskController.createTask);
 router.put("/:id", upload.array("images", 5), taskController.replaceTask);
 router.post("/:id/duplicate", taskController.duplicateTask);
