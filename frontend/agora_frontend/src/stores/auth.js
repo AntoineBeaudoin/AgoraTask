@@ -51,6 +51,23 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const getEmployes = async () => {
+    try {
+      const response = await apiFetch(`/account/employes`);
+      if (response.status !== 200) {
+        errorMessage.value = response.status + ': ' + (response.message || 'Erreur lors de la récupération des employés')
+        return null
+      }
+      console.log("get employes response ", response);
+      return response.data
+    }
+    catch (err) {
+      console.log('Erreur lors de la récupération des employés:', err)
+      errorMessage.value = 'Erreur lors de la récupération des employés'
+      return null
+    }
+  }
+
   function isTokenValid() {
     if (!token.value) return false
     try {
@@ -111,6 +128,24 @@ export const useAuthStore = defineStore('auth', () => {
     } catch {
       return null
     }
+  }
+
+  async function loadEmployes()
+  {
+      try {
+        const response = await apiFetch('/account/employes');
+
+        console.log('get employes response:', response);
+
+        if (response.status !== 200) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        return response.data;
+
+      } catch (err) {
+        console.log(`HTTP ${err}`);
+      }
   }
 
   /**
@@ -200,6 +235,8 @@ export const useAuthStore = defineStore('auth', () => {
     isUserEnAttente,
     getRole,
     getUserById,
-    changePassword
+    getEmployes,
+    changePassword,
+    loadEmployes
   }
 })

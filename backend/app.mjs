@@ -4,6 +4,7 @@ dotenv.config();
 import express from "express";
 import authRoutes from "./routes/auth.mjs";
 import taskRoutes from "./routes/task.mjs";
+import posteRoutes from "./routes/poste.mjs";
 import bdRoutes from "./routes/bd.mjs";
 import cors from "cors";
 import bd from "./models/bd.mjs";
@@ -30,6 +31,7 @@ app.use("/api/account", authRoutes);
 app.use("/bd", bdRoutes);
 app.use("/api/users", adminRoutes);
 app.use("/api/task", taskRoutes);
+app.use("/api/poste", posteRoutes);
 app.use("/api/historique", histRoutes);
 app.get("/", (req, res) => {
   res.status(200).json({
@@ -47,18 +49,16 @@ bd.authenticate()
   .then(() => {
     console.log("Connected to PostgreSQL");
 
-    // mettre force à true pour réinitialiser la structure de la BD.
-    return bd.sync({ force: false });
-  })
-  .then(async () => {
-    console.log("Test accounts created");
-
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+        // mettre force à true pour réinitialiser la structure de la BD.
+        return bd.sync({ force: false });
+    })
+    .then(async () => {
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    })
+    .catch(error => {
+        console.error("Database connection failed:", error);
     });
-  })
-  .catch((error) => {
-    console.error("Database connection failed:", error);
-  });
 
 export default app;

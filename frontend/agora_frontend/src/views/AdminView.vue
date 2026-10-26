@@ -3,7 +3,7 @@
     <h1 class="mb-4">Portail administrateur</h1>
 
     <div class="row g-4">
-      <div class="col-md-4">
+      <div class="col-md-3">
         <div class="card h-100 shadow-sm">
           <div class="card-body d-flex flex-column">
             <h3 class="card-title">Gestion des tâches</h3>
@@ -17,7 +17,21 @@
         </div>
       </div>
 
-      <div class="col-md-4">
+      <div class="col-md-3">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body d-flex flex-column">
+            <h3 class="card-title">Gestion des employés</h3>
+
+            <p class="card-text">Consulter et gérer les comptes des employés.</p>
+
+            <RouterLink :to="{ name: 'GestionEmployes' }" class="btn btn-primary mt-auto">
+              Gérer les employés
+            </RouterLink>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
         <div class="card h-100 shadow-sm">
           <div class="card-body d-flex flex-column">
             <h3 class="card-title">Historique des tâches</h3>
@@ -31,23 +45,12 @@
         </div>
       </div>
 
-      <div class="col-md-4">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body d-flex flex-column">
-            <h3 class="card-title">Gestion des employés</h3>
-
-            <p class="card-text">Consulter et gérer les comptes des employés.</p>
-
-            <RouterLink :to="{ name: 'GestionEmployes' }" class="btn btn-primary mt-auto">
-              Gérer les employés
-            </RouterLink>
-          </div>
-        </div>
-      </div>
+      <PortalPosteOption :col-md="3"/>
     </div>
   </main>
 </template>
 
 <script setup>
-import { RouterLink } from 'vue-router'
+import PortalPosteOption from '@/components/postes/PortalPosteOption.vue';
+import { RouterLink } from 'vue-router';
 </script>

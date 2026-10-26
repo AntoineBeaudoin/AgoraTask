@@ -1,7 +1,21 @@
 import { Sequelize } from "sequelize";
 import pg from "pg";
+import dotenv from "dotenv";
 
-const bd = new Sequelize(process.env.DATABASE_URL, {
+dotenv.config();
+
+const databaseUrl =
+  process.env.NODE_ENV === 'test'
+    ? process.env.DATABASE_URL_TEST
+    : process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  throw new Error(
+    `Missing database connection string for NODE_ENV=${process.env.NODE_ENV}`
+  );
+}
+
+const bd = new Sequelize(databaseUrl, {
     dialect: "postgres",
     dialectModule: pg,
     logging: false
