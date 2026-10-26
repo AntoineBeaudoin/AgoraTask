@@ -18,6 +18,7 @@
     "bootstrap": "^5.3.8",
     "jwt-decode": "^4.0.0",
     "pinia": "^4.0.2",
+    "supertest": "^7.3.1",
     "vue": "^3.5.40",
     "vue-router": "^5.2.0"
   },
