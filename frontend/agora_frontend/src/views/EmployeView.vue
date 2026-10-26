@@ -93,7 +93,7 @@ async function save() {
   saving.value = true
   message.value = ''
   try {
-    const ok = await taskStore.saveCompleted(checkedIds.value)
+    const ok = await taskStore.saveProgress(checkedIds.value)
     message.value = ok ? 'Progression enregistrée.' : "Échec de l'enregeistrement."
   } finally {
     saving.value = false
