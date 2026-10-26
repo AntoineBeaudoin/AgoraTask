@@ -16,6 +16,12 @@
               <h4>Description:</h4>
               <p>{{ task.description }}</p>
               <h3 class="fs-5 mb-2 text-primary">Images</h3>
+              <div class="d-flex">
+                <div v-for="(file) in task.images" :key="file.id" class="position-relative">
+                  <img class="imgIconDisplay rounded border me-1" style="width: 100px; height: 100px; object-fit: cover;"
+                    :src="file.preview ?? file.path" :alt="file.name" />
+                </div>
+              </div>
             </div>
             <div class="col-lg-6">
               <div class="d-flex justify-content-between align-items-center mb-2">
