@@ -45,7 +45,7 @@
         </div>
       </div>
 
-      <PortalPosteOption/>
+      <PortalPosteOption :col-md="3"/>
     </div>
   </main>
 </template>

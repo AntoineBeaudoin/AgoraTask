@@ -3,7 +3,7 @@
     <h1 class="mb-4">Portail du coordonnnateur</h1>
 
     <div class="row g-4 mx-auto">
-      <PortalPosteOption/>
+      <PortalPosteOption :col-md="6"/>
       <div class="col-md-6">
       <div class="card h-100 shadow-sm">
         <div class="card-body d-flex flex-column">
