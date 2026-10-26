@@ -214,7 +214,6 @@ describe('Tests en lien avec les postes de travail', () => {
         comptes: [employe1.id, employe2.id]
       });
 
-    console.log(response);
     expect(response.status).toBe(200);
 
     expect(response.body.data.employes).toHaveLength(2);
