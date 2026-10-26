@@ -14,7 +14,7 @@ const upload = multer({
 });
 router.get("/list", taskController.getAllTasks);
 router.get("/mine", isConnected, taskController.getMyTasks);
-router.patch("/complete", isConnected, taskController.completeTasks);
+router.patch("/progress", isConnected, taskController.saveProgress);
 router.post("/add", upload.array("images", 5), taskController.createTask);
 router.put("/:id", upload.array("images", 5), taskController.replaceTask);
 router.post("/:id/duplicate", taskController.duplicateTask);

@@ -6,35 +6,62 @@
       Aucune tâche ne vous est assignée.
     </p>
 
-    <form v-else action="" class="mx-auto" @submit.prevent="save" @reset.prevent="checkedIds = []">
+    <form v-else class="mx-auto" @submit.prevent="save" @reset.prevent="taskStore.loadMyTasks()">
       <div v-for="task in taskStore.myTasks" :key="task.tacheAFaireId" class="card mb-3">
-        <div class="card-body d-flex justify-content-between align-items-center">
-          <div class="form-check d-flex align-items-center gap-2">
-            <input v-if="task.isCompleted" class="form-check-input" type="checkbox" checked disabled />
-        <input v-else class="form-check-input" type="checkbox"
-               :id="'task-' + task.tacheAFaireId"
-               :value="task.tacheAFaireId" v-model="checkedIds" />
-        <label class="form-check-label" :for="'task-' + task.tacheAFaireId">
-          {{ task.title }}
-          <span class="badge bg-secondary ms-2">{{ task.heureDebut }}</span>
-          <span class="badge bg-secondary ms-2">{{ task.heureFin }}</span>
-        </label>
-      </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="form-check d-flex align-items-center gap-2">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                :id="'task-' + task.tacheAFaireId"
+                v-model="task.isCompleted"
+              />
+              <label class="form-check-label" :for="'task-' + task.tacheAFaireId">
+                {{ task.title }}
+                <span class="badge bg-secondary ms-2">{{ task.heureDebut }}</span>
+                <span class="badge bg-secondary ms-2">{{ task.heureFin }}</span>
+              </label>
+            </div>
+            <button
+              type="button"
+              class="btn btn-outline-primary btn-sm"
+              @click="toggleDetails(task.tacheAFaireId)"
+            >
+              {{ detailledTasks.has(task.tacheAFaireId) ? 'Moins de détails' : 'Plus de détails' }}
+            </button>
+          </div>
 
-          <button
-            type="button"
-            class="btn btn-outline-primary btn-sm"
-            @click="toggleDetails(task.id)"
-          >
-            {{ detailledTasks.has(task.id) ? 'Moins de détails' : 'Plus de détails' }}
-          </button>
+          <div v-for="sub in task.sousTaches" :key="sub.id" class="form-check ms-4 mt-2">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              :id="'sub-' + task.tacheAFaireId + '-' + sub.id"
+              v-model="sub.isCompleted"
+            />
+            <label class="form-check-label" :for="'sub-' + task.tacheAFaireId + '-' + sub.id">
+              {{ sub.titre }}
+            </label>
+          </div>
         </div>
 
-        <div v-if="detailledTasks.has(task.id)" class="card-footer bg-light">
+        <div v-if="detailledTasks.has(task.tacheAFaireId)" class="card-footer bg-light">
           <p class="mb-1"><strong>Local :</strong> {{ task.room }}</p>
-          <p class="mb-1"><strong>Description :</strong> {{ task.description }}</p>
+          <p class="mb-2"><strong>Description :</strong> {{ task.description }}</p>
+          <label :for="'comment-' + task.tacheAFaireId" class="form-label">
+            <strong>Commentaire :</strong>
+          </label>
+          <textarea
+            class="form-control"
+            rows="2"
+            maxlength="1000"
+            :id="'comment-' + task.tacheAFaireId"
+            v-model="task.commentaire"
+          ></textarea>
         </div>
       </div>
+
+      <p v-if="message" class="text-center">{{ message }}</p>
 
       <div class="d-flex justify-content-center gap-2 mt-4">
         <button type="submit" class="btn btn-primary" :disabled="saving">Sauvegarder</button>
@@ -52,6 +79,7 @@ const taskStore = useTaskStore()
 const detailledTasks = reactive(new Set())
 const checkedIds = ref([])
 const saving = ref(false)
+const message = ref('')
 
 function toggleDetails(id) {
   if (detailledTasks.has(id)) {
@@ -62,11 +90,11 @@ function toggleDetails(id) {
 }
 
 async function save() {
-  if (checkedIds.value.length === 0) return
   saving.value = true
+  message.value = ''
   try {
     const ok = await taskStore.saveCompleted(checkedIds.value)
-    if (ok) checkedIds.value = []
+    message.value = ok ? 'Progression enregistrée.' : "Échec de l'enregeistrement."
   } finally {
     saving.value = false
   }
