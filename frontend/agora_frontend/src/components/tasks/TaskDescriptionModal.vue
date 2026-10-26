@@ -15,23 +15,62 @@
               <p>Local: {{ task.room }}</p>
               <h4>Description:</h4>
               <p>{{ task.description }}</p>
-              <h3 class="fs-5 mb-2 text-primary">Images</h3>
-              <div class="d-flex">
-                <div v-for="(file) in task.images" :key="file.id" class="position-relative">
-                  <img class="imgIconDisplay rounded border me-1" style="width: 100px; height: 100px; object-fit: cover;"
-                    :src="file.preview ?? file.path" :alt="file.name" />
+              <div v-if="task.images.length !== 0">
+                <h3 class="fs-5 mb-2 text-primary">Images</h3>
+                <div class="d-flex">
+                  <div v-for="(file) in task.images" :key="file.id" class="position-relative">
+                    <img class="imgIconDisplay rounded border me-1"
+                      style="width: 100px; height: 100px; object-fit: cover;" :src="file.preview ?? file.path"
+                      :alt="file.name" />
+                  </div>
                 </div>
               </div>
             </div>
             <div class="col-lg-6">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <h3 class="fs-5 text-primary m-0">Horaires & Fréquence (Occurrences)</h3>
+              <div v-if="task.occurrences.length > 0" class="mb-2">
+                <h3 class="fs-5 text-primary m-0">Horaires</h3>
+                <p class="text-muted small mb-3">Fréquence et occurrences de la tâche.</p>
+                <div v-for="(occ, index) in task.occurrences" :key="index"
+                  class="card card-body bg-light mb-3 position-relative p-3">
+                  <p><strong>Journée: </strong>{{ occ.journee ? occ.journee.charAt(0).toUpperCase() +
+                    occ.journee.slice(1) : 'Non définie' }}</p>
+                  <div class="d-flex justify-content-between">
+                    <p><strong>Priorité:</strong> {{ occ.priorite ?? 'Non définie' }}</p>
+                    <i class="ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="Indique le niveau de priorité : 1 = très élevée, 2 = élevé, 3 = moyenne, 4 = basse, 5 = très basse."
+                      style="cursor: help;">
+                      <img src="../../assets/images/info-circle.svg" alt="">
+                    </i>
+                  </div>
+                  <p><strong>Heure début:</strong> {{ occ.heureDebut || 'Non définie' }}</p>
+                  <p><strong>Heure fin:</strong> {{ occ.heureFin || 'Non définie' }}</p>
+                  <div class="col-12 mt-2">
+                    <div class="form-check">
+                      <input type="checkbox" :checked="occ.isRequired" class="form-check-input" :id="`req-${index}`"
+                        disabled />
+                      <label class="form-check-label small" :for="`req-${index}`">
+                        Est obligatoire
+                      </label>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="alert alert-secondary py-2 small text-center mb-3">Aucun horaire défini.</div>
-              <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+              <div v-else class="alert alert-secondary py-2 small text-center mb-3">Aucun horaire défini.</div>
+              <div v-if="task.sous_taches.length > 0" class="mb-2 mt-4">
                 <h3 class="fs-5 text-primary m-0">Sous-tâches</h3>
+                <p class="text-muted small mb-3">Étapes ou sous-tâches associées.</p>
+                <div v-for="(st, index) in task.sous_taches" :key="index"
+                  class="card card-body bg-light mb-2 p-2 position-relative">
+                  <div class="mb-2 pe-4">
+                    <label class="form-label small fw-bold">Titre de la sous-tâche</label>
+                    <p class="form-control-plaintext form-control-sm mb-2">{{ st.titre || 'Sans titre' }}</p>
+                    <label class="form-label small fw-bold">Description</label>
+                    <p class="form-control-plaintext form-control-sm mb-0">{{ st.description || 'Aucune description' }}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div class="alert alert-secondary py-2 small text-center mb-3">Aucune sous-tâche définie.</div>
+              <div v-else class="alert alert-secondary py-2 small text-center mb-3">Aucune sous-tâche définie.</div>
             </div>
           </div>
         </div>
