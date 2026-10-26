@@ -46,7 +46,6 @@ const Compte = bd.define("Compte", {
   posteId: {
     type: DataTypes.INTEGER,
     allowNull: true,
-    unique: true,
   },
 });
 

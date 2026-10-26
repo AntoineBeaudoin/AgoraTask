@@ -1,6 +1,14 @@
 // Relation between Task and TaskImage
 import { Task } from "./task.mjs";
+import TaskPoste from "./task_poste.mjs"
 import { TaskImage } from "./task_image.mjs";
+import { occurrence_de_tache } from "./occurrence_de_tache.mjs";
+import { sous_tache } from "./sous_taches.mjs";
+import Poste from "./poste.mjs";
+import Compte from "./compte.mjs";
+import { sous_taches_AFaire } from "./SousTachesAFaire.mjs";
+import { tachesAFaire } from "./tachesAFaire.mjs";
+
 Task.hasMany(TaskImage, {
   foreignKey: "taskId",
   as: "images",
@@ -10,8 +18,7 @@ TaskImage.belongsTo(Task, {
   foreignKey: "taskId",
   as: "task",
 });
-// Relation between Task and occurence_de_tache
-import { occurrence_de_tache } from "./occurrence_de_tache.mjs";
+
 Task.hasMany(occurrence_de_tache, {
   foreignKey: "tacheId",
   as: "occurrences",
@@ -21,8 +28,8 @@ occurrence_de_tache.belongsTo(Task, {
   foreignKey: "tacheId",
   as: "task",
 });
-// Relation between Task and sous_tache
-import { sous_tache } from "./sous_taches.mjs";
+
+
 Task.hasMany(sous_tache, {
   foreignKey: "tacheId",
   as: "sous_taches",
@@ -33,34 +40,33 @@ sous_tache.belongsTo(Task, {
   as: "task",
 });
 // Relation between poste and compte
-import { poste } from "./poste.mjs";
-import Compte from "./compte.mjs";
 
-poste.hasOne(Compte, {
+
+Poste.hasMany(Compte, {
   foreignKey: "posteId",
-  as: "compte",
+  as: "employes",
   onDelete: "SET NULL",
 });
-Compte.belongsTo(poste, {
+Compte.belongsTo(Poste, {
   foreignKey: "posteId",
   as: "poste",
 });
+
 // Relation between poste and tache
-import { TaskPoste } from "./TaskPoste.mjs";
-poste.belongsToMany(Task, {
+Poste.belongsToMany(Task, {
   through: TaskPoste,
   foreignKey: "posteId",
   otherKey: "tacheId",
-  as: "taches",
+  as: "tasks",
 });
-Task.belongsToMany(poste, {
+Task.belongsToMany(Poste, {
   through: TaskPoste,
   foreignKey: "tacheId",
   otherKey: "posteId",
   as: "postes",
 });
 // Relation between employe and tache
-import { tachesAFaire } from "./tachesAFaire.mjs";
+
 Compte.belongsToMany(Task, {
   through: tachesAFaire,
   foreignKey: "compteId",
@@ -74,7 +80,7 @@ Task.belongsToMany(Compte, {
   as: "comptes",
 });
 // relation between tacheafaire and sous_tache
-import { sous_taches_AFaire } from "./SousTachesAFaire.mjs";
+
 tachesAFaire.belongsToMany(sous_tache, {
   through: sous_taches_AFaire,
   foreignKey: "tachesAFaireId",
@@ -100,11 +106,11 @@ occurrence_de_tache.hasMany(tachesAFaire, {
 export {
   Task,
   TaskImage,
+  Compte,
+  Poste,
+  TaskPoste,
   occurrence_de_tache,
   sous_tache,
-  poste,
-  Compte,
-  TaskPoste,
-  tachesAFaire,
   sous_taches_AFaire,
+  tachesAFaire
 };
