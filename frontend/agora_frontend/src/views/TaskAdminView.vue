@@ -17,28 +17,20 @@
       />
     </div>
 
-    <div
-      v-for="task in tasksDisplayed"
-      :key="task.id"
-      class="card mb-3 shadow-sm"
-      v-if="tasksDisplayed?.length != 0"
-    >
-      <div class="card-body">
-        <h2 class="card-title h4 mb-2">{{ task.title }}</h2>
-
-        <p class="card-text text-secondary mb-3">{{ task.description }}</p>
-
-        <div class="d-flex gap-2">
-          <button @click="updateTask(task.id)" class="btn btn-primary">Modifier la tâche</button>
-          <button @click="duplicateTask(task.id)" v-bind:id="task.id" class="btn btn-secondary">
-            Dupliquer
-          </button>
-          <button @click="taskStore.deleteTask(task.id)" class="btn btn-danger">Supprimer</button>
-          <button @click="taskDetails(task.id)" class="btn btn-danger">Voir détails</button>
-        </div>
+    <div v-if="tasksDisplayed?.length != 0">
+      <div v-for="task in tasksDisplayed" :key="task.id" class="card mb-3 shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title h4 mb-2">{{ task.title }}</h2>
+          <p class="card-text text-secondary mb-3">{{ task.description }}</p>
+          <div class="d-flex gap-2">
+            <button @click="updateTask(task.id)" class="btn btn-primary">Modifier la tâche</button>
+            <button @click="duplicateTask(task.id)" v-bind:id="task.id" class="btn btn-secondary">Dupliquer</button>
+            <button @click="deleteTask(task.id)" class="btn btn-danger">Supprimer</button>
+          </div>
       </div>
     </div>
-    <p v-else class="text-center text-muted">Aucune tâche ne correspond à votre recherche.</p>
+  </div>
+  <p v-else class="text-center text-muted">Aucune tâche ne correspond à votre recherche.</p>
   </section>
 </template>
 
@@ -71,6 +63,11 @@ onMounted(async () => {
   await taskStore.loadTasks()
   tasksDisplayed.value = taskStore.tasks
 })
+
+async function deleteTask(id) {
+  taskStore.deleteTask(id);
+  filterTasks();
+}
 
 async function updateTask(id) {
   let theTask = await taskStore.getTaskById(id)
