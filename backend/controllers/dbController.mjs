@@ -107,7 +107,6 @@ const seedDatabase = async (req, res) => {
       posteId: posteMoussa.id,
     });
 
-    // Create real accounts from data
     const comptes = {};
     
     comptes["Romain"] = await Compte.create({
@@ -270,7 +269,6 @@ const seedDatabase = async (req, res) => {
       posteId: posteEntretien.id,
     });
 
-    // Create tasks based on real data
     const tachePiscine = await Task.create({
       title: "Entretien de la piscine",
       room: "Mini-piscine / Piscine",
@@ -316,7 +314,6 @@ const seedDatabase = async (req, res) => {
       archived: false,
     });
 
-    // Link tasks to postes
     await TaskPoste.create({ posteId: posteEntretien.id, tacheId: tachePiscine.id });
     await TaskPoste.create({ posteId: posteEntretien.id, tacheId: tacheBoxe.id });
     await TaskPoste.create({ posteId: posteEntretien.id, tacheId: tacheEntretienGeneral.id });
@@ -379,7 +376,6 @@ const seedDatabase = async (req, res) => {
     });
     idOccurrence.tacheBoxe_id = occBoxe.id;
 
-    // Create some sub-tasks
     const st1 = await sous_tache.create({
       tacheId: tachePiscine.id,
       titre: "Back wash",
@@ -411,7 +407,6 @@ const seedDatabase = async (req, res) => {
       description: "Vider et remplacer les sacs.",
     });
 
-    // Assign tasks to people based on real associations
     if (comptes["Romain"]) {
       const ta = await tachesAFaire.create({
         tacheId: tachePiscine.id,
@@ -448,7 +443,7 @@ const seedDatabase = async (req, res) => {
     }
 
     if (comptes["Mathieu"]) {
-      const ta = await tachesAFaire.create({
+      await tachesAFaire.create({
         tacheId: tacheAppariteur.id,
         compteId: comptes["Mathieu"].id,
         occurrence_de_tacheId: idOccurrence.tacheAppariteur_id,
@@ -458,7 +453,7 @@ const seedDatabase = async (req, res) => {
     }
 
     if (comptes["Naomi"]) {
-      const ta = await tachesAFaire.create({
+      await tachesAFaire.create({
         tacheId: tacheAppariteur.id,
         compteId: comptes["Naomi"].id,
         occurrence_de_tacheId: idOccurrence.tacheAppariteur_id,
@@ -468,7 +463,7 @@ const seedDatabase = async (req, res) => {
     }
 
     if (comptes["Brahim"]) {
-      const ta = await tachesAFaire.create({
+      await tachesAFaire.create({
         tacheId: tacheAppariteur.id,
         compteId: comptes["Brahim"].id,
         occurrence_de_tacheId: idOccurrence.tacheAppariteur_id,
@@ -478,7 +473,7 @@ const seedDatabase = async (req, res) => {
     }
 
     if (comptes["Sheng"]) {
-      const ta = await tachesAFaire.create({
+      await tachesAFaire.create({
         tacheId: tacheAppariteur.id,
         compteId: comptes["Sheng"].id,
         occurrence_de_tacheId: idOccurrence.tacheAppariteur_id,
@@ -488,7 +483,7 @@ const seedDatabase = async (req, res) => {
     }
 
     if (comptes["Mónica"]) {
-      const ta = await tachesAFaire.create({
+      await tachesAFaire.create({
         tacheId: tacheESJM.id,
         compteId: comptes["Mónica"].id,
         occurrence_de_tacheId: idOccurrence.tacheESJM_id,
@@ -498,7 +493,7 @@ const seedDatabase = async (req, res) => {
     }
 
     if (comptes["Léon"]) {
-      const ta = await tachesAFaire.create({
+      await tachesAFaire.create({
         tacheId: tacheESJM.id,
         compteId: comptes["Léon"].id,
         occurrence_de_tacheId: idOccurrence.tacheESJM_id,
