@@ -11,6 +11,7 @@ import {
   sous_taches_AFaire,
 } from "../models/bd_index.mjs";
 import bd from "../models/bd.mjs";
+
 /**
  * Remplit la base de données avec des données de test.
  * Tout le seedage est exécuté dans une transaction : si une seule étape
@@ -35,6 +36,26 @@ const seedDatabase = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash("Test1234!", 15);
 
+    const posteEntretien = await Poste.create({
+      nom: "Entretien",
+      description: "Entretien ménager et maintenance du centre.",
+    });
+
+    const posteAppariteur = await Poste.create({
+      nom: "Appariteur",
+      description: "Surveillance et gestion des salles/locaux.",
+    });
+
+    const posteCoordination = await Poste.create({
+      nom: "Coordination",
+      description: "Coordination des opérations.",
+    });
+
+    const posteAdministration = await Poste.create({
+      nom: "Administration",
+      description: "Administration du système.",
+    });
+
     const posteAntoine = await Poste.create({
       nom: "Préposé aux installations",
       description:
@@ -56,7 +77,7 @@ const seedDatabase = async (req, res) => {
       description: "Coordination des tâches et supervision des activités.",
     });
 
-    const antoine = await Compte.create({
+    await Compte.create({
       prenom: "Antoine",
       nom: "Beaudoin",
       courriel: "antoinebeaudoin@icloud.com",
@@ -64,16 +85,6 @@ const seedDatabase = async (req, res) => {
       role: "personnel_de_terrain",
       IsArchived: false,
       posteId: posteAntoine.id,
-    });
-
-    await Compte.create({
-      prenom: "Colin",
-      nom: "Giguère",
-      courriel: "admin@admin.com",
-      motDePasse: hashedPassword,
-      role: "administrateur",
-      IsArchived: false,
-      posteId: posteColin.id,
     });
 
     await Compte.create({
@@ -86,34 +97,7 @@ const seedDatabase = async (req, res) => {
       posteId: posteJulien.id,
     });
 
-     await Compte.create({
-      prenom: "Bob",
-      nom: "Marley",
-      courriel: "bmarley@gmail.com",
-      motDePasse: hashedPassword,
-      role: "personnel_de_terrain",
-      IsArchived: false,
-    });
-
-     await Compte.create({
-      prenom: "Michael",
-      nom: "Jackson",
-      courriel: "mjackson@test.com",
-      motDePasse: hashedPassword,
-      role: "personnel_de_terrain",
-      IsArchived: false,
-    });
-
     await Compte.create({
-      prenom: "Raphael",
-      nom: "Pouliot",
-      courriel: "rpouliot@agoratask.com",
-      motDePasse: hashedPassword,
-      role: "personnel_de_terrain",
-      IsArchived: false,
-    });
-
-    const moussa = await Compte.create({
       prenom: "Moussa",
       nom: "Dembélé",
       courriel: "coordo@coordo.com",
@@ -123,385 +107,405 @@ const seedDatabase = async (req, res) => {
       posteId: posteMoussa.id,
     });
 
-    const preparerSalle = await Task.create({
-      title: "Préparer la salle polyvalente",
-      room: "Salle polyvalente",
-      description:
-        "Installer les tables et les chaises nécessaires pour les activités.",
-      recurring: true,
-      automaticAssignment: true,
-      archived: false,
+    // Create real accounts from data
+    const comptes = {};
+    
+    comptes["Romain"] = await Compte.create({
+      prenom: "Romain",
+      nom: " ",
+      courriel: "romain@agoratask.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+      posteId: posteEntretien.id,
     });
 
-    const nettoyerVestiaires = await Task.create({
-      title: "Nettoyer les vestiaires",
-      room: "Vestiaires",
-      description:
-        "Nettoyer les planchers, vider les poubelles et vérifier l'état général.",
-      recurring: true,
-      automaticAssignment: true,
-      archived: false,
+    comptes["Clara"] = await Compte.create({
+      prenom: "Clara",
+      nom: " ",
+      courriel: "clara@agoratask.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+      posteId: posteEntretien.id,
     });
 
-    const rangerMateriel = await Task.create({
-      title: "Ranger le matériel sportif",
-      room: "Gymnase",
-      description:
-        "Ramasser et ranger les ballons, cônes et autres équipements sportifs.",
-      recurring: true,
-      automaticAssignment: true,
-      archived: false,
+    comptes["Naomi"] = await Compte.create({
+      prenom: "Naomi",
+      nom: " ",
+      courriel: "naomi@agoratask.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+      posteId: posteAppariteur.id,
     });
 
-    const nettoyerGymnase = await Task.create({
-      title: "Nettoyage complet du gymnase",
-      room: "Gymnase",
-      description:
-        "Balayer et laver le plancher du gymnase et nettoyer les surfaces.",
+    comptes["Zoé"] = await Compte.create({
+      prenom: "Zoé",
+      nom: " ",
+      courriel: "zoe@agoratask.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+      posteId: posteAppariteur.id,
+    });
+
+    comptes["Mathieu"] = await Compte.create({
+      prenom: "Mathieu",
+      nom: " ",
+      courriel: "mathieu@agoratask.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+      posteId: posteAppariteur.id,
+    });
+
+    comptes["Brahim"] = await Compte.create({
+      prenom: "Brahim",
+      nom: " ",
+      courriel: "brahim@agoratask.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+      posteId: posteAppariteur.id,
+    });
+
+    comptes["Sheng"] = await Compte.create({
+      prenom: "Sheng",
+      nom: " ",
+      courriel: "sheng@agoratask.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+      posteId: posteAppariteur.id,
+    });
+
+    comptes["Sheng Ming"] = await Compte.create({
+      prenom: "Sheng",
+      nom: "Ming",
+      courriel: "shengming@agoratask.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+      posteId: posteAppariteur.id,
+    });
+
+    comptes["Colin"] = await Compte.create({
+      prenom: "Colin",
+      nom: " ",
+      courriel: "admin@admin.com",
+      motDePasse: hashedPassword,
+      role: "administrateur",
+      IsArchived: false,
+      posteId: posteAdministration.id,
+    });
+
+    comptes["Philipe"] = await Compte.create({
+      prenom: "Philipe",
+      nom: " ",
+      courriel: "philipe@agoratask.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+      posteId: posteEntretien.id,
+    });
+
+    comptes["Shelby"] = await Compte.create({
+      prenom: "Shelby",
+      nom: " ",
+      courriel: "shelby@agoratask.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+      posteId: posteEntretien.id,
+    });
+
+    comptes["Audrée"] = await Compte.create({
+      prenom: "Audrée",
+      nom: " ",
+      courriel: "audree@agoratask.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+      posteId: posteEntretien.id,
+    });
+
+    comptes["Léon"] = await Compte.create({
+      prenom: "Léon",
+      nom: " ",
+      courriel: "leon@agoratask.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+      posteId: posteAppariteur.id,
+    });
+
+    comptes["Mónica"] = await Compte.create({
+      prenom: "Mónica",
+      nom: " ",
+      courriel: "monica@agoratask.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+      posteId: posteEntretien.id,
+    });
+
+    comptes["Stéphanie"] = await Compte.create({
+      prenom: "Stéphanie",
+      nom: " ",
+      courriel: "stephanie@agoratask.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+      posteId: posteEntretien.id,
+    });
+
+    comptes["Sébastien"] = await Compte.create({
+      prenom: "Sébastien",
+      nom: " ",
+      courriel: "sebastien@agoratask.com",
+      motDePasse: hashedPassword,
+      role: "personnel_de_terrain",
+      IsArchived: false,
+      posteId: posteEntretien.id,
+    });
+
+    // Create tasks based on real data
+    const tachePiscine = await Task.create({
+      title: "Entretien de la piscine",
+      room: "Mini-piscine / Piscine",
+      description: "Back wash et entretien des zones de piscine et vestiaires.",
       recurring: true,
       automaticAssignment: false,
       archived: false,
     });
 
-    const nettoyerSalles = await Task.create({
-      title: "Nettoyer les salles après les activités",
-      room: "Salles d'activités",
-      description:
-        "Ramasser les déchets, replacer le mobilier et nettoyer les surfaces.",
+    const tacheBoxe = await Task.create({
+      title: "Nettoyage de la salle de boxe",
+      room: "Salle de boxe",
+      description: "Nettoyage des bandages et entretien de la salle de boxe.",
       recurring: true,
-      automaticAssignment: true,
+      automaticAssignment: false,
       archived: false,
     });
 
-    const viderPoubelles = await Task.create({
-      title: "Vider les poubelles",
-      room: "Centre de loisirs",
-      description:
-        "Vider les poubelles des différentes salles et remplacer les sacs.",
+    const tacheAppariteur = await Task.create({
+      title: "Tâches d'appariteur",
+      room: "Centre",
+      description: "Ouverture, fermeture, surveillance et préparation des salles selon l'horaire.",
       recurring: true,
-      automaticAssignment: true,
+      automaticAssignment: false,
       archived: false,
     });
 
-    const jours = [
-      "lundi",
-      "mardi",
-      "mercredi",
-      "jeudi",
-      "vendredi",
-      "samedi",
-      "dimanche",
-    ];
+    const tacheEntretienGeneral = await Task.create({
+      title: "Entretien ménager général",
+      room: "Centre",
+      description: "Balayer, laver, vider les poubelles selon les grilles d'entretien.",
+      recurring: true,
+      automaticAssignment: false,
+      archived: false,
+    });
+
+    const tacheESJM = await Task.create({
+      title: "Entretien ESJM",
+      room: "ESJM",
+      description: "Entretien des locaux ESJM selon les grilles.",
+      recurring: true,
+      automaticAssignment: false,
+      archived: false,
+    });
+
+    // Link tasks to postes
+    await TaskPoste.create({ posteId: posteEntretien.id, tacheId: tachePiscine.id });
+    await TaskPoste.create({ posteId: posteEntretien.id, tacheId: tacheBoxe.id });
+    await TaskPoste.create({ posteId: posteEntretien.id, tacheId: tacheEntretienGeneral.id });
+    await TaskPoste.create({ posteId: posteEntretien.id, tacheId: tacheESJM.id });
+    await TaskPoste.create({ posteId: posteAppariteur.id, tacheId: tacheAppariteur.id });
+    await TaskPoste.create({ posteId: posteCoordination.id, tacheId: tacheAppariteur.id });
+
+    const jours = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
     let idOccurrence = {};
-    let occurence;
-    for (const journee of jours) {
-      occurence = await occurrence_de_tache.create({
-        heureDebut: "08:30:00",
-        heureFin: "09:00:00",
-        journee,
-        isRequired: true,
-        tacheId: preparerSalle.id,
-        priorite: 3,
-      });
-      if (idOccurrence.preparerSalle_id === undefined) {
-        idOccurrence.preparerSalle_id = occurence.id;
-      }
 
-      occurence = await occurrence_de_tache.create({
-        heureDebut: "12:00:00",
-        heureFin: "12:30:00",
+    for (const journee of jours) {
+      let occ = await occurrence_de_tache.create({
+        heureDebut: "19:00:00",
+        heureFin: "20:00:00",
         journee,
         isRequired: true,
-        tacheId: nettoyerVestiaires.id,
+        tacheId: tachePiscine.id,
         priorite: 3,
       });
-      if (idOccurrence.nettoyerVestiaires_id === undefined) {
-        idOccurrence.nettoyerVestiaires_id = occurence.id;
-      }
-      occurence = await occurrence_de_tache.create({
+      if (!idOccurrence.tachePiscine_id) idOccurrence.tachePiscine_id = occ.id;
+
+      occ = await occurrence_de_tache.create({
+        heureDebut: "17:00:00",
+        heureFin: "18:00:00",
+        journee,
+        isRequired: true,
+        tacheId: tacheEntretienGeneral.id,
+        priorite: 3,
+      });
+      if (!idOccurrence.tacheEntretienGeneral_id) idOccurrence.tacheEntretienGeneral_id = occ.id;
+
+      occ = await occurrence_de_tache.create({
+        heureDebut: "06:15:00",
+        heureFin: "22:00:00",
+        journee,
+        isRequired: true,
+        tacheId: tacheAppariteur.id,
+        priorite: 4,
+      });
+      if (!idOccurrence.tacheAppariteur_id) idOccurrence.tacheAppariteur_id = occ.id;
+
+      occ = await occurrence_de_tache.create({
         heureDebut: "16:00:00",
-        heureFin: "16:30:00",
+        heureFin: "18:00:00",
         journee,
         isRequired: true,
-        tacheId: rangerMateriel.id,
-        priorite: 2,
+        tacheId: tacheESJM.id,
+        priorite: 3,
       });
-      if (idOccurrence.rangerMateriel_id === undefined) {
-        idOccurrence.rangerMateriel_id = occurence.id;
-      }
-      occurence = await occurrence_de_tache.create({
-        heureDebut: "17:30:00",
-        heureFin: "18:30:00",
-        journee,
-        isRequired: true,
-        tacheId: nettoyerSalles.id,
-        priorite: 4,
-      });
-      if (idOccurrence.nettoyerSalles_id === undefined) {
-        idOccurrence.nettoyerSalles_id = occurence.id;
-      }
-      occurence = await occurrence_de_tache.create({
-        heureDebut: "18:30:00",
-        heureFin: "19:00:00",
-        journee,
-        isRequired: true,
-        tacheId: viderPoubelles.id,
-        priorite: 4,
-      });
-      if (idOccurrence.viderPoubelles_id === undefined) {
-        idOccurrence.viderPoubelles_id = occurence.id;
-      }
+      if (!idOccurrence.tacheESJM_id) idOccurrence.tacheESJM_id = occ.id;
     }
 
-    occurence = await occurrence_de_tache.create({
+    let occBoxe = await occurrence_de_tache.create({
       heureDebut: "17:00:00",
       heureFin: "18:00:00",
-      journee: "vendredi",
+      journee: "mercredi",
       isRequired: true,
-      tacheId: nettoyerGymnase.id,
-      priorite: 5,
+      tacheId: tacheBoxe.id,
+      priorite: 3,
     });
-    idOccurrence.nettoyerGymnase_id = occurence.id;
+    idOccurrence.tacheBoxe_id = occBoxe.id;
 
-    const installerTables = await sous_tache.create({
-      tacheId: preparerSalle.id,
-      titre: "Installer les tables",
-      description: "Placer les tables selon la configuration prévue.",
+    // Create some sub-tasks
+    const st1 = await sous_tache.create({
+      tacheId: tachePiscine.id,
+      titre: "Back wash",
+      description: "Effectuer le back wash selon la procédure.",
     });
-
-    const installerChaises = await sous_tache.create({
-      tacheId: preparerSalle.id,
-      titre: "Installer les chaises",
-      description: "Installer les chaises autour des tables.",
+    const st2 = await sous_tache.create({
+      tacheId: tachePiscine.id,
+      titre: "Nettoyer les vestiaires",
+      description: "Nettoyer les vestiaires de la piscine.",
     });
-
-    const verifierSalle = await sous_tache.create({
-      tacheId: preparerSalle.id,
-      titre: "Vérifier la disposition",
-      description:
-        "Vérifier que la salle correspond à la configuration demandée.",
+    const st3 = await sous_tache.create({
+      tacheId: tacheBoxe.id,
+      titre: "Nettoyer les bandages",
+      description: "Nettoyer/ranger les bandages selon la procédure.",
     });
-
-    const laverVestiaires = await sous_tache.create({
-      tacheId: nettoyerVestiaires.id,
-      titre: "Nettoyer les planchers",
-      description: "Balayer et laver les planchers des vestiaires.",
+    const st4 = await sous_tache.create({
+      tacheId: tacheEntretienGeneral.id,
+      titre: "Balayer le plancher",
+      description: "Balayer les planchers des locaux assignés.",
     });
-
-    const poubellesVestiaires = await sous_tache.create({
-      tacheId: nettoyerVestiaires.id,
+    const st5 = await sous_tache.create({
+      tacheId: tacheEntretienGeneral.id,
+      titre: "Laver le plancher",
+      description: "Laver les planchers.",
+    });
+    const st6 = await sous_tache.create({
+      tacheId: tacheEntretienGeneral.id,
       titre: "Vider les poubelles",
-      description: "Vider les poubelles et remplacer les sacs.",
+      description: "Vider et remplacer les sacs.",
     });
 
-    const verifierVestiaires = await sous_tache.create({
-      tacheId: nettoyerVestiaires.id,
-      titre: "Vérifier les vestiaires",
-      description: "Vérifier l'état général des vestiaires après le nettoyage.",
-    });
+    // Assign tasks to people based on real associations
+    if (comptes["Romain"]) {
+      const ta = await tachesAFaire.create({
+        tacheId: tachePiscine.id,
+        compteId: comptes["Romain"].id,
+        occurrence_de_tacheId: idOccurrence.tachePiscine_id,
+        commentaire: "Entretien piscine selon grille.",
+        isCompleted: false,
+      });
+      await sous_taches_AFaire.create({ sousTacheId: st1.id, tachesAFaireId: ta.id, commentaire: null, isCompleted: false });
+      await sous_taches_AFaire.create({ sousTacheId: st2.id, tachesAFaireId: ta.id, commentaire: null, isCompleted: false });
+    }
 
-    const ramasserMateriel = await sous_tache.create({
-      tacheId: rangerMateriel.id,
-      titre: "Ramasser le matériel",
-      description: "Rassembler le matériel sportif utilisé.",
-    });
+    if (comptes["Clara"]) {
+      const ta = await tachesAFaire.create({
+        tacheId: tacheBoxe.id,
+        compteId: comptes["Clara"].id,
+        occurrence_de_tacheId: idOccurrence.tacheBoxe_id,
+        commentaire: "Nettoyage des bandages.",
+        isCompleted: false,
+      });
+      await sous_taches_AFaire.create({ sousTacheId: st3.id, tachesAFaireId: ta.id, commentaire: null, isCompleted: false });
+    }
 
-    const rangerEquipements = await sous_tache.create({
-      tacheId: rangerMateriel.id,
-      titre: "Ranger les équipements",
-      description: "Ranger les équipements à leurs emplacements respectifs.",
-    });
+    if (comptes["Zoé"]) {
+      const ta = await tachesAFaire.create({
+        tacheId: tacheEntretienGeneral.id,
+        compteId: comptes["Zoé"].id,
+        occurrence_de_tacheId: idOccurrence.tacheEntretienGeneral_id,
+        commentaire: "Entretien selon grille.",
+        isCompleted: false,
+      });
+      await sous_taches_AFaire.create({ sousTacheId: st4.id, tachesAFaireId: ta.id, commentaire: null, isCompleted: false });
+      await sous_taches_AFaire.create({ sousTacheId: st5.id, tachesAFaireId: ta.id, commentaire: null, isCompleted: false });
+    }
 
-    const balayerGymnase = await sous_tache.create({
-      tacheId: nettoyerGymnase.id,
-      titre: "Balayer le gymnase",
-      description: "Balayer complètement le plancher du gymnase.",
-    });
+    if (comptes["Mathieu"]) {
+      const ta = await tachesAFaire.create({
+        tacheId: tacheAppariteur.id,
+        compteId: comptes["Mathieu"].id,
+        occurrence_de_tacheId: idOccurrence.tacheAppariteur_id,
+        commentaire: "Tâches d'appariteur selon tableau.",
+        isCompleted: false,
+      });
+    }
 
-    const laverGymnase = await sous_tache.create({
-      tacheId: nettoyerGymnase.id,
-      titre: "Laver le gymnase",
-      description: "Laver le plancher du gymnase.",
-    });
+    if (comptes["Naomi"]) {
+      const ta = await tachesAFaire.create({
+        tacheId: tacheAppariteur.id,
+        compteId: comptes["Naomi"].id,
+        occurrence_de_tacheId: idOccurrence.tacheAppariteur_id,
+        commentaire: "Tâches d'appariteur selon tableau.",
+        isCompleted: false,
+      });
+    }
 
-    const nettoyerSurfacesGymnase = await sous_tache.create({
-      tacheId: nettoyerGymnase.id,
-      titre: "Nettoyer les surfaces",
-      description: "Nettoyer les surfaces et équipements accessibles.",
-    });
+    if (comptes["Brahim"]) {
+      const ta = await tachesAFaire.create({
+        tacheId: tacheAppariteur.id,
+        compteId: comptes["Brahim"].id,
+        occurrence_de_tacheId: idOccurrence.tacheAppariteur_id,
+        commentaire: "Tâches d'appariteur selon tableau.",
+        isCompleted: false,
+      });
+    }
 
-    const ramasserDechets = await sous_tache.create({
-      tacheId: nettoyerSalles.id,
-      titre: "Ramasser les déchets",
-      description: "Ramasser les déchets laissés après les activités.",
-    });
+    if (comptes["Sheng"]) {
+      const ta = await tachesAFaire.create({
+        tacheId: tacheAppariteur.id,
+        compteId: comptes["Sheng"].id,
+        occurrence_de_tacheId: idOccurrence.tacheAppariteur_id,
+        commentaire: "Tâches d'appariteur selon tableau.",
+        isCompleted: false,
+      });
+    }
 
-    const replacerMobilier = await sous_tache.create({
-      tacheId: nettoyerSalles.id,
-      titre: "Replacer le mobilier",
-      description: "Remettre les tables et les chaises à leur emplacement.",
-    });
+    if (comptes["Mónica"]) {
+      const ta = await tachesAFaire.create({
+        tacheId: tacheESJM.id,
+        compteId: comptes["Mónica"].id,
+        occurrence_de_tacheId: idOccurrence.tacheESJM_id,
+        commentaire: "Entretien ESJM selon grille.",
+        isCompleted: false,
+      });
+    }
 
-    const nettoyerSurfacesSalles = await sous_tache.create({
-      tacheId: nettoyerSalles.id,
-      titre: "Nettoyer les surfaces",
-      description: "Nettoyer les surfaces utilisées pendant les activités.",
-    });
-
-    const viderSacs = await sous_tache.create({
-      tacheId: viderPoubelles.id,
-      titre: "Vider les poubelles",
-      description: "Vider toutes les poubelles du secteur.",
-    });
-
-    const remplacerSacs = await sous_tache.create({
-      tacheId: viderPoubelles.id,
-      titre: "Remplacer les sacs",
-      description: "Installer de nouveaux sacs dans les poubelles.",
-    });
-
-    await TaskPoste.create({
-      posteId: posteAntoine.id,
-      tacheId: preparerSalle.id,
-    });
-
-    await TaskPoste.create({
-      posteId: posteAntoine.id,
-      tacheId: nettoyerVestiaires.id,
-    });
-
-    await TaskPoste.create({
-      posteId: posteAntoine.id,
-      tacheId: rangerMateriel.id,
-    });
-
-    await TaskPoste.create({
-      posteId: posteAntoine.id,
-      tacheId: nettoyerSalles.id,
-    });
-
-    await TaskPoste.create({
-      posteId: posteAntoine.id,
-      tacheId: viderPoubelles.id,
-    });
-
-    await TaskPoste.create({
-      posteId: posteMoussa.id,
-      tacheId: nettoyerGymnase.id,
-    });
-
-    const assignationSalle = await tachesAFaire.create({
-      tacheId: preparerSalle.id,
-      compteId: antoine.id,
-      commentaire:
-        "la reunion a commencé plutot que prévu, j'ai pas eu le temps de tout installer.",
-      isCompleted: false,
-      occurrence_de_tacheId: idOccurrence.preparerSalle_id,
-    });
-
-    const assignationVestiaires = await tachesAFaire.create({
-      tacheId: nettoyerVestiaires.id,
-      occurrence_de_tacheId: idOccurrence.nettoyerVestiaires_id,
-      compteId: antoine.id,
-      commentaire:
-        "Il ne reste presque plus de savon pour la plancher, il faudrait en acheter",
-      isCompleted: true,
-    });
-
-    const assignationPoubelles = await tachesAFaire.create({
-      tacheId: viderPoubelles.id,
-      occurrence_de_tacheId: idOccurrence.viderPoubelles_id,
-      compteId: antoine.id,
-      commentaire:
-        "Il ne reste presque plus de savon pour la plancher, il faudrait en acheter",
-      isCompleted: false,
-    });
-
-    const assignationGymnase = await tachesAFaire.create({
-      tacheId: nettoyerGymnase.id,
-      occurrence_de_tacheId: idOccurrence.nettoyerGymnase_id,
-      compteId: moussa.id,
-      commentaire:
-        "Il ne reste presque plus de savon pour la plancher, il faudrait en acheter",
-      isCompleted: false,
-    });
-
-    await sous_taches_AFaire.create({
-      sousTacheId: installerTables.id,
-      tachesAFaireId: assignationSalle.id,
-      commentaire: null,
-      isCompleted: true,
-    });
-
-    await sous_taches_AFaire.create({
-      sousTacheId: installerChaises.id,
-      tachesAFaireId: assignationSalle.id,
-      commentaire: null,
-      isCompleted: true,
-    });
-
-    await sous_taches_AFaire.create({
-      sousTacheId: verifierSalle.id,
-      tachesAFaireId: assignationSalle.id,
-      commentaire: "Disposition finale à vérifier.",
-      isCompleted: false,
-    });
-
-    await sous_taches_AFaire.create({
-      sousTacheId: laverVestiaires.id,
-      tachesAFaireId: assignationVestiaires.id,
-      commentaire: null,
-      isCompleted: true,
-    });
-
-    await sous_taches_AFaire.create({
-      sousTacheId: poubellesVestiaires.id,
-      tachesAFaireId: assignationVestiaires.id,
-      commentaire: null,
-      isCompleted: true,
-    });
-
-    await sous_taches_AFaire.create({
-      sousTacheId: verifierVestiaires.id,
-      tachesAFaireId: assignationVestiaires.id,
-      commentaire: null,
-      isCompleted: true,
-    });
-
-    await sous_taches_AFaire.create({
-      sousTacheId: viderSacs.id,
-      tachesAFaireId: assignationPoubelles.id,
-      commentaire: null,
-      isCompleted: true,
-    });
-
-    await sous_taches_AFaire.create({
-      sousTacheId: remplacerSacs.id,
-      tachesAFaireId: assignationPoubelles.id,
-      commentaire: "Certains sacs restent à remplacer.",
-      isCompleted: false,
-    });
-
-    await sous_taches_AFaire.create({
-      sousTacheId: balayerGymnase.id,
-      tachesAFaireId: assignationGymnase.id,
-      commentaire: null,
-      isCompleted: true,
-    });
-
-    await sous_taches_AFaire.create({
-      sousTacheId: laverGymnase.id,
-      tachesAFaireId: assignationGymnase.id,
-      commentaire: null,
-      isCompleted: false,
-    });
-
-    await sous_taches_AFaire.create({
-      sousTacheId: nettoyerSurfacesGymnase.id,
-      tachesAFaireId: assignationGymnase.id,
-      commentaire: null,
-      isCompleted: false,
-    });
+    if (comptes["Léon"]) {
+      const ta = await tachesAFaire.create({
+        tacheId: tacheESJM.id,
+        compteId: comptes["Léon"].id,
+        occurrence_de_tacheId: idOccurrence.tacheESJM_id,
+        commentaire: "Entretien ESJM selon grille.",
+        isCompleted: false,
+      });
+    }
 
     res.status(200).json({
       message: "La base de données a été initialisée avec succès.",
@@ -514,4 +518,3 @@ const seedDatabase = async (req, res) => {
 };
 
 export { seedDatabase };
-
