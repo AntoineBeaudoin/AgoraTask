@@ -88,6 +88,15 @@ import { useModalStore } from '@/stores/modalStore';
 const modalStore = useModalStore();
 const task = ref('');
 const sortedOccurrences = ref([]);
+const days = [
+  'lundi',
+  'mardi',
+  'mercredi',
+  'jeudi',
+  'vendredi',
+  'samedi',
+  'dimanche'
+];
 
 watch(
   () => modalStore.observableTask,
@@ -102,22 +111,20 @@ watch(
 watch(
   () => task.value?.occurrences,
   (occurrences) => {
-    sortedOccurrences.value = occurrences ? [...occurrences] : [];
+    sortedOccurrences.value = occurrences ? sortByDays(occurrences) : [];
   },
   { immediate: true, deep: true }
 );
 
-function sortOccurrences(type) {
-  const days = [
-    'lundi',
-    'mardi',
-    'mercredi',
-    'jeudi',
-    'vendredi',
-    'samedi',
-    'dimanche'
-  ];
+function sortByDays(occurrences) {
+  return [...occurrences].sort((a, b) => {
+    const dayA = days.indexOf(a.journee?.toLowerCase());
+    const dayB = days.indexOf(b.journee?.toLowerCase());
+    return (dayA === -1 ? Infinity : dayA) - (dayB === -1 ? Infinity : dayB);
+  });
+}
 
+function sortOccurrences(type) {
   sortedOccurrences.value = [...sortedOccurrences.value].sort((a, b) => {
     switch (type) {
       case 'priorities':
