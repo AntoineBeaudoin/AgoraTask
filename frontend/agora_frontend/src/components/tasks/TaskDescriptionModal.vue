@@ -25,8 +25,14 @@
           <div v-if="task.occurrences.length > 0">
             <h3 class="fs-5 text-primary m-0">Horaires</h3>
             <p class="text-muted small mb-3">Fréquence et occurrences de la tâche.</p>
+            <div class="d-flex gap-2 mb-3">
+              <button type="button" class="btn btn-outline-primary" @click="sortOccurrences('priorities')">Trier par
+                priorités</button>
+              <button type="button" class="btn btn-outline-primary" @click="sortOccurrences('days')">Trier par
+                jours</button>
+            </div>
             <div class="row">
-              <div v-for="(occ, index) in task.occurrences" :key="index"
+              <div v-for="(occ, index) in sortedOccurrences" :key="index"
                 class="card card-body bg-light m-3 mt-0 position-relative p-3 col-md-5">
                 <div class="row">
                   <div class="col-sm-6">
@@ -81,17 +87,48 @@ import { useModalStore } from '@/stores/modalStore';
 
 const modalStore = useModalStore();
 const task = ref('');
+const sortedOccurrences = ref([]);
 
 watch(
   () => modalStore.observableTask,
   (observableTask) => {
-    console.log("the task to modify: ", observableTask);
     if (observableTask) {
       task.value = observableTask;
     }
   },
   { immediate: true }
 )
+
+watch(
+  () => task.value?.occurrences,
+  (occurrences) => {
+    sortedOccurrences.value = occurrences ? [...occurrences] : [];
+  },
+  { immediate: true, deep: true }
+);
+
+function sortOccurrences(type) {
+  const days = [
+    'lundi',
+    'mardi',
+    'mercredi',
+    'jeudi',
+    'vendredi',
+    'samedi',
+    'dimanche'
+  ];
+
+  sortedOccurrences.value = [...sortedOccurrences.value].sort((a, b) => {
+    switch (type) {
+      case 'priorities':
+        return (a.priorite ?? Infinity) - (b.priorite ?? Infinity);
+      case 'days':
+        return days.indexOf(a.journee?.toLowerCase()) - days.indexOf(b.journee?.toLowerCase());
+      default:
+        return 0;
+    }
+  });
+}
 
 function close() {
   modalStore.closeTaskModal();
