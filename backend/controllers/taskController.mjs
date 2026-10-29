@@ -19,17 +19,13 @@ async function validateTaskDoesNotAlreadyExist(title, room, taskId = -1) {
             room: room,
         }
     });
-    if (taskId !== -1) {
-        if (anotherTask?.id !== taskId) {
-            return false;
-        }
-        return true;
-    }
-    if (anotherTask) {
+    if (anotherTask && Number(anotherTask.id) !== Number(taskId)) {
         const error = new Error("Une tâche identique existe déjà.");
         error.statusCode = 409;
         throw error;
     }
+
+    return true;
 }
 
 /**
@@ -100,29 +96,29 @@ async function addTaskImages(req, task) {
 }
 
 async function copyExistingImages(originalTask, newTask) {
-  for (const image of originalTask.images ?? []) {
-    const imageResponse = await fetch(image.path);
+    for (const image of originalTask.images ?? []) {
+        const imageResponse = await fetch(image.path);
 
-    if (!imageResponse.ok) {
-      throw new Error(`Impossible de récupérer l'image ${image.filename}`);
+        if (!imageResponse.ok) {
+            throw new Error(`Impossible de récupérer l'image ${image.filename}`);
+        }
+
+        const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+        const blob = await put(
+            `task/${newTask.id}/${image.filename}`,
+            imageBuffer,
+            {
+                access: "public",
+                contentType: image.mimeType,
+            },
+        );
+        await TaskImage.create({
+            taskId: newTask.id,
+            filename: image.filename,
+            path: blob.url,
+            mimeType: image.mimeType,
+        });
     }
-
-    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-    const blob = await put(
-      `task/${newTask.id}/${image.filename}`,
-      imageBuffer,
-      {
-        access: "public",
-        contentType: image.mimeType,
-      },
-    );
-    await TaskImage.create({
-      taskId: newTask.id,
-      filename: image.filename,
-      path: blob.url,
-      mimeType: image.mimeType,
-    });
-  }
 }
 
 /**
@@ -130,32 +126,29 @@ async function copyExistingImages(originalTask, newTask) {
  * les images qui ne figurent plus dans la liste conservée (`existingImageIds`).
  */
 async function syncExistingImages(req, taskId) {
-  let existingIds = [];
-  if (req.body.existingImageIds) {
-    try {
-      existingIds = JSON.parse(req.body.existingImageIds).map((id) =>
-        Number(id),
-      );
-    } catch {
-      existingIds = [];
-    }
-  }
-  const currentImages = await TaskImage.findAll({ where: { taskId } });
-  for (const image of currentImages) {
-    if (!existingIds.includes(image.id)) {
-      if (image.path) {
+    let existingIds = [];
+    if (req.body.existingImageIds) {
         try {
-          await del(image.path);
-        } catch (err) {
-          console.error(
-            `Erreur lors de la suppression sur Vercel Blob (${image.path}):`,
-            err,
-          );
+            existingIds = JSON.parse(req.body.existingImageIds).map((id) =>
+                Number(id),
+            );
+        } catch {
+            existingIds = [];
         }
-      }
-      await image.destroy();
     }
-  }
+    const currentImages = await TaskImage.findAll({ where: { taskId } });
+    for (const image of currentImages) {
+        if (!existingIds.includes(image.id)) {
+            if (image.path) {
+                try {
+                    await del(image.path);
+                } catch (err) {
+                    console.error(`Erreur lors de la suppression sur Vercel Blob (${image.path}):`, err,);
+                }
+            }
+            await image.destroy();
+        }
+    }
 }
 
 /**
@@ -228,16 +221,16 @@ export async function getAllTasks(req, res, next) {
             ]
         });
 
-    res.status(200).json({
-      status: 200,
-      message: "Tâches récupérés avec succès.",
-      data: tasks,
-      path: `/api/task/list`,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (err) {
-    next(err);
-  }
+        res.status(200).json({
+            status: 200,
+            message: "Tâches récupérés avec succès.",
+            data: tasks,
+            path: `/api/task/list`,
+            timestamp: new Date().toISOString(),
+        });
+    } catch (err) {
+        next(err);
+    }
 }
 
 export async function replaceTask(req, res, next) {
@@ -251,18 +244,44 @@ export async function replaceTask(req, res, next) {
                 message: "Tâche introuvable."
             });
         }
-        const taskExists = await validateTaskDoesNotAlreadyExist(title, room, id);
-        if (taskExists) {
-            return res.status(409).json({
-                status: 409,
-                message: "Une tâche identique existe déjà."
-            });
-        }
+        await validateTaskDoesNotAlreadyExist(title, room, id);
         await task.update({ title, room, description: description ?? null, recurring, automaticAssignment });
         if (req.body.occurrences !== undefined) {
             const occurrences = typeof req.body.occurrences === "string" ? JSON.parse(req.body.occurrences) : req.body.occurrences;
-            await occurrence_de_tache.destroy({ where: { tacheId: task.id } });
-            await createOccurrences(task.id, occurrences);
+            const existingOccurrences = await occurrence_de_tache.findAll({ where: { tacheId: task.id } });
+            const existingById = new Map(existingOccurrences.map(occ => [Number(occ.id), occ]));
+            const retainedIds = [];
+            for (const occ of occurrences) {
+                const occurrenceId = Number(occ.id);
+                const existing = existingById.get(occurrenceId);
+                if (existing) {
+                    await existing.update({
+                        journee: occ.journee,
+                        heureDebut: occ.heureDebut || null,
+                        heureFin: occ.heureFin || null,
+                        priorite: occ.priorite ?? 3,
+                        isRequired: occ.isRequired ?? true
+                    });
+                    retainedIds.push(existing.id);
+                } else {
+                    const created = await occurrence_de_tache.create({
+                        tacheId: task.id,
+                        journee: occ.journee,
+                        heureDebut: occ.heureDebut || null,
+                        heureFin: occ.heureFin || null,
+                        priorite: occ.priorite ?? 3,
+                        isRequired: occ.isRequired ?? true
+                    });
+                    retainedIds.push(created.id);
+                }
+            }
+            const removedOccurrences = existingOccurrences.filter(occ => !retainedIds.includes(occ.id));
+            for (const occ of removedOccurrences) {
+                const referenceCount = await TachesAFaires.count({ where: { occurrence_de_tacheId: occ.id } });
+                if (referenceCount === 0) {
+                    await occ.destroy();
+                }
+            }
         }
         if (req.body.subTasks !== undefined) {
             const subTasks = typeof req.body.subTasks === "string" ? JSON.parse(req.body.subTasks) : req.body.subTasks;

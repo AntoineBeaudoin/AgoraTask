@@ -147,7 +147,7 @@
             <div class="modal-footer">
               <button type="button" class="btn btn-danger" @click="close">Annuler</button>
               <button id="submitBtn" type="submit" class="btn btn-success">{{ isEditing ? 'Modifier' : 'Ajouter'
-                }}</button>
+              }}</button>
             </div>
           </form>
         </div>
@@ -193,9 +193,13 @@ watch(
       automaticAssignment.value = task.automaticAssignment ?? false;
 
       occurrences.value = (task.occurrences ?? []).map(occ => ({ ...occ }));
-      subTasks.value = (task.subTasks ?? task.sous_taches ?? []).map(st => ({
-        titre: st.titre ?? st.title,
-        description: st.description
+      subTasks.value = (
+        task.subTasks ?? task.sous_taches ?? []
+      ).map(st => ({
+        id: st.id,
+        tacheId: st.tacheId,
+        titre: st.titre ?? st.title ?? '',
+        description: st.description ?? ''
       }));
 
       images.value = (task.images ?? []).map(image => ({
