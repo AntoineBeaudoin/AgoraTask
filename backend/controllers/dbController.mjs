@@ -111,17 +111,17 @@ const seedDatabase = async (req, res) => {
     
     comptes["Romain"] = await Compte.create({
       prenom: "Romain",
-      nom: " ",
+      nom: "Bredy",
       courriel: "romain@agoratask.com",
       motDePasse: hashedPassword,
-      role: "personnel_de_terrain",
+      role: "coordonnateur",
       IsArchived: false,
-      posteId: posteEntretien.id,
+      posteId: posteCoordination.id,
     });
 
     comptes["Clara"] = await Compte.create({
       prenom: "Clara",
-      nom: " ",
+      nom: "Côté",
       courriel: "clara@agoratask.com",
       motDePasse: hashedPassword,
       role: "personnel_de_terrain",
@@ -131,7 +131,7 @@ const seedDatabase = async (req, res) => {
 
     comptes["Naomi"] = await Compte.create({
       prenom: "Naomi",
-      nom: " ",
+      nom: "Tremblay",
       courriel: "naomi@agoratask.com",
       motDePasse: hashedPassword,
       role: "personnel_de_terrain",
@@ -141,7 +141,7 @@ const seedDatabase = async (req, res) => {
 
     comptes["Zoé"] = await Compte.create({
       prenom: "Zoé",
-      nom: " ",
+      nom: "Fortin",
       courriel: "zoe@agoratask.com",
       motDePasse: hashedPassword,
       role: "personnel_de_terrain",
@@ -151,7 +151,7 @@ const seedDatabase = async (req, res) => {
 
     comptes["Mathieu"] = await Compte.create({
       prenom: "Mathieu",
-      nom: " ",
+      nom: "Gagné",
       courriel: "mathieu@agoratask.com",
       motDePasse: hashedPassword,
       role: "personnel_de_terrain",
@@ -161,18 +161,8 @@ const seedDatabase = async (req, res) => {
 
     comptes["Brahim"] = await Compte.create({
       prenom: "Brahim",
-      nom: " ",
+      nom: "Bouchard",
       courriel: "brahim@agoratask.com",
-      motDePasse: hashedPassword,
-      role: "personnel_de_terrain",
-      IsArchived: false,
-      posteId: posteAppariteur.id,
-    });
-
-    comptes["Sheng"] = await Compte.create({
-      prenom: "Sheng",
-      nom: " ",
-      courriel: "sheng@agoratask.com",
       motDePasse: hashedPassword,
       role: "personnel_de_terrain",
       IsArchived: false,
@@ -191,17 +181,17 @@ const seedDatabase = async (req, res) => {
 
     comptes["Colin"] = await Compte.create({
       prenom: "Colin",
-      nom: " ",
+      nom: "Giguère",
       courriel: "admin@admin.com",
       motDePasse: hashedPassword,
       role: "administrateur",
       IsArchived: false,
-      posteId: posteAdministration.id,
+      posteId: posteColin.id,
     });
 
     comptes["Philipe"] = await Compte.create({
       prenom: "Philipe",
-      nom: " ",
+      nom: "Lavoie",
       courriel: "philipe@agoratask.com",
       motDePasse: hashedPassword,
       role: "personnel_de_terrain",
@@ -211,7 +201,7 @@ const seedDatabase = async (req, res) => {
 
     comptes["Shelby"] = await Compte.create({
       prenom: "Shelby",
-      nom: " ",
+      nom: "Côté",
       courriel: "shelby@agoratask.com",
       motDePasse: hashedPassword,
       role: "personnel_de_terrain",
@@ -221,7 +211,7 @@ const seedDatabase = async (req, res) => {
 
     comptes["Audrée"] = await Compte.create({
       prenom: "Audrée",
-      nom: " ",
+      nom: "Morin",
       courriel: "audree@agoratask.com",
       motDePasse: hashedPassword,
       role: "personnel_de_terrain",
@@ -231,7 +221,7 @@ const seedDatabase = async (req, res) => {
 
     comptes["Léon"] = await Compte.create({
       prenom: "Léon",
-      nom: " ",
+      nom: "Simard",
       courriel: "leon@agoratask.com",
       motDePasse: hashedPassword,
       role: "personnel_de_terrain",
@@ -241,7 +231,7 @@ const seedDatabase = async (req, res) => {
 
     comptes["Mónica"] = await Compte.create({
       prenom: "Mónica",
-      nom: " ",
+      nom: "Desrosiers",
       courriel: "monica@agoratask.com",
       motDePasse: hashedPassword,
       role: "personnel_de_terrain",
@@ -251,7 +241,7 @@ const seedDatabase = async (req, res) => {
 
     comptes["Stéphanie"] = await Compte.create({
       prenom: "Stéphanie",
-      nom: " ",
+      nom: "Lachance",
       courriel: "stephanie@agoratask.com",
       motDePasse: hashedPassword,
       role: "personnel_de_terrain",
@@ -261,7 +251,7 @@ const seedDatabase = async (req, res) => {
 
     comptes["Sébastien"] = await Compte.create({
       prenom: "Sébastien",
-      nom: " ",
+      nom: "Roy",
       courriel: "sebastien@agoratask.com",
       motDePasse: hashedPassword,
       role: "personnel_de_terrain",
