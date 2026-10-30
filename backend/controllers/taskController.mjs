@@ -279,40 +279,37 @@ export async function getMyTasks(req, res, next) {
     });
 
     const taskIds = [];
+    const assignmentIds = [];
     for (let i = 0; i < assignments.length; i++) {
       taskIds.push(assignments[i].tacheId);
+      assignmentIds.push(assignments[i].id);
     }
 
     const tasks = await Task.findAll({
       where: { id: taskIds, archived: false },
       include: { model: TaskImage, as: "images" },
     });
-
     const tasksById = {};
     for (let i = 0; i < tasks.length; i++) {
       tasksById[tasks[i].id] = tasks[i];
     }
 
     const subTasks = await sous_tache.findAll({ where: { tacheId: taskIds } });
-
-    const assignmentIds = [];
-    for (let i = 0; i < assignments.length; i++) {
-      assignmentIds.push(assignments[i].id);
-    }
     const progressRows = await sous_taches_AFaire.findAll({
       where: { tachesAFaireId: assignmentIds },
     });
     const progress = {};
     for (let i = 0; i < progressRows.length; i++) {
-      progress[
-        progressRows[i].tacheAFaireId + "-" + progressRows[i].sousTacheId
-      ] = progressRows[i].isCompleted;
+      progress[progressRows[i].tachesAFaireId + "-" + progressRows[i].sousTacheId] =
+        progressRows[i].isCompleted;
     }
 
     const data = [];
     for (let i = 0; i < assignments.length; i++) {
       const a = assignments[i];
       const task = tasksById[a.tacheId];
+      if (!task) continue; // tâche archivée
+
       const mySubTasks = [];
       for (let j = 0; j < subTasks.length; j++) {
         if (subTasks[j].tacheId === a.tacheId) {
@@ -324,17 +321,16 @@ export async function getMyTasks(req, res, next) {
           });
         }
       }
-      if (!task) continue;
+
       data.push({
         ...task.toJSON(),
         tacheAFaireId: a.id,
         isCompleted: a.isCompleted,
         commentaire: a.commentaire,
         journee: a.occurrence_de_tache ? a.occurrence_de_tache.journee : null,
-        heureDebut: a.occurrence_de_tache
-          ? a.occurrence_de_tache.heureDebut
-          : null,
+        heureDebut: a.occurrence_de_tache ? a.occurrence_de_tache.heureDebut : null,
         heureFin: a.occurrence_de_tache ? a.occurrence_de_tache.heureFin : null,
+        sousTaches: mySubTasks,
       });
     }
 
@@ -346,6 +342,7 @@ export async function getMyTasks(req, res, next) {
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
+    console.error(err);
     next(err);
   }
 }
