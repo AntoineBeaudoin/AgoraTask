@@ -2,6 +2,7 @@ import { Task, TaskImage, occurrence_de_tache, sous_tache, tachesAFaire, sous_ta
 import { put, del } from "@vercel/blob";
 import { Op } from "sequelize";
 import dotenv from "dotenv";
+import bd from "../models/bd.mjs";
 
 dotenv.config();
 
