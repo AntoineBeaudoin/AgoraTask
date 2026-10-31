@@ -5,6 +5,8 @@ export const useModalStore = defineStore('modal', {
   state: () => ({
     taskModalOpen: false,
     editingTask: null,
+    taskDescriptionModalOpen: false,
+    observableTask: null,
 
     passwordModalOpen: false,
     editingUser: null,
@@ -14,6 +16,11 @@ export const useModalStore = defineStore('modal', {
   }),
 
   actions: {
+    openTaskDescription(observableTask) {
+      this.observableTask = observableTask;
+      this.taskDescriptionModalOpen = true;
+    },
+
     openAddTask() {
       this.editingTask = null
       this.taskModalOpen = true
@@ -25,8 +32,10 @@ export const useModalStore = defineStore('modal', {
     },
 
     closeTaskModal() {
+      this.taskDescriptionModalOpen = false;
       this.taskModalOpen = false
       this.editingTask = null
+      this.observableTask = null;
     },
 
     openEditPassword(userId) {

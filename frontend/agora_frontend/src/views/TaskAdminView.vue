@@ -5,6 +5,7 @@
       Ajouter une tâche
     </button>
     <TaskModal />
+    <TaskDescriptionModal />
 
     <div class="input-group mb-3">
       <input
@@ -25,6 +26,7 @@
             <button @click="updateTask(task.id)" class="btn btn-primary">Modifier la tâche</button>
             <button @click="duplicateTask(task.id)" v-bind:id="task.id" class="btn btn-secondary">Dupliquer</button>
             <button @click="deleteTask(task.id)" class="btn btn-danger">Supprimer</button>
+            <button @click="taskDetails(task.id)" class="btn btn-info">Détails</button>
           </div>
       </div>
     </div>
@@ -37,6 +39,7 @@
 import { useModalStore } from '@/stores/modalStore'
 import { useTaskStore } from '@/stores/taskStore'
 import TaskModal from '@/components/tasks/TaskModal.vue'
+import TaskDescriptionModal from '@/components/tasks/TaskDescriptionModal.vue';
 import { onMounted, ref, watch } from 'vue'
 import { switchIsButtonActiveById } from '@/utils/dom-manipulation'
 
@@ -79,7 +82,12 @@ async function duplicateTask(id) {
 }
 
 async function addTask() {
-  const modalStore = useModalStore()
-  modalStore.openAddTask()
+  const modalStore = useModalStore();
+  modalStore.openAddTask();
+}
+
+async function taskDetails(id) {
+  const observableTask = await taskStore.getTaskById(id);
+  modalStore.openTaskDescription(observableTask);
 }
 </script>
