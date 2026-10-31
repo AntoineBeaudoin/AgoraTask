@@ -1,4 +1,3 @@
-
 /**
  * Effectue une requête vers une url avec d'une méthoode et des options définies par l'utilisateur,
  * tout cela en utilisant la clé d'api pour le projet.
@@ -19,6 +18,7 @@ export async function apiFetch(path, options = {}) {
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
+  console.log(`${import.meta.env.VITE_API_BASE}${path}`)
   const res = await fetch(`${import.meta.env.VITE_API_BASE}${path}`, { ...options, headers })
   if (res.status === 204) return null
   const jsonResponse = await res.json()

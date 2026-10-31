@@ -232,7 +232,7 @@
                   <select
                     v-model="pendingRoles[user.id]"
                     class="role-select"
-                    :disabled="user.IsArchived"
+                    :disabled="user.IsArchived || authStore.isConnectedUser(user.courriel)"
                   >
                     <option value="administrateur">Administrateur</option>
 

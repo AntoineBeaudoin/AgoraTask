@@ -26,25 +26,25 @@ export const useAuthStore = defineStore('auth', () => {
   })
 
   const setToken = (theToken) => {
-    localStorage.setItem('jwt', theToken);
-    token.value = theToken;
+    localStorage.setItem('jwt', theToken)
+    token.value = theToken
   }
 
   const disconnect = () => {
-    localStorage.removeItem('jwt');
-    router.push('/');
+    localStorage.removeItem('jwt')
+    router.push('/')
   }
 
   const getUserById = async (id) => {
     try {
-      const response = await apiFetch(`/account/${id}`);
+      const response = await apiFetch(`/account/${id}`)
       if (response.status !== 200) {
-        errorMessage.value = response.status + ': ' + (response.message || 'Erreur lors de la récupération du compte')
+        errorMessage.value =
+          response.status + ': ' + (response.message || 'Erreur lors de la récupération du compte')
         return null
       }
       return response.data
-    }
-    catch (err) {
+    } catch (err) {
       console.log('Erreur lors de la récupération du compte:', err)
       errorMessage.value = 'Erreur lors de la récupération du compte'
       return null
@@ -97,7 +97,15 @@ export const useAuthStore = defineStore('auth', () => {
       return false
     }
   }
-
+  function isConnectedUser(courriel) {
+    if (!token.value) return null
+    try {
+      const { email } = jwtDecode(token.value)
+      return courriel === email
+    } catch {
+      return null
+    }
+  }
   function isUserEmploye() {
     if (!token.value) return false
 
@@ -158,6 +166,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const loginUser = async (email, mdp) => {
+    console.log('loginUser called with email:', email.value, 'and password:', mdp.value)
     errorMessage.value = ''
     try {
       const response = await apiFetch('/account/login', {
@@ -169,7 +178,8 @@ export const useAuthStore = defineStore('auth', () => {
       })
 
       if (response.status !== 200 && response.status !== 201) {
-        errorMessage.value = response.status + ': ' + response.message || 'Erreur lors de la connexion'
+        errorMessage.value =
+          response.status + ': ' + response.message || 'Erreur lors de la connexion'
       } else {
         const decodedToken = jwtDecode(response.data.token)
 
@@ -177,9 +187,9 @@ export const useAuthStore = defineStore('auth', () => {
         const userRole = decodedToken.role
         let redirectTo = ''
         switch (userRole) {
-          case "administrateur":
-            redirectTo = route.query.redirect || "/admin";
-            break;
+          case 'administrateur':
+            redirectTo = route.query.redirect || '/admin'
+            break
 
           case 'coordonnateur':
             redirectTo = route.query.redirect || '/coordo'
@@ -200,24 +210,23 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const changePassword = async(userId, newPassword, confirmedPassword) => {
+  const changePassword = async (userId, newPassword, confirmedPassword) => {
     try {
       const response = await apiFetch('/account/password', {
         method: 'PATCH',
         body: JSON.stringify({
           id: userId,
           newPassword: newPassword.value,
-          confirmedPassword: confirmedPassword.value
+          confirmedPassword: confirmedPassword.value,
         }),
-      });
-      if (response.status !== 200)
-      {
-        throw new Error(`HTTP ${response.status}`);
+      })
+      if (response.status !== 200) {
+        throw new Error(`HTTP ${response.status}`)
       }
-      return true;
+      return true
     } catch (err) {
-      console.log('error', err);
-      return false;
+      console.log('error', err)
+      return false
     }
   }
 
