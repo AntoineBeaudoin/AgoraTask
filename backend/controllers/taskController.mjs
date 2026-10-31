@@ -305,6 +305,7 @@ export async function getMyTasks(req, res, next) {
     const assignments = await tachesAFaire.findAll({
       where: { compteId: req.user.id },
       include: { model: occurrence_de_tache, as: "occurrence_de_tache" },
+      order: [["id", "ASC"]],
     });
 
     const taskIds = [];
@@ -323,7 +324,10 @@ export async function getMyTasks(req, res, next) {
       tasksById[tasks[i].id] = tasks[i];
     }
 
-    const subTasks = await sous_tache.findAll({ where: { tacheId: taskIds } });
+    const subTasks = await sous_tache.findAll({ 
+      where: { tacheId: taskIds },
+      order: [["id", "ASC"]]
+    });
     const progressRows = await sous_taches_AFaire.findAll({
       where: { tachesAFaireId: assignmentIds },
     });
