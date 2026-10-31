@@ -194,11 +194,11 @@ watch(
 
       occurrences.value = (task.occurrences ?? []).map(occ => ({ ...occ }));
       subTasks.value = (
-        task.subTasks ?? task.sous_taches ?? []
+        task.sous_taches ?? []
       ).map(st => ({
         id: st.id,
         tacheId: st.tacheId,
-        titre: st.titre ?? st.title ?? '',
+        titre: st.title ?? '',
         description: st.description ?? ''
       }));
 
