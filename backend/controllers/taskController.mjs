@@ -337,7 +337,7 @@ export async function getMyTasks(req, res, next) {
     for (let i = 0; i < assignments.length; i++) {
       const a = assignments[i];
       const task = tasksById[a.tacheId];
-      if (!task) continue; // tâche archivée
+      if (!task) continue;
 
       const mySubTasks = [];
       for (let j = 0; j < subTasks.length; j++) {
