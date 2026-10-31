@@ -1,7 +1,7 @@
 <template>
   <section class="container py-5">
     <h1 class="mb-4 text-center">Vos tâches</h1>
-
+    <TaskDescriptionModal />
     <p v-if="taskStore.loaded && taskStore.tasks.length === 0" class="text-center text-muted">
       Aucune tâche ne vous est assignée.
     </p>
@@ -16,16 +16,7 @@
               <span class="badge bg-secondary ms-2">{{ task.room }}</span>
             </label>
           </div>
-
-          <button type="button" class="btn btn-outline-primary btn-sm" @click="toggleDetails(task.id)">
-            {{ detailledTasks.has(task.id) ? 'Moins de détails' : 'Plus de détails' }}
-          </button>
-        </div>
-
-        <div v-if="detailledTasks.has(task.id)" class="card-footer bg-light">
-          <p class="mb-1"><strong>Description :</strong> {{ task.description }}</p>
-          <p class="mb-1"><strong>Début :</strong> {{ task.startTime }}</p>
-          <p class="mb-0"><strong>Fin :</strong> {{ task.endTime }}</p>
+          <button type="button" @click="taskDetails(task.id)" class="btn btn-info">Détails</button>
         </div>
       </div>
 
@@ -38,18 +29,17 @@
 </template>
 
 <script setup>
-import { onMounted, reactive } from 'vue';
+import TaskDescriptionModal from '@/components/tasks/TaskDescriptionModal.vue';
+import { onMounted } from 'vue';
 import { useTaskStore } from '@/stores/taskStore.js';
+import { useModalStore } from '@/stores/modalStore';
 
 const taskStore = useTaskStore();
-const detailledTasks = reactive(new Set());
+const modalStore = useModalStore();
 
-function toggleDetails(id) {
-  if (detailledTasks.has(id)) {
-    detailledTasks.delete(id);
-  } else {
-    detailledTasks.add(id);
-  }
+async function taskDetails(id) {
+  const observableTask = await taskStore.getTaskById(id);
+  modalStore.openTaskDescription(observableTask);
 }
 
 onMounted(() => {

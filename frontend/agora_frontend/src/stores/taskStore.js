@@ -11,7 +11,7 @@ export const useTaskStore = defineStore('tasks', {
 
   actions: {
     async getTaskById(id) {
-      return this.tasks.find((task) => task.id == id);
+      return await this.tasks.find((task) => task.id == id);
     },
     async loadTasks() {
       if (this.loaded) {
