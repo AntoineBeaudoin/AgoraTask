@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 import * as taskController from "../controllers/taskController.mjs";
-import { isConnected } from "../middleware/isConnected.mjs";
+import { isConnected } from "../Middleware/IsConnected.mjs";
 
 const router = express.Router();
 

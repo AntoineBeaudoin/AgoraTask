@@ -6,7 +6,7 @@ import { occurrence_de_tache } from "./occurrence_de_tache.mjs";
 import { sous_tache } from "./sous_taches.mjs";
 import Poste from "./poste.mjs";
 import Compte from "./compte.mjs";
-import { sous_taches_AFaire } from "./SousTachesAFaire.mjs";
+import { sous_taches_AFaire } from "./sousTachesAFaire.mjs";
 import { tachesAFaire } from "./tachesAFaire.mjs";
 
 Task.hasMany(TaskImage, {
@@ -69,6 +69,7 @@ Task.belongsToMany(Poste, {
 
 Compte.belongsToMany(Task, {
   through: tachesAFaire,
+  through: { model: tachesAFaire, unique: false},
   foreignKey: "compteId",
   otherKey: "tacheId",
   as: "taches",

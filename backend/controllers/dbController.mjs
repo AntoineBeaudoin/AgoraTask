@@ -440,9 +440,6 @@ const seedDatabase = async (req, res) => {
         commentaire: "Tâches d'appariteur selon tableau.",
         isCompleted: false,
       });
-      if (idOccurrence.viderPoubelles_id === undefined) {
-        idOccurrence.viderPoubelles_id = occurence.id;
-      }
     }
 
     if (comptes["Naomi"]) {
