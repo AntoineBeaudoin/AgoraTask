@@ -146,7 +146,6 @@
       </button>
     </div>
 
-    <!-- LISTE DES EMPLOYÉS -->
     <section class="employees-card">
       <div class="card-header">
         <div>
@@ -160,7 +159,6 @@
         <div class="employee-count">{{ displayedUsers.length }} résultat(s)</div>
       </div>
 
-      <!-- FILTRE PAR RÔLE -->
       <div class="role-filters">
         <span class="role-label"> Filtrer par rôle : </span>
 
@@ -292,10 +290,9 @@ import { onMounted, reactive } from 'vue'
 import { apiFetch } from '../utils/api.js'
 import { useModalStore } from '@/stores/modalStore.js'
 import EditPasswordModal from '@/components/users/EditPasswordModal.vue'
-import { useAuthStore } from '@/stores/auth.js'
 
 const modalStore = useModalStore()
-const authStore = useAuthStore()
+
 let displayTitle = ref('Employés actifs')
 let displayedRole = ref('personnel_de_terrain')
 let pendingRoles = ref({})

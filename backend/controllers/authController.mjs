@@ -65,6 +65,40 @@ export async function createUser(req, res, next) {
 }
 
 /**
+ * Retourne toutes les employés qui ne sont pas archivés, ainsi que chacune des urls des images qui lui sont associés.
+ *
+ * @export
+ * @async
+ * @param {*} req La requête envoyée par le frontend.
+ * @param {*} res La réponse à retourner au frontend.
+ * @param {*} next Le prochain middlware à appeler, en cas d'erreur.
+ * @returns {*} Cette fonction ne retourne rien.
+ */
+export async function getAllFieldEmployees(req, res, next) {
+    try {
+        let employees = await Compte.findAll({
+            where: {
+                IsArchived: false,
+                role: 'personnel_de_terrain'
+            }
+        });
+
+        res.status(200).json(
+            {
+                status: 200,
+                message: "Employés récupérés avec succès.",
+                data: employees,
+                path: `/api/auth/employes`,
+                timestamp: new Date().toISOString()
+            }
+        )
+    } catch (err) {
+        next(err);
+    }
+}
+
+
+/**
  * Authentifie un utilisateur et génère un jeton JWT que le client peut utiliser
  *
  * @export

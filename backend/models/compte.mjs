@@ -43,6 +43,10 @@ const Compte = bd.define("Compte", {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  posteId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
 });
 
 export default Compte;

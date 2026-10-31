@@ -3,7 +3,7 @@
     <h1 class="mb-4">Portail administrateur</h1>
 
     <div class="row g-4">
-      <div class="col-md-6">
+      <div class="col-md-3">
         <div class="card h-100 shadow-sm">
           <div class="card-body d-flex flex-column">
             <h3 class="card-title">Gestion des tâches</h3>
@@ -17,7 +17,7 @@
         </div>
       </div>
 
-      <div class="col-md-6">
+      <div class="col-md-3">
         <div class="card h-100 shadow-sm">
           <div class="card-body d-flex flex-column">
             <h3 class="card-title">Gestion des employés</h3>
@@ -30,10 +30,27 @@
           </div>
         </div>
       </div>
+
+      <div class="col-md-3">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body d-flex flex-column">
+            <h3 class="card-title">Historique des tâches</h3>
+
+            <p class="card-text">Consulter l'historique des tâches effectuées.</p>
+
+            <RouterLink :to="{ name: 'history' }" class="btn btn-primary mt-auto">
+              Voir l'historique
+            </RouterLink>
+          </div>
+        </div>
+      </div>
+
+      <PortalPosteOption :col-md="3"/>
     </div>
   </main>
 </template>
 
 <script setup>
-import { RouterLink } from 'vue-router'
+import PortalPosteOption from '@/components/postes/PortalPosteOption.vue';
+import { RouterLink } from 'vue-router';
 </script>

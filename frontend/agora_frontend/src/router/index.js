@@ -8,6 +8,7 @@ import CoordoView from '@/views/CoordoView.vue'
 import TaskAdminView from '@/views/TaskAdminView.vue'
 import GestionEmployesView from '@/views/GestionEmployesView.vue'
 import AdminView from '@/views/AdminView.vue'
+import PosteAdminView from '@/views/PosteAdminView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -32,16 +33,20 @@ const router = createRouter({
       },
     },
     {
-      path: "/GestionDesTaches",
-      name: "taskAdmin",
+      path: '/GestionDesTaches',
+      name: 'taskAdmin',
       component: TaskAdminView,
-      meta: { title: "Portail de tâche pour les administrateurs", requireAuth: true, role: "administrateur" }
+      meta: {
+        title: 'Portail de tâche pour les administrateurs',
+        requireAuth: true,
+        role: 'administrateur',
+      },
     },
     {
-      path: "/admin",
+      path: '/admin',
       name: 'admin',
       component: AdminView,
-      meta: {title: 'Portail administrateur', requireAuth: true, role: 'administrateur'},
+      meta: { title: 'Portail administrateur', requireAuth: true, role: 'administrateur' },
     },
     {
       path: '/coordo',
@@ -62,9 +67,25 @@ const router = createRouter({
       meta: { title: 'Gestion des employés', requireAuth: true, role: 'administrateur' },
     },
     {
+      path: '/GestionPostes',
+      name: 'GestionPostes',
+      component: PosteAdminView,
+      meta: { title: 'Gestion des postes de travail', requireAuth: true, roles: ['administrateur', 'coordonnateur'] },
+    },
+    {
       path: '/error',
       name: 'error',
       component: () => import('../views/GlobalErrorView.vue'),
+    },
+    {
+      path: '/history',
+      name: 'history',
+      component: () => import('../views/Historique.vue'),
+      meta: {
+        title: 'Historique des tâches',
+        requireAuth: true,
+        role: 'administrateur/coordonnateur',
+      },
     },
     //404
     {
@@ -111,9 +132,14 @@ router.beforeEach((to, from, next) => {
     })
   }
 
-  if (to.meta.role && authStore.getRole() !== to.meta.role) {
+  if (to.meta.roles && !to.meta.roles.includes(authStore.getRole())) {
     return next({ name: 'home' })
   }
+
+  if (to.meta.role && to.meta.role.includes(authStore.getRole()) === false) {
+    return next({ name: 'home' })
+  }
+
   if (to.name === 'not-found') {
     const errorStore = useErrorStore()
     errorStore.setError(404, "cette page n'existe pas ou a été supprimée.")
