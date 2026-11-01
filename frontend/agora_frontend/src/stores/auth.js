@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import { isNumber } from '@/utils/checks'
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { jwtDecode } from 'jwt-decode'
@@ -33,8 +32,40 @@ export const useAuthStore = defineStore('auth', () => {
 
   const disconnect = () => {
     localStorage.removeItem('jwt')
-    console.log('Token removed from localStorage')
     router.push('/')
+  }
+
+  const getUserById = async (id) => {
+    try {
+      const response = await apiFetch(`/account/${id}`)
+      if (response.status !== 200) {
+        errorMessage.value =
+          response.status + ': ' + (response.message || 'Erreur lors de la récupération du compte')
+        return null
+      }
+      return response.data
+    } catch (err) {
+      console.log('Erreur lors de la récupération du compte:', err)
+      errorMessage.value = 'Erreur lors de la récupération du compte'
+      return null
+    }
+  }
+
+  const getEmployes = async () => {
+    try {
+      const response = await apiFetch(`/account/employes`);
+      if (response.status !== 200) {
+        errorMessage.value = response.status + ': ' + (response.message || 'Erreur lors de la récupération des employés')
+        return null
+      }
+      console.log("get employes response ", response);
+      return response.data
+    }
+    catch (err) {
+      console.log('Erreur lors de la récupération des employés:', err)
+      errorMessage.value = 'Erreur lors de la récupération des employés'
+      return null
+    }
   }
 
   function isTokenValid() {
@@ -66,7 +97,15 @@ export const useAuthStore = defineStore('auth', () => {
       return false
     }
   }
-
+  function isConnectedUser(courriel) {
+    if (!token.value) return null
+    try {
+      const { email } = jwtDecode(token.value)
+      return courriel === email
+    } catch {
+      return null
+    }
+  }
   function isUserEmploye() {
     if (!token.value) return false
 
@@ -99,6 +138,24 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function loadEmployes()
+  {
+      try {
+        const response = await apiFetch('/account/employes');
+
+        console.log('get employes response:', response);
+
+        if (response.status !== 200) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        return response.data;
+
+      } catch (err) {
+        console.log(`HTTP ${err}`);
+      }
+  }
+
   /**
    * Retrouve le jeton de l'utilisateur connecté dans le localStorage.
    *
@@ -109,7 +166,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const loginUser = async (email, mdp) => {
-    console.log('LOGIN USER FUNCTION BEGINNING')
+    console.log('loginUser called with email:', email.value, 'and password:', mdp.value)
     errorMessage.value = ''
     try {
       const response = await apiFetch('/account/login', {
@@ -120,24 +177,19 @@ export const useAuthStore = defineStore('auth', () => {
         }),
       })
 
-      console.log('response after login attempt', response)
-
       if (response.status !== 200 && response.status !== 201) {
         errorMessage.value =
           response.status + ': ' + response.message || 'Erreur lors de la connexion'
       } else {
         const decodedToken = jwtDecode(response.data.token)
 
-        console.log('TOKEN:', response.data.token)
-        console.log('DECODED TOKEN:', decodedToken)
-        console.log('ROLE:', decodedToken.role)
         setToken(response.data.token)
         const userRole = decodedToken.role
         let redirectTo = ''
         switch (userRole) {
-          case "administrateur":
-            redirectTo = route.query.redirect || "/admin";
-            break;
+          case 'administrateur':
+            redirectTo = route.query.redirect || '/admin'
+            break
 
           case 'coordonnateur':
             redirectTo = route.query.redirect || '/coordo'
@@ -158,6 +210,26 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const changePassword = async (userId, newPassword, confirmedPassword) => {
+    try {
+      const response = await apiFetch('/account/password', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          id: userId,
+          newPassword: newPassword.value,
+          confirmedPassword: confirmedPassword.value,
+        }),
+      })
+      if (response.status !== 200) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+      return true
+    } catch (err) {
+      console.log('error', err)
+      return false
+    }
+  }
+
   return {
     getToken,
     token,
@@ -171,5 +243,9 @@ export const useAuthStore = defineStore('auth', () => {
     isUserEmploye,
     isUserEnAttente,
     getRole,
+    getUserById,
+    getEmployes,
+    changePassword,
+    loadEmployes
   }
 })
