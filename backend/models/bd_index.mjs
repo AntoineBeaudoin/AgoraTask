@@ -29,7 +29,6 @@ occurrence_de_tache.belongsTo(Task, {
   as: "task",
 });
 
-
 Task.hasMany(sous_tache, {
   foreignKey: "tacheId",
   as: "sous_taches",
