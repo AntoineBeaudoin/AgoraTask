@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeAll, afterAll, beforeEach } from "vitest";
 import bd from '../models/bd.mjs';
-import Poste from '../models/Poste.mjs';
+import Poste from '../models/poste.mjs';
 import Compte from '../models/compte.mjs';
 import request from 'supertest';
 import app from '../app.mjs';

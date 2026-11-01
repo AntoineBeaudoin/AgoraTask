@@ -67,7 +67,8 @@ Task.belongsToMany(Poste, {
 // Relation between employe and tache
 
 Compte.belongsToMany(Task, {
-  through: { model: tachesAFaire, unique: false },
+  through: tachesAFaire,
+  through: { model: tachesAFaire, unique: false},
   foreignKey: "compteId",
   otherKey: "tacheId",
   as: "taches",
