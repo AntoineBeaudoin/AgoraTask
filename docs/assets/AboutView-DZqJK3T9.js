@@ -1,0 +1,1 @@
+import{c as e,n as t,p as n,u as r}from"./index-CIYAT7EJ.js";var i={};function a(t,i){return n(),r(`main`,null,[...i[0]||=[e(`h1`,null,`Je suis la page about`,-1)]])}var o=t(i,[[`render`,a]]);export{o as default};
