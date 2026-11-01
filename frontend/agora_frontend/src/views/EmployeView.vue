@@ -19,8 +19,8 @@
               />
               <label class="form-check-label" :for="'task-' + task.tacheAFaireId">
                 {{ task.title }}
-                <span class="badge bg-secondary ms-2">{{ task.heureDebut }}</span>
-                <span class="badge bg-secondary ms-2">{{ task.heureFin }}</span>
+                <span class="badge bg-secondary ms-2">Début : {{ task.heureDebut }}</span>
+                <span class="badge bg-secondary ms-2">Fin : {{ task.heureFin }}</span>
               </label>
             </div>
             <button
