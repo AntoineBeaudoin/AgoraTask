@@ -235,147 +235,150 @@ export async function getAllTasks(req, res, next) {
 }
 
 export async function getMyTasks(req, res, next) {
-  try {
-    const assignments = await tachesAFaire.findAll({
-      where: { compteId: req.user.id },
-      include: { model: occurrence_de_tache, as: "occurrence_de_tache" },
-      order: [["id", "ASC"]],
-    });
+    try {
+        const assignments = await tachesAFaire.findAll({
+            where: { compteId: req.user.id },
+            include: { model: occurrence_de_tache, as: "occurrence_de_tache" },
+            order: [
+                [{ model: occurrence_de_tache, as: "occurrence_de_tache" }, "heureDebut", "ASC"],
+                ["id", "ASC"],
+            ],
+        });
 
-    const taskIds = [];
-    const assignmentIds = [];
-    for (let i = 0; i < assignments.length; i++) {
-      taskIds.push(assignments[i].tacheId);
-      assignmentIds.push(assignments[i].id);
-    }
-
-    const tasks = await Task.findAll({
-      where: { id: taskIds, archived: false },
-      include: { model: TaskImage, as: "images" },
-    });
-    const tasksById = {};
-    for (let i = 0; i < tasks.length; i++) {
-      tasksById[tasks[i].id] = tasks[i];
-    }
-
-    const subTasks = await sous_tache.findAll({ 
-      where: { tacheId: taskIds },
-      order: [["id", "ASC"]]
-    });
-    const progressRows = await sous_taches_AFaire.findAll({
-      where: { tachesAFaireId: assignmentIds },
-    });
-    const progress = {};
-    for (let i = 0; i < progressRows.length; i++) {
-      progress[progressRows[i].tachesAFaireId + "-" + progressRows[i].sousTacheId] =
-        progressRows[i].isCompleted;
-    }
-
-    const data = [];
-    for (let i = 0; i < assignments.length; i++) {
-      const a = assignments[i];
-      const task = tasksById[a.tacheId];
-      if (!task) continue;
-
-      const mySubTasks = [];
-      for (let j = 0; j < subTasks.length; j++) {
-        if (subTasks[j].tacheId === a.tacheId) {
-          mySubTasks.push({
-            id: subTasks[j].id,
-            titre: subTasks[j].titre,
-            description: subTasks[j].description,
-            isCompleted: progress[a.id + "-" + subTasks[j].id] === true,
-          });
+        const taskIds = [];
+        const assignmentIds = [];
+        for (let i = 0; i < assignments.length; i++) {
+            taskIds.push(assignments[i].tacheId);
+            assignmentIds.push(assignments[i].id);
         }
-      }
 
-      data.push({
-        ...task.toJSON(),
-        tacheAFaireId: a.id,
-        isCompleted: a.isCompleted,
-        commentaire: a.commentaire,
-        journee: a.occurrence_de_tache ? a.occurrence_de_tache.journee : null,
-        heureDebut: a.occurrence_de_tache ? a.occurrence_de_tache.heureDebut : null,
-        heureFin: a.occurrence_de_tache ? a.occurrence_de_tache.heureFin : null,
-        sousTaches: mySubTasks,
-      });
+        const tasks = await Task.findAll({
+            where: { id: taskIds, archived: false },
+            include: { model: TaskImage, as: "images" },
+        });
+        const tasksById = {};
+        for (let i = 0; i < tasks.length; i++) {
+            tasksById[tasks[i].id] = tasks[i];
+        }
+
+        const subTasks = await sous_tache.findAll({
+            where: { tacheId: taskIds },
+            order: [["id", "ASC"]]
+        });
+        const progressRows = await sous_taches_AFaire.findAll({
+            where: { tachesAFaireId: assignmentIds },
+        });
+        const progress = {};
+        for (let i = 0; i < progressRows.length; i++) {
+            progress[progressRows[i].tachesAFaireId + "-" + progressRows[i].sousTacheId] =
+                progressRows[i].isCompleted;
+        }
+
+        const data = [];
+        for (let i = 0; i < assignments.length; i++) {
+            const a = assignments[i];
+            const task = tasksById[a.tacheId];
+            if (!task) continue;
+
+            const mySubTasks = [];
+            for (let j = 0; j < subTasks.length; j++) {
+                if (subTasks[j].tacheId === a.tacheId) {
+                    mySubTasks.push({
+                        id: subTasks[j].id,
+                        titre: subTasks[j].titre,
+                        description: subTasks[j].description,
+                        isCompleted: progress[a.id + "-" + subTasks[j].id] === true,
+                    });
+                }
+            }
+
+            data.push({
+                ...task.toJSON(),
+                tacheAFaireId: a.id,
+                isCompleted: a.isCompleted,
+                commentaire: a.commentaire,
+                journee: a.occurrence_de_tache ? a.occurrence_de_tache.journee : null,
+                heureDebut: a.occurrence_de_tache ? a.occurrence_de_tache.heureDebut : null,
+                heureFin: a.occurrence_de_tache ? a.occurrence_de_tache.heureFin : null,
+                sousTaches: mySubTasks,
+            });
+        }
+
+        res.status(200).json({
+            status: 200,
+            message: "Tâches récupérées avec succès.",
+            data: data,
+            path: "/api/task/mine",
+            timestamp: new Date().toISOString(),
+        });
+    } catch (err) {
+        console.error(err);
+        next(err);
     }
-
-    res.status(200).json({
-      status: 200,
-      message: "Tâches récupérées avec succès.",
-      data: data,
-      path: "/api/task/mine",
-      timestamp: new Date().toISOString(),
-    });
-  } catch (err) {
-    console.error(err);
-    next(err);
-  }
 }
 
 export async function saveProgress(req, res, next) {
-  try {
-    const items = req.body.tasks;
-    if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({
-        status: 400,
-        message: "Aucune tâche à enregistrer.",
-      });
-    }
-
-    await bd.transaction(async function (t) {
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-
-        const assignment = await tachesAFaire.findOne({
-          where: { id: item.tacheAFaireId, compteId: req.user.id },
-          transaction: t,
-        });
-        if (!assignment) continue;
-
-        const comment = item.commentaire
-          ? String(item.commentaire).trim().slice(0, 1000)
-          : null;
-
-        await assignment.update(
-          {
-            isCompleted: item.isCompleted === true,
-            commentaire: comment || null,
-          },
-          { transaction: t },
-        );
-
-        const subs = Array.isArray(item.sousTaches) ? item.sousTaches : [];
-        for (let j = 0; j < subs.length; j++) {
-          const sub = await sous_tache.findOne({
-            where: { id: subs[j].id, tacheId: assignment.tacheId },
-            transaction: t,
-          });
-          if (!sub) continue;
-
-          const result = await sous_taches_AFaire.findOrCreate({
-            where: { tachesAFaireId: assignment.id, sousTacheId: sub.id },
-            defaults: { isCompleted: false },
-            transaction: t,
-          });
-          await result[0].update(
-            { isCompleted: subs[j].isCompleted === true },
-            { transaction: t },
-          );
+    try {
+        const items = req.body.tasks;
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({
+                status: 400,
+                message: "Aucune tâche à enregistrer.",
+            });
         }
-      }
-    });
 
-    res.status(200).json({
-      status: 200,
-      message: "Progression enregistrée.",
-      path: "/api/task/progress",
-      timestamp: new Date().toISOString(),
-    });
-  } catch (err) {
-    next(err);
-  }
+        await bd.transaction(async function (t) {
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+
+                const assignment = await tachesAFaire.findOne({
+                    where: { id: item.tacheAFaireId, compteId: req.user.id },
+                    transaction: t,
+                });
+                if (!assignment) continue;
+
+                const comment = item.commentaire
+                    ? String(item.commentaire).trim().slice(0, 1000)
+                    : null;
+
+                await assignment.update(
+                    {
+                        isCompleted: item.isCompleted === true,
+                        commentaire: comment || null,
+                    },
+                    { transaction: t },
+                );
+
+                const subs = Array.isArray(item.sousTaches) ? item.sousTaches : [];
+                for (let j = 0; j < subs.length; j++) {
+                    const sub = await sous_tache.findOne({
+                        where: { id: subs[j].id, tacheId: assignment.tacheId },
+                        transaction: t,
+                    });
+                    if (!sub) continue;
+
+                    const result = await sous_taches_AFaire.findOrCreate({
+                        where: { tachesAFaireId: assignment.id, sousTacheId: sub.id },
+                        defaults: { isCompleted: false },
+                        transaction: t,
+                    });
+                    await result[0].update(
+                        { isCompleted: subs[j].isCompleted === true },
+                        { transaction: t },
+                    );
+                }
+            }
+        });
+
+        res.status(200).json({
+            status: 200,
+            message: "Progression enregistrée.",
+            path: "/api/task/progress",
+            timestamp: new Date().toISOString(),
+        });
+    } catch (err) {
+        next(err);
+    }
 }
 
 export async function replaceTask(req, res, next) {
