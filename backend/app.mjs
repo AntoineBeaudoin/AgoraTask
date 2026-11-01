@@ -49,16 +49,16 @@ bd.authenticate()
   .then(() => {
     console.log("Connected to PostgreSQL");
 
-    // mettre force à true pour réinitialiser la structure de la BD.
-    return bd.sync({ force: false });
-  })
-  .then(async () => {
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+        // mettre force à true pour réinitialiser la structure de la BD.
+        return bd.sync({ force: false });
+    })
+    .then(async () => {
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    })
+    .catch(error => {
+        console.error("Database connection failed:", error);
     });
-  })
-  .catch((error) => {
-    console.error("Database connection failed:", error);
-  });
 
 export default app;

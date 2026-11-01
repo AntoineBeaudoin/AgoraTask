@@ -2,7 +2,7 @@
   <section class="container py-5">
     <h1 class="mb-4 text-center">Vos tâches</h1>
     <TaskDescriptionModal />
-    <p v-if="taskStore.loaded && taskStore.tasks.length === 0" class="text-center text-muted">
+    <p v-if="taskStore.myTasksLoaded && taskStore.myTasks.length === 0" class="text-center text-muted">
       Aucune tâche ne vous est assignée.
     </p>
 
