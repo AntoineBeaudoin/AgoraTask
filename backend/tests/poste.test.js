@@ -1,4 +1,5 @@
 import { describe, expect, it, beforeAll, afterAll, beforeEach } from "vitest";
+import jwt from 'jsonwebtoken';
 import bd from '../models/bd.mjs';
 import Poste from '../models/poste.mjs';
 import Compte from '../models/compte.mjs';
@@ -6,14 +7,31 @@ import request from 'supertest';
 import app from '../app.mjs';
 
 describe('Tests en lien avec les postes de travail', () => {
+  let token;
+
   beforeAll(async () => {
     await bd.authenticate();
+    await bd.sync();
   });
 
-  beforeEach(async() => {
-    await Poste.destroy({where: {}});
-    await Compte.destroy({where: {}});
-  })
+  beforeEach(async () => {
+    await Poste.destroy({ where: {} });
+    await Compte.destroy({ where: {} });
+
+    const admin = await Compte.create({
+      prenom: 'Admin',
+      nom: 'Test',
+      courriel: 'admin.poste.vitest@example.com',
+      motDePasse: 'password123',
+      role: 'administrateur'
+    });
+
+    token = jwt.sign(
+      { id: admin.id, role: admin.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+  });
 
   afterAll(async () => {
     await bd.close();
@@ -36,6 +54,7 @@ describe('Tests en lien avec les postes de travail', () => {
   it('refuse un poste invalide', async () => {
     const response = await request(app)
       .post('/api/poste/add')
+      .set('Authorization', 'Bearer ' + token)
       .send({
         name: 'Vitest test poste',
         description: 'Poste créé pendant un test'
@@ -47,6 +66,7 @@ describe('Tests en lien avec les postes de travail', () => {
   it('crée un poste avec les propriétés par défaut', async () => {
     const response = await request(app)
       .post('/api/poste/add')
+      .set('Authorization', 'Bearer ' + token)
       .send({
         nom: 'Vitest test poste',
         description: 'Poste créé pendant un test'
@@ -71,6 +91,7 @@ describe('Tests en lien avec les postes de travail', () => {
   it('retourne une erreur lors de la modification d’un poste inexistant', async () => {
     const response = await request(app)
       .put('/api/poste/9999')
+      .set('Authorization', 'Bearer ' + token)
       .send({
         nom: 'Lorem ipsum dolor',
         description: 'Sit amet consectetur'
@@ -82,6 +103,7 @@ describe('Tests en lien avec les postes de travail', () => {
   it('modifie correctement un poste', async () => {
     const response = await request(app)
       .post('/api/poste/add')
+      .set('Authorization', 'Bearer ' + token)
       .send({
         nom: 'Vitest test poste',
         description: 'Poste créé pendant un test'
@@ -95,6 +117,7 @@ describe('Tests en lien avec les postes de travail', () => {
 
     const responseUpdate = await request(app)
       .put('/api/poste/' + savedPoste.id)
+      .set('Authorization', 'Bearer ' + token)
       .send({
         nom: 'Vitest test poste updated',
         description: 'Poste updaté pendant le test'
@@ -106,6 +129,7 @@ describe('Tests en lien avec les postes de travail', () => {
   it('retourne une erreur lors de la modification d’un poste inexistant', async () => {
     const response = await request(app)
       .put('/api/poste/9999')
+      .set('Authorization', 'Bearer ' + token)
       .send({
         nom: 'Lorem ipsum dolor',
         description: 'Sit amet consectetur'
@@ -117,6 +141,7 @@ describe('Tests en lien avec les postes de travail', () => {
   it('archive correctement un poste', async () => {
     const response = await request(app)
       .post('/api/poste/add')
+      .set('Authorization', 'Bearer ' + token)
       .send({
         nom: 'Vitest test poste',
         description: 'Poste créé pendant un test'
@@ -130,6 +155,7 @@ describe('Tests en lien avec les postes de travail', () => {
 
     const responseDelete = await request(app)
       .delete('/api/poste/' + savedPoste.id)
+      .set('Authorization', 'Bearer ' + token)
       .send({});
 
     expect(responseDelete.status).toBe(204);
@@ -138,6 +164,7 @@ describe('Tests en lien avec les postes de travail', () => {
   it('retire correctement le statut archivé d’un poste', async () => {
     const response = await request(app)
       .post('/api/poste/add')
+      .set('Authorization', 'Bearer ' + token)
       .send({
         nom: 'Vitest test poste',
         description: 'Poste créé pendant un test'
@@ -151,12 +178,14 @@ describe('Tests en lien avec les postes de travail', () => {
 
     const responseDelete = await request(app)
       .delete('/api/poste/' + savedPoste.id)
+      .set('Authorization', 'Bearer ' + token)
       .send({});
 
     expect(responseDelete.status).toBe(204);
 
     const responseUnArchive = await request(app)
       .patch('/api/poste/' + savedPoste.id + '/reactivate')
+      .set('Authorization', 'Bearer ' + token)
       .send({});
 
     expect(responseUnArchive.status).toBe(200);
@@ -165,6 +194,7 @@ describe('Tests en lien avec les postes de travail', () => {
   it('retourne tous les postes dans la liste', async () => {
     const response = await request(app)
       .post('/api/poste/add')
+      .set('Authorization', 'Bearer ' + token)
       .send({
         nom: 'Vitest test poste',
         description: 'Poste créé pendant un test'
@@ -174,6 +204,7 @@ describe('Tests en lien avec les postes de travail', () => {
 
     const responseTwo = await request(app)
       .post('/api/poste/add')
+      .set('Authorization', 'Bearer ' + token)
       .send({
         nom: 'Vitest test poste 2',
         description: 'Poste 2 créé pendant un test'
@@ -183,6 +214,7 @@ describe('Tests en lien avec les postes de travail', () => {
 
     const responseList = await request(app)
       .get('/api/poste/list')
+      .set('Authorization', 'Bearer ' + token)
       .send({});
 
     expect(responseList.body.data.length).toBe(2);
@@ -210,6 +242,7 @@ describe('Tests en lien avec les postes de travail', () => {
 
     const response = await request(app)
       .put(`/api/poste/${poste.id}/employes`)
+      .set('Authorization', 'Bearer ' + token)
       .send({
         comptes: [employe1.id, employe2.id]
       });
@@ -233,6 +266,7 @@ describe('Tests en lien avec les postes de travail', () => {
 
     const response = await request(app)
       .put(`/api/poste/${poste.id}/employes`)
+      .set('Authorization', 'Bearer ' + token)
       .send({
         comptes: '1,2'
       });
@@ -248,6 +282,7 @@ describe('Tests en lien avec les postes de travail', () => {
 
     const response = await request(app)
       .put(`/api/poste/${poste.id}/employes`)
+      .set('Authorization', 'Bearer ' + token)
       .send({
         comptes: [0, -1, 'invalid']
       });
@@ -258,6 +293,7 @@ describe('Tests en lien avec les postes de travail', () => {
   it('retourne une erreur 404 lorsque le poste n’existe pas', async () => {
     const response = await request(app)
       .put('/api/poste/9999/employes')
+      .set('Authorization', 'Bearer ' + token)
       .send({
         comptes: []
       });
@@ -273,6 +309,7 @@ describe('Tests en lien avec les postes de travail', () => {
 
     const response = await request(app)
       .put(`/api/poste/${poste.id}/employes`)
+      .set('Authorization', 'Bearer ' + token)
       .send({
         comptes: [9999]
       });

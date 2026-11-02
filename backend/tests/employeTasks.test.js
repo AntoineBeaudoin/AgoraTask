@@ -39,6 +39,7 @@ describe("Tests des tâches de l'employé", function () {
   
   beforeAll(async function () {
     await bd.authenticate();
+    await bd.sync();
   });
 
   beforeEach(async function () {
