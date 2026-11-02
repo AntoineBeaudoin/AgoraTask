@@ -47,8 +47,9 @@ jobs:
 
       - name: Compresser le build frontend pour la release
         run: |
-          cd frontend/agora_frontend/dist
-          zip -r ../../../frontend-dist.zip .
+          ls -la docs
+          cd docs
+          zip -r ../frontend-dist.zip .
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
