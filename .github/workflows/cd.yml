@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write
 
+permissions:
+  contents: write
+
 jobs:
   deploy-app:
     runs-on: ubuntu-latest
