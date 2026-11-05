@@ -25,7 +25,6 @@ async function validateTaskDoesNotAlreadyExist(title, room, taskId = -1) {
         error.statusCode = 409;
         throw error;
     }
-
     return true;
 }
 
@@ -195,6 +194,45 @@ export async function createTask(req, res, next) {
         });
     }
     catch (err) {
+        next(err);
+    }
+}
+
+
+/**
+ * Retourne les occurences liés à une tâche.
+ *
+ * @async
+ * @param {*} req La requête envoyée par le frontend.
+ * @param {*} res La réponse à retourner au frontend.
+ * @param {*} next Le prochain middleware à appeler, en cas d'erreur.
+ * @returns {unknown} Retourne le statut de la requête au client.
+ */
+export async function getTaskOccurences(req, res, next){
+    const id = req.params.id;
+    try {
+        let task = await Task.findByPk(id);
+        if (!task){
+            return res.status(404).json({
+                status: 404,
+                message: "Tâche introuvable",
+                path: `/api/task/occurences$/{id}`,
+                timestamp: new Date().toISOString()
+            });
+        }
+        let occurences = await occurrence_de_tache.findAll({
+            where: {
+                tacheId: id
+            }
+        });
+        return res.status(200).json({
+                status: 200,
+                message: "Occurences de la tâche récupérés avec succès.",
+                data: occurences,
+                path: `/api/task/occurences$/{id}`,
+                timestamp: new Date().toISOString()
+            });  
+    } catch (err) {
         next(err);
     }
 }
