@@ -8,6 +8,7 @@ import Poste from "./poste.mjs";
 import Compte from "./compte.mjs";
 import { sous_taches_AFaire } from "./sousTachesAFaire.mjs";
 import { tachesAFaire } from "./tachesAFaire.mjs";
+import { task_priority } from "./task_priority.mjs";
 
 Task.hasMany(TaskImage, {
   foreignKey: "taskId",
@@ -103,6 +104,20 @@ occurrence_de_tache.hasMany(tachesAFaire, {
   foreignKey: "occurrence_de_tacheId",
   as: "tachesAFaire",
 });
+
+task_priority.hasMany(occurrence_de_tache, {
+  foreignKey: "taskPriorityId",
+  as: "occurrences",
+  onDelete: "RESTRICT",
+  onUpdate: "CASCADE",
+});
+
+occurrence_de_tache.belongsTo(task_priority, {
+  foreignKey: "taskPriorityId",
+  as: "priority",
+  onDelete: "RESTRICT",
+  onUpdate: "CASCADE",
+});
 export {
   Task,
   TaskImage,
@@ -112,5 +127,6 @@ export {
   occurrence_de_tache,
   sous_tache,
   sous_taches_AFaire,
-  tachesAFaire
+  tachesAFaire,
+  task_priority
 };
