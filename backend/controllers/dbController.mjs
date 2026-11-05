@@ -10,7 +10,6 @@ import {
   tachesAFaire,
   sous_taches_AFaire,
 } from "../models/bd_index.mjs";
-import bd from "../models/bd.mjs";
 
 /**
  * Remplit la base de données avec des données de test.
@@ -108,7 +107,7 @@ const seedDatabase = async (req, res) => {
     });
 
     const comptes = {};
-    
+
     comptes["Romain"] = await Compte.create({
       prenom: "Romain",
       nom: "Bredy",
@@ -397,99 +396,283 @@ const seedDatabase = async (req, res) => {
       description: "Vider et remplacer les sacs.",
     });
 
-    if (comptes["Romain"]) {
-      const ta = await tachesAFaire.create({
-        tacheId: tachePiscine.id,
-        compteId: comptes["Romain"].id,
-        occurrence_de_tacheId: idOccurrence.tachePiscine_id,
-        commentaire: "Entretien piscine selon grille.",
+    const creerAffectation = async (
+      compte,
+      tache,
+      occurrenceId,
+      commentaire,
+      sousTaches = []
+    ) => {
+      const affectation = await tachesAFaire.create({
+        tacheId: tache.id,
+        compteId: compte.id,
+        occurrence_de_tacheId: occurrenceId,
+        commentaire,
         isCompleted: false,
       });
-      await sous_taches_AFaire.create({ sousTacheId: st1.id, tachesAFaireId: ta.id, commentaire: null, isCompleted: false });
-      await sous_taches_AFaire.create({ sousTacheId: st2.id, tachesAFaireId: ta.id, commentaire: null, isCompleted: false });
+
+      for (const sousTache of sousTaches) {
+        await sous_taches_AFaire.create({
+          sousTacheId: sousTache.id,
+          tachesAFaireId: affectation.id,
+          commentaire: null,
+          isCompleted: false,
+        });
+      }
+
+      return affectation;
+    };
+
+    if (comptes["Romain"]) {
+      await creerAffectation(
+        comptes["Romain"],
+        tachePiscine,
+        idOccurrence.tachePiscine_id,
+        null,
+        [st1, st2]
+      );
+
+      await creerAffectation(
+        comptes["Romain"],
+        tacheEntretienGeneral,
+        idOccurrence.tacheEntretienGeneral_id,
+        null,
+        [st4, st5, st6]
+      );
+
+      await creerAffectation(
+        comptes["Romain"],
+        tacheAppariteur,
+        idOccurrence.tacheAppariteur_id,
+        null
+      );
     }
 
     if (comptes["Clara"]) {
-      const ta = await tachesAFaire.create({
-        tacheId: tacheBoxe.id,
-        compteId: comptes["Clara"].id,
-        occurrence_de_tacheId: idOccurrence.tacheBoxe_id,
-        commentaire: "Nettoyage des bandages.",
-        isCompleted: false,
-      });
-      await sous_taches_AFaire.create({ sousTacheId: st3.id, tachesAFaireId: ta.id, commentaire: null, isCompleted: false });
+      await creerAffectation(
+        comptes["Clara"],
+        tacheBoxe,
+        idOccurrence.tacheBoxe_id,
+        null,
+        [st3]
+      );
+
+      await creerAffectation(
+        comptes["Clara"],
+        tachePiscine,
+        idOccurrence.tachePiscine_id,
+        null,
+        [st1, st2]
+      );
+
+      await creerAffectation(
+        comptes["Clara"],
+        tacheEntretienGeneral,
+        idOccurrence.tacheEntretienGeneral_id,
+        null,
+        [st4, st5, st6]
+      );
+
+      await creerAffectation(
+        comptes["Clara"],
+        tacheESJM,
+        idOccurrence.tacheESJM_id,
+        null
+      );
     }
 
     if (comptes["Zoé"]) {
-      const ta = await tachesAFaire.create({
-        tacheId: tacheEntretienGeneral.id,
-        compteId: comptes["Zoé"].id,
-        occurrence_de_tacheId: idOccurrence.tacheEntretienGeneral_id,
-        commentaire: "Entretien selon grille.",
-        isCompleted: false,
-      });
-      await sous_taches_AFaire.create({ sousTacheId: st4.id, tachesAFaireId: ta.id, commentaire: null, isCompleted: false });
-      await sous_taches_AFaire.create({ sousTacheId: st5.id, tachesAFaireId: ta.id, commentaire: null, isCompleted: false });
+      await creerAffectation(
+        comptes["Zoé"],
+        tacheEntretienGeneral,
+        idOccurrence.tacheEntretienGeneral_id,
+        null,
+        [st4, st5]
+      );
+
+      await creerAffectation(
+        comptes["Zoé"],
+        tacheESJM,
+        idOccurrence.tacheESJM_id,
+        null
+      );
     }
 
     if (comptes["Mathieu"]) {
-      await tachesAFaire.create({
-        tacheId: tacheAppariteur.id,
-        compteId: comptes["Mathieu"].id,
-        occurrence_de_tacheId: idOccurrence.tacheAppariteur_id,
-        commentaire: "Tâches d'appariteur selon tableau.",
-        isCompleted: false,
-      });
+      await creerAffectation(
+        comptes["Mathieu"],
+        tacheAppariteur,
+        idOccurrence.tacheAppariteur_id,
+        null
+      );
     }
 
     if (comptes["Naomi"]) {
-      await tachesAFaire.create({
-        tacheId: tacheAppariteur.id,
-        compteId: comptes["Naomi"].id,
-        occurrence_de_tacheId: idOccurrence.tacheAppariteur_id,
-        commentaire: "Tâches d'appariteur selon tableau.",
-        isCompleted: false,
-      });
+      await creerAffectation(
+        comptes["Naomi"],
+        tacheAppariteur,
+        idOccurrence.tacheAppariteur_id,
+        null
+      );
     }
 
     if (comptes["Brahim"]) {
-      await tachesAFaire.create({
-        tacheId: tacheAppariteur.id,
-        compteId: comptes["Brahim"].id,
-        occurrence_de_tacheId: idOccurrence.tacheAppariteur_id,
-        commentaire: "Tâches d'appariteur selon tableau.",
-        isCompleted: false,
-      });
+      await creerAffectation(
+        comptes["Brahim"],
+        tacheAppariteur,
+        idOccurrence.tacheAppariteur_id,
+        null
+      );
     }
 
-    if (comptes["Sheng"]) {
-      await tachesAFaire.create({
-        tacheId: tacheAppariteur.id,
-        compteId: comptes["Sheng"].id,
-        occurrence_de_tacheId: idOccurrence.tacheAppariteur_id,
-        commentaire: "Tâches d'appariteur selon tableau.",
-        isCompleted: false,
-      });
+    if (comptes["Sheng Ming"]) {
+      await creerAffectation(
+        comptes["Sheng Ming"],
+        tacheAppariteur,
+        idOccurrence.tacheAppariteur_id,
+        null
+      );
     }
 
-    if (comptes["Mónica"]) {
-      await tachesAFaire.create({
-        tacheId: tacheESJM.id,
-        compteId: comptes["Mónica"].id,
-        occurrence_de_tacheId: idOccurrence.tacheESJM_id,
-        commentaire: "Entretien ESJM selon grille.",
-        isCompleted: false,
-      });
+    if (comptes["Philipe"]) {
+      await creerAffectation(
+        comptes["Philipe"],
+        tachePiscine,
+        idOccurrence.tachePiscine_id,
+        null,
+        [st1, st2]
+      );
+
+      await creerAffectation(
+        comptes["Philipe"],
+        tacheBoxe,
+        idOccurrence.tacheBoxe_id,
+        null,
+        [st3]
+      );
+
+      await creerAffectation(
+        comptes["Philipe"],
+        tacheEntretienGeneral,
+        idOccurrence.tacheEntretienGeneral_id,
+        null,
+        [st4, st5, st6]
+      );
+
+      await creerAffectation(
+        comptes["Philipe"],
+        tacheESJM,
+        idOccurrence.tacheESJM_id,
+        null
+      );
+    }
+
+    if (comptes["Shelby"]) {
+      await creerAffectation(
+        comptes["Shelby"],
+        tachePiscine,
+        idOccurrence.tachePiscine_id,
+        null,
+        [st1, st2]
+      );
+
+      await creerAffectation(
+        comptes["Shelby"],
+        tacheBoxe,
+        idOccurrence.tacheBoxe_id,
+        null,
+        [st3]
+      );
+
+      await creerAffectation(
+        comptes["Shelby"],
+        tacheEntretienGeneral,
+        idOccurrence.tacheEntretienGeneral_id,
+        null,
+        [st4, st5, st6]
+      );
+
+      await creerAffectation(
+        comptes["Shelby"],
+        tacheESJM,
+        idOccurrence.tacheESJM_id,
+        null
+      );
+    }
+
+    if (comptes["Audrée"]) {
+      await creerAffectation(
+        comptes["Audrée"],
+        tachePiscine,
+        idOccurrence.tachePiscine_id,
+        null,
+        [st1, st2]
+      );
+
+      await creerAffectation(
+        comptes["Audrée"],
+        tacheBoxe,
+        idOccurrence.tacheBoxe_id,
+        null,
+        [st3]
+      );
+
+      await creerAffectation(
+        comptes["Audrée"],
+        tacheEntretienGeneral,
+        idOccurrence.tacheEntretienGeneral_id,
+        null,
+        [st4, st5, st6]
+      );
+
+      await creerAffectation(
+        comptes["Audrée"],
+        tacheESJM,
+        idOccurrence.tacheESJM_id,
+        null
+      );
     }
 
     if (comptes["Léon"]) {
-      await tachesAFaire.create({
-        tacheId: tacheESJM.id,
-        compteId: comptes["Léon"].id,
-        occurrence_de_tacheId: idOccurrence.tacheESJM_id,
-        commentaire: "Entretien ESJM selon grille.",
-        isCompleted: false,
-      });
+      await creerAffectation(
+        comptes["Léon"],
+        tacheESJM,
+        idOccurrence.tacheESJM_id,
+        null
+      );
+    }
+
+    if (comptes["Mónica"]) {
+      await creerAffectation(
+        comptes["Mónica"],
+        tachePiscine,
+        idOccurrence.tachePiscine_id,
+        null,
+        [st1, st2]
+      );
+
+      await creerAffectation(
+        comptes["Mónica"],
+        tacheBoxe,
+        idOccurrence.tacheBoxe_id,
+        null,
+        [st3]
+      );
+
+      await creerAffectation(
+        comptes["Mónica"],
+        tacheEntretienGeneral,
+        idOccurrence.tacheEntretienGeneral_id,
+        null,
+        [st4, st5, st6]
+      );
+
+      await creerAffectation(
+        comptes["Mónica"],
+        tacheESJM,
+        idOccurrence.tacheESJM_id,
+        null
+      );
     }
 
     res.status(200).json({
