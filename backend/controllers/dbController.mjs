@@ -428,7 +428,7 @@ const seedDatabase = async (req, res) => {
         comptes["Romain"],
         tachePiscine,
         idOccurrence.tachePiscine_id,
-        "Entretien piscine selon grille.",
+        null,
         [st1, st2]
       );
 
@@ -436,7 +436,7 @@ const seedDatabase = async (req, res) => {
         comptes["Romain"],
         tacheEntretienGeneral,
         idOccurrence.tacheEntretienGeneral_id,
-        "Entretien ménager général.",
+        null,
         [st4, st5, st6]
       );
 
@@ -444,7 +444,7 @@ const seedDatabase = async (req, res) => {
         comptes["Romain"],
         tacheAppariteur,
         idOccurrence.tacheAppariteur_id,
-        "Coordination des tâches d'appariteur."
+        null
       );
     }
 
@@ -453,7 +453,7 @@ const seedDatabase = async (req, res) => {
         comptes["Clara"],
         tacheBoxe,
         idOccurrence.tacheBoxe_id,
-        "Nettoyage des bandages.",
+        null,
         [st3]
       );
 
@@ -461,7 +461,7 @@ const seedDatabase = async (req, res) => {
         comptes["Clara"],
         tachePiscine,
         idOccurrence.tachePiscine_id,
-        "Entretien complémentaire de la piscine.",
+        null,
         [st1, st2]
       );
 
@@ -469,7 +469,7 @@ const seedDatabase = async (req, res) => {
         comptes["Clara"],
         tacheEntretienGeneral,
         idOccurrence.tacheEntretienGeneral_id,
-        "Entretien ménager général.",
+        null,
         [st4, st5, st6]
       );
 
@@ -477,7 +477,7 @@ const seedDatabase = async (req, res) => {
         comptes["Clara"],
         tacheESJM,
         idOccurrence.tacheESJM_id,
-        "Entretien des locaux ESJM."
+        null
       );
     }
 
@@ -486,7 +486,7 @@ const seedDatabase = async (req, res) => {
         comptes["Zoé"],
         tacheEntretienGeneral,
         idOccurrence.tacheEntretienGeneral_id,
-        "Entretien selon grille.",
+        null,
         [st4, st5]
       );
 
@@ -494,7 +494,7 @@ const seedDatabase = async (req, res) => {
         comptes["Zoé"],
         tacheESJM,
         idOccurrence.tacheESJM_id,
-        "Entretien des locaux ESJM."
+        null
       );
     }
 
@@ -503,7 +503,7 @@ const seedDatabase = async (req, res) => {
         comptes["Mathieu"],
         tacheAppariteur,
         idOccurrence.tacheAppariteur_id,
-        "Tâches d'appariteur selon tableau."
+        null
       );
     }
 
@@ -512,7 +512,7 @@ const seedDatabase = async (req, res) => {
         comptes["Naomi"],
         tacheAppariteur,
         idOccurrence.tacheAppariteur_id,
-        "Tâches d'appariteur selon tableau."
+        null
       );
     }
 
@@ -521,7 +521,7 @@ const seedDatabase = async (req, res) => {
         comptes["Brahim"],
         tacheAppariteur,
         idOccurrence.tacheAppariteur_id,
-        "Tâches d'appariteur selon tableau."
+        null
       );
     }
 
@@ -530,7 +530,7 @@ const seedDatabase = async (req, res) => {
         comptes["Sheng Ming"],
         tacheAppariteur,
         idOccurrence.tacheAppariteur_id,
-        "Tâches d'appariteur selon tableau."
+        null
       );
     }
 
@@ -539,7 +539,7 @@ const seedDatabase = async (req, res) => {
         comptes["Philipe"],
         tachePiscine,
         idOccurrence.tachePiscine_id,
-        "Entretien de la piscine.",
+        null,
         [st1, st2]
       );
 
@@ -547,7 +547,7 @@ const seedDatabase = async (req, res) => {
         comptes["Philipe"],
         tacheBoxe,
         idOccurrence.tacheBoxe_id,
-        "Nettoyage de la salle de boxe.",
+        null,
         [st3]
       );
 
@@ -555,7 +555,7 @@ const seedDatabase = async (req, res) => {
         comptes["Philipe"],
         tacheEntretienGeneral,
         idOccurrence.tacheEntretienGeneral_id,
-        "Entretien ménager général.",
+        null,
         [st4, st5, st6]
       );
 
@@ -563,7 +563,7 @@ const seedDatabase = async (req, res) => {
         comptes["Philipe"],
         tacheESJM,
         idOccurrence.tacheESJM_id,
-        "Entretien des locaux ESJM."
+        null
       );
     }
 
@@ -572,7 +572,7 @@ const seedDatabase = async (req, res) => {
         comptes["Shelby"],
         tachePiscine,
         idOccurrence.tachePiscine_id,
-        "Entretien de la piscine.",
+        null,
         [st1, st2]
       );
 
@@ -580,7 +580,7 @@ const seedDatabase = async (req, res) => {
         comptes["Shelby"],
         tacheBoxe,
         idOccurrence.tacheBoxe_id,
-        "Nettoyage de la salle de boxe.",
+        null,
         [st3]
       );
 
@@ -588,7 +588,7 @@ const seedDatabase = async (req, res) => {
         comptes["Shelby"],
         tacheEntretienGeneral,
         idOccurrence.tacheEntretienGeneral_id,
-        "Entretien ménager général.",
+        null,
         [st4, st5, st6]
       );
 
@@ -596,7 +596,7 @@ const seedDatabase = async (req, res) => {
         comptes["Shelby"],
         tacheESJM,
         idOccurrence.tacheESJM_id,
-        "Entretien des locaux ESJM."
+        null
       );
     }
 
@@ -605,7 +605,7 @@ const seedDatabase = async (req, res) => {
         comptes["Audrée"],
         tachePiscine,
         idOccurrence.tachePiscine_id,
-        "Entretien de la piscine.",
+        null,
         [st1, st2]
       );
 
@@ -613,7 +613,7 @@ const seedDatabase = async (req, res) => {
         comptes["Audrée"],
         tacheBoxe,
         idOccurrence.tacheBoxe_id,
-        "Nettoyage de la salle de boxe.",
+        null,
         [st3]
       );
 
@@ -621,7 +621,7 @@ const seedDatabase = async (req, res) => {
         comptes["Audrée"],
         tacheEntretienGeneral,
         idOccurrence.tacheEntretienGeneral_id,
-        "Entretien ménager général.",
+        null,
         [st4, st5, st6]
       );
 
@@ -629,7 +629,7 @@ const seedDatabase = async (req, res) => {
         comptes["Audrée"],
         tacheESJM,
         idOccurrence.tacheESJM_id,
-        "Entretien des locaux ESJM."
+        null
       );
     }
 
@@ -638,7 +638,7 @@ const seedDatabase = async (req, res) => {
         comptes["Léon"],
         tacheESJM,
         idOccurrence.tacheESJM_id,
-        "Entretien ESJM selon grille."
+        null
       );
     }
 
@@ -647,7 +647,7 @@ const seedDatabase = async (req, res) => {
         comptes["Mónica"],
         tachePiscine,
         idOccurrence.tachePiscine_id,
-        "Entretien de la piscine.",
+        null,
         [st1, st2]
       );
 
@@ -655,7 +655,7 @@ const seedDatabase = async (req, res) => {
         comptes["Mónica"],
         tacheBoxe,
         idOccurrence.tacheBoxe_id,
-        "Nettoyage de la salle de boxe.",
+        null,
         [st3]
       );
 
@@ -663,7 +663,7 @@ const seedDatabase = async (req, res) => {
         comptes["Mónica"],
         tacheEntretienGeneral,
         idOccurrence.tacheEntretienGeneral_id,
-        "Entretien ménager général.",
+        null,
         [st4, st5, st6]
       );
 
@@ -671,7 +671,7 @@ const seedDatabase = async (req, res) => {
         comptes["Mónica"],
         tacheESJM,
         idOccurrence.tacheESJM_id,
-        "Entretien des locaux ESJM."
+        null
       );
     }
 
