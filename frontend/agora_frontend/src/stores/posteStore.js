@@ -32,6 +32,27 @@ export const usePosteStore = defineStore("postes", {
       }
     },
 
+    async getEmployeePosteId(idEmployee) {
+      try {
+        const response = await apiFetch(`/poste/employe/${idEmployee}`, {
+          method: 'GET'
+        });
+
+        this.lastErrorStatus = response.status;
+
+        if (response.status !== 200) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        return response.data.posteId;
+
+      } catch (err) {
+        this.lastErrorStatus = err.status || this.lastErrorStatus;
+        console.error("get employee poste error:", err);
+        return null;
+      }
+    },
+
     async addPoste(poste) {
       try {
         const response = await apiFetch('/poste/add', {
@@ -96,15 +117,15 @@ export const usePosteStore = defineStore("postes", {
       }
     },
 
-    async assignPosteToEmployees(posteId, comptes) {
+    async assignPosteToEmployee(compteId, posteId) {
       try {
-        const response = await apiFetch(`/poste/${posteId}/employes`, {
-          method: 'PUT',
+        const response = await apiFetch(`/poste/employe/${compteId}`, {
+          method: 'PATCH',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            comptes
+            posteId
           })
         });
 
@@ -114,11 +135,9 @@ export const usePosteStore = defineStore("postes", {
           throw new Error(`HTTP ${response.status}`);
         }
 
-        await this.loadPostes('/poste/list', true);
-
         return true;
       } catch (err) {
-        console.error('assign employees to poste error:', err);
+        console.error('assign poste to employee error:', err);
         return false;
       }
     },
