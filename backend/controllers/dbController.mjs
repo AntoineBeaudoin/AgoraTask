@@ -46,36 +46,13 @@ const seedDatabase = async (req, res) => {
       description: "Surveillance et gestion des salles/locaux.",
     });
 
-    const posteCoordination = await Poste.create({
-      nom: "Coordination",
-      description: "Coordination des opérations.",
-    });
-
-    const posteAdministration = await Poste.create({
-      nom: "Administration",
-      description: "Administration du système.",
-    });
-
     const posteAntoine = await Poste.create({
       nom: "Préposé aux installations",
       description:
         "Responsable de la préparation, du rangement et de l'entretien des installations.",
     });
 
-    const posteColin = await Poste.create({
-      nom: "Administrateur principal",
-      description: "Administration générale du système AgoraTask.",
-    });
-
-    const posteJulien = await Poste.create({
-      nom: "Administrateur secondaire",
-      description: "Administration et gestion des utilisateurs du système.",
-    });
-
-    const posteMoussa = await Poste.create({
-      nom: "Coordonnateur des opérations",
-      description: "Coordination des tâches et supervision des activités.",
-    });
+ 
 
     await Compte.create({
       prenom: "Antoine",
@@ -94,7 +71,6 @@ const seedDatabase = async (req, res) => {
       motDePasse: hashedPassword,
       role: "administrateur",
       IsArchived: false,
-      posteId: posteJulien.id,
     });
 
     await Compte.create({
@@ -104,7 +80,6 @@ const seedDatabase = async (req, res) => {
       motDePasse: hashedPassword,
       role: "coordonnateur",
       IsArchived: false,
-      posteId: posteMoussa.id,
     });
 
     const comptes = {};
@@ -116,7 +91,6 @@ const seedDatabase = async (req, res) => {
       motDePasse: hashedPassword,
       role: "coordonnateur",
       IsArchived: false,
-      posteId: posteCoordination.id,
     });
 
     comptes["Clara"] = await Compte.create({
@@ -186,7 +160,6 @@ const seedDatabase = async (req, res) => {
       motDePasse: hashedPassword,
       role: "administrateur",
       IsArchived: false,
-      posteId: posteColin.id,
     });
 
     comptes["Philipe"] = await Compte.create({
@@ -309,7 +282,6 @@ const seedDatabase = async (req, res) => {
     await TaskPoste.create({ posteId: posteEntretien.id, tacheId: tacheEntretienGeneral.id });
     await TaskPoste.create({ posteId: posteEntretien.id, tacheId: tacheESJM.id });
     await TaskPoste.create({ posteId: posteAppariteur.id, tacheId: tacheAppariteur.id });
-    await TaskPoste.create({ posteId: posteCoordination.id, tacheId: tacheAppariteur.id });
 
     const jours = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
     let idOccurrence = {};
