@@ -1,4 +1,4 @@
-import { Task, TaskImage, occurrence_de_tache, sous_tache, tachesAFaire, sous_taches_AFaire } from '../models/bd_index.mjs';
+import { Task, TaskImage, occurrence_de_tache, sous_tache, tachesAFaire, sous_taches_AFaire, task_priority } from '../models/bd_index.mjs';
 import { put, del } from "@vercel/blob";
 import { Op } from "sequelize";
 import dotenv from "dotenv";
@@ -217,7 +217,14 @@ export async function getAllTasks(req, res, next) {
             },
             include: [
                 { model: TaskImage, as: 'images' },
-                { model: occurrence_de_tache, as: 'occurrences' },
+                {
+                    model: occurrence_de_tache, as: 'occurrences', include: [
+                        {
+                            model: task_priority,
+                            as: 'priority'
+                        }
+                    ]
+                },
                 { model: sous_tache, as: 'sous_taches' }
             ]
         });

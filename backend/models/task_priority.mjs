@@ -12,6 +12,10 @@ const task_priority = bd.define("task_priority", {
     type: DataTypes.STRING(100),
     allowNull: false,
   },
+  weigth: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  }
 }, {
   tableName: "task_priorities",
 });

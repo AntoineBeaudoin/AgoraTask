@@ -32,9 +32,9 @@ async function deleteTables() {
 
 async function seedTaskPriorities(){
   let taskPriorities = [
-    await task_priority.create({task_priority: "Important"}),
-    await task_priority.create({task_priority: "Normale"}),
-    await task_priority.create({task_priority: "Libre"})
+    await task_priority.create({task_priority: "Important"}, {weigth: 1}),
+    await task_priority.create({task_priority: "Normale"}, {weigth: 2}),
+    await task_priority.create({task_priority: "Libre"}, {weigth: 3})
   ];
   taskPriorities.map((task) => {
     taskPrioritiesId.push(task.id);
