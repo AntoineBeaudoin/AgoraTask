@@ -44,7 +44,7 @@ async function createOccurrences(taskId, occurrences) {
                 journee: occ.journee,
                 heureDebut: occ.heureDebut || null,
                 heureFin: occ.heureFin || null,
-                priorite: occ.priorite ?? 3,
+                taskPriorityId: occ.taskPriorityId ?? occ.priority?.id,
                 isRequired: occ.isRequired ?? true
             })
         )
@@ -181,7 +181,7 @@ export async function createTask(req, res, next) {
             where: { id: aTask.id },
             include: [
                 { model: TaskImage, as: 'images' },
-                { model: occurrence_de_tache, as: 'occurrences' },
+                { model: occurrence_de_tache, as: 'occurrences', include: [{ model: task_priority, as: 'priority' }] },
                 { model: sous_tache, as: 'sous_taches' }
             ]
         });
@@ -414,7 +414,7 @@ export async function replaceTask(req, res, next) {
                         journee: occ.journee,
                         heureDebut: occ.heureDebut || null,
                         heureFin: occ.heureFin || null,
-                        priorite: occ.priorite ?? 3,
+                        taskPriorityId: occ.taskPriorityId ?? occ.priority?.id,
                         isRequired: occ.isRequired ?? true
                     });
                     retainedIds.push(existing.id);
@@ -424,7 +424,7 @@ export async function replaceTask(req, res, next) {
                         journee: occ.journee,
                         heureDebut: occ.heureDebut || null,
                         heureFin: occ.heureFin || null,
-                        priorite: occ.priorite ?? 3,
+                        taskPriorityId: occ.taskPriorityId ?? occ.priority?.id,
                         isRequired: occ.isRequired ?? true
                     });
                     retainedIds.push(created.id);
@@ -449,7 +449,7 @@ export async function replaceTask(req, res, next) {
             where: { id: task.id },
             include: [
                 { model: TaskImage, as: "images" },
-                { model: occurrence_de_tache, as: "occurrences" },
+                { model: occurrence_de_tache, as: "occurrences", include: [{ model: task_priority, as: "priority" }] },
                 { model: sous_tache, as: "sous_taches" }
             ]
         });
@@ -472,7 +472,7 @@ export async function duplicateTask(req, res, next) {
             where: { id, archived: false },
             include: [
                 { model: TaskImage, as: 'images' },
-                { model: occurrence_de_tache, as: 'occurrences' },
+                { model: occurrence_de_tache, as: 'occurrences', include: [{ model: task_priority, as: 'priority' }] },
                 { model: sous_tache, as: 'sous_taches' }
             ]
         });
@@ -509,7 +509,7 @@ export async function duplicateTask(req, res, next) {
             where: { id: newTask.id },
             include: [
                 { model: TaskImage, as: 'images' },
-                { model: occurrence_de_tache, as: 'occurrences' },
+                { model: occurrence_de_tache, as: 'occurrences', include: [{ model: task_priority, as: 'priority' }] },
                 { model: sous_tache, as: 'sous_taches' }
             ]
         });

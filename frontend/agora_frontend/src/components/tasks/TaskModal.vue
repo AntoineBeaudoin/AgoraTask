@@ -98,12 +98,13 @@
                       </select>
                     </div>
                     <div class="col-md-6">
-                      <label class="form-label small fw-bold">Priorité (1 à 5)</label>
-                      <i class="ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                        title="Indique le niveau de priorité : 1 = très élevée, 2 = élevé, 3 = moyenne, 4 = basse, 5 = très basse."
-                        style="cursor: help;"><img src="../../assets/images/info-circle.svg" alt=""></i>
-                      <input type="number" v-model.number="occ.priorite" min="1" max="5"
-                        class="form-control form-control-sm" />
+                      <label class="form-label small fw-bold">Priorité *</label>
+                      <select v-model="occ.taskPriorityId" class="form-select form-select-sm" required>
+                        <option value="" disabled>Choisir une priorité</option>
+                        <option v-for="priority in taskPriorities" :key="priority.id" :value="priority.id">
+                          {{ priority.task_priority }}
+                        </option>
+                      </select>
                     </div>
                     <div class="col-md-6">
                       <label class="form-label small fw-bold">Heure début</label>
@@ -147,7 +148,7 @@
             <div class="modal-footer">
               <button type="button" class="btn btn-danger" @click="close">Annuler</button>
               <button id="submitBtn" type="submit" class="btn btn-success">{{ isEditing ? 'Modifier' : 'Ajouter'
-              }}</button>
+                }}</button>
             </div>
           </form>
         </div>
@@ -159,10 +160,12 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useTaskStore } from '@/stores/taskStore';
+import { useTaskPriorityStore } from '@/stores/taskPriorityStore';
 import { useModalStore } from '@/stores/modalStore';
 import { switchIsButtonActiveById } from '@/utils/dom-manipulation';
 
 const taskStore = useTaskStore();
+const taskPriorityStore = useTaskPriorityStore();
 const modalStore = useModalStore();
 
 const SUBMIT_BUTTON_ID = 'submitBtn';
@@ -182,6 +185,29 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 Mo
 
 const isEditing = computed(() => !!modalStore.editingTask);
 
+const taskPriorities = computed(() =>
+  [...(taskPriorityStore.taskPriorities ?? [])].sort(
+    (a, b) => (a.weigth ?? 0) - (b.weigth ?? 0) || a.id - b.id
+  )
+);
+
+const defaultPriorityId = computed(() => taskPriorities.value[0]?.id ?? '');
+
+watch(
+  () => modalStore.taskModalOpen,
+  async (isOpen) => {
+    if (isOpen) {
+      await taskPriorityStore.loadTaskPriorities();
+      occurrences.value.forEach((occ) => {
+        if (!occ.taskPriorityId && defaultPriorityId.value) {
+          occ.taskPriorityId = defaultPriorityId.value;
+        }
+      });
+    }
+  },
+  { immediate: true }
+);
+
 watch(
   () => modalStore.editingTask,
   (task) => {
@@ -192,7 +218,10 @@ watch(
       recurring.value = task.recurring ?? false;
       automaticAssignment.value = task.automaticAssignment ?? false;
 
-      occurrences.value = (task.occurrences ?? []).map(occ => ({ ...occ }));
+      occurrences.value = (task.occurrences ?? []).map(occ => ({
+        ...occ,
+        taskPriorityId: occ.taskPriorityId ?? occ.priority?.id ?? defaultPriorityId.value
+      }));
       subTasks.value = (
         task.sous_taches ?? []
       ).map(st => ({
@@ -253,7 +282,7 @@ function addOccurrence() {
     journee: 'lundi',
     heureDebut: '',
     heureFin: '',
-    priorite: 3,
+    taskPriorityId: defaultPriorityId.value,
     isRequired: true
   });
 }
@@ -276,6 +305,7 @@ function removeSubTask(index) {
 function formIsValid() {
   return title.value.trim() !== '' &&
     room.value.trim() !== '' &&
+    occurrences.value.every(occ => Boolean(occ.taskPriorityId)) &&
     subTasks.value.every(st => st.titre?.trim() !== '');
 }
 
