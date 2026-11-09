@@ -4,17 +4,16 @@
     <button @click="addTask" data-target="#taskModal" class="btn btn-secondary mx-auto m-3">
       Ajouter une tâche
     </button>
+    <button @click="managePriorities" data-target="#taskPriorityModal" class="btn btn-secondary mx-auto m-3 ms-3">
+      Gérer les priorités
+    </button>
     <TaskModal />
+    <TaskPriorityModal />
     <TaskDescriptionModal />
 
     <div class="input-group mb-3">
-      <input
-        v-model="motCle"
-        type="text"
-        class="form-control"
-        placeholder="Rechercher une tâche"
-        @keyup.enter="filterTasks"
-      />
+      <input v-model="motCle" type="text" class="form-control" placeholder="Rechercher une tâche"
+        @keyup.enter="filterTasks" />
     </div>
 
     <div v-if="tasksDisplayed?.length != 0">
@@ -28,10 +27,10 @@
             <button @click="deleteTask(task.id)" class="btn btn-danger">Supprimer</button>
             <button @click="taskDetails(task.id)" class="btn btn-info">Détails</button>
           </div>
+        </div>
       </div>
     </div>
-  </div>
-  <p v-else class="text-center text-muted">Aucune tâche ne correspond à votre recherche.</p>
+    <p v-else class="text-center text-muted">Aucune tâche ne correspond à votre recherche.</p>
   </section>
 </template>
 
@@ -39,6 +38,7 @@
 import { useModalStore } from '@/stores/modalStore'
 import { useTaskStore } from '@/stores/taskStore'
 import TaskModal from '@/components/tasks/TaskModal.vue'
+import TaskPriorityModal from '@/components/tasks/TaskPriorityModal.vue'
 import TaskDescriptionModal from '@/components/tasks/TaskDescriptionModal.vue';
 import { onMounted, ref, watch } from 'vue'
 import { switchIsButtonActiveById } from '@/utils/dom-manipulation'
@@ -82,8 +82,11 @@ async function duplicateTask(id) {
 }
 
 async function addTask() {
-  const modalStore = useModalStore();
   modalStore.openAddTask();
+}
+
+async function managePriorities() {
+  modalStore.openTaskPriorityModal();
 }
 
 async function taskDetails(id) {
