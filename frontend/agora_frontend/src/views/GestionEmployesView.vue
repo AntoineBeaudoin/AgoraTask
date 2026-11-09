@@ -290,8 +290,10 @@ import { onMounted, reactive } from 'vue'
 import { apiFetch } from '../utils/api.js'
 import { useModalStore } from '@/stores/modalStore.js'
 import EditPasswordModal from '@/components/users/EditPasswordModal.vue'
+import { useAuthStore } from '@/stores/auth.js'
 
 const modalStore = useModalStore()
+const authStore = useAuthStore()
 
 let displayTitle = ref('Employés actifs')
 let displayedRole = ref('personnel_de_terrain')

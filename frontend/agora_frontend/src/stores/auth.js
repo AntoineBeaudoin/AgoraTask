@@ -246,6 +246,7 @@ export const useAuthStore = defineStore('auth', () => {
     getUserById,
     getEmployes,
     changePassword,
-    loadEmployes
+    loadEmployes,
+    isConnectedUser
   }
 })
