@@ -227,7 +227,7 @@ watch(
       ).map(st => ({
         id: st.id,
         tacheId: st.tacheId,
-        titre: st.title ?? '',
+        titre: st.titre ?? '',
         description: st.description ?? ''
       }));
 
