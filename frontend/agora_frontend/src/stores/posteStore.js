@@ -13,11 +13,15 @@ export const usePosteStore = defineStore("postes", {
       return this.postes.find((poste) => poste.id == id);
     },
 
-    async loadPostes(url = '/poste/list', forceRefresh = false) {
-      if (this.loaded && !forceRefresh && url === '/poste/list') return;
+    async loadPostes(url = '/poste/list', forceRefresh = false, includeArchived = true) {
+      const requestUrl = includeArchived
+        ? url
+        : `${url}${url.includes('?') ? '&' : '?'}archived=false`;
+
+      if (this.loaded && !forceRefresh && requestUrl === '/poste/list') return;
 
       try {
-        const response = await apiFetch(url);
+        const response = await apiFetch(requestUrl);
 
         this.lastErrorStatus = response.status;
 

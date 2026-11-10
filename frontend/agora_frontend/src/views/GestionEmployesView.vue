@@ -283,7 +283,7 @@ onMounted(() => {
 
 async function LoadPostes() {
   try {
-    await posteStore.loadPostes('/poste/list', true);
+    await posteStore.loadPostes('/poste/list', true, false);
 
     const postes = posteStore.postes;
     displayedPostes.value = Array.isArray(postes) ? postes : [];
