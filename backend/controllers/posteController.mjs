@@ -1,8 +1,9 @@
 import { Task, Poste, Compte } from '../models/bd_index.mjs';
 import bd from "../models/bd.mjs";
 import dotenv from "dotenv";
-import { Op } from 'sequelize';
 import { emptyString } from '../utils/checks.mjs';
+import { createHttpError } from '../utils/httpError.mjs';
+import { Op } from 'sequelize';
 
 dotenv.config();
 
@@ -20,10 +21,7 @@ export async function createPoste(req, res, next) {
     const { nom, description, tasks = [] } = req.body;
 
     if (emptyString(nom) || emptyString(description)){
-        return res.status(400).json({
-            status: 400,
-            message: "Le poste spécifié doit contenir un nom et une description."
-        })
+        throw createHttpError(400, "Le poste spécifié doit contenir un nom et une description.");
     }
 
     const aSimilarPoste = await Poste.findOne({
@@ -34,24 +32,15 @@ export async function createPoste(req, res, next) {
     });
 
     if (aSimilarPoste) {
-        return res.status(409).json({
-            status: 409,
-            message: "Un poste avec un nom et une description identique existe déjà."
-        })
+        throw createHttpError(409, "Un poste avec un nom et une description identique existe déjà.");
     }
 
     if (!nom || !nom.trim()) {
-        return res.status(400).json({
-            status: 400,
-            message: "Le nom du poste est requis."
-        });
+        throw createHttpError(400, "Le nom du poste est requis.");
     }
 
     if (!Array.isArray(tasks)) {
-        return res.status(400).json({
-            status: 400,
-            message: "Les tâches doivent être fournies sous forme de tableau d'dentifiants."
-        });
+        throw createHttpError(400, "Les tâches doivent être fournies sous forme de tableau d'identifiants.");
     }
 
     const transaction = await bd.transaction();
@@ -96,10 +85,7 @@ export async function updatePoste(req, res, next) {
     const { nom, description, tasks = [] } = req.body;
 
     if ( !id || emptyString(nom) || emptyString(description)){
-        return res.status(400).json({
-            status: 400,
-            message: "Le poste spécifié doit contenir un nom et une description."
-        })
+        throw createHttpError(400, "Le poste spécifié doit contenir un nom et une description.");
     }
 
     const aSimilarPoste = await Poste.findOne({
@@ -111,22 +97,15 @@ export async function updatePoste(req, res, next) {
     });
 
     if (aSimilarPoste) {
-        return res.status(409).json({
-            status: 409,
-            message: "Un poste avec un nom et une description identique existe déjà."
-        })
+        throw createHttpError(409, "Un poste avec un nom et une description identique existe déjà.");
     }
 
     if (!nom || !nom.trim()) {
-        return res.status(400).json({
-            message: "Le nom du poste est requis."
-        });
+        throw createHttpError(400, "Le nom du poste est requis.");
     }
 
     if (!Array.isArray(tasks)) {
-        return res.status(400).json({
-            message: "Les tâches doivent être fournies sous forme de tableau d'identifiants."
-        });
+        throw createHttpError(400, "Les tâches doivent être fournies sous forme de tableau d'identifiants.");
     }
 
     const transaction = await bd.transaction();
@@ -136,9 +115,7 @@ export async function updatePoste(req, res, next) {
 
         if (!poste) {
             await transaction.rollback();
-            return res.status(404).json({
-                message: "Le poste est introuvable."
-            });
+            throw createHttpError(404, "Le poste est introuvable");
         }
 
         await poste.update({
@@ -245,10 +222,7 @@ export async function getEmployeePosteId(req, res, next) {
         });
 
         if (!employe) {
-            return res.status(404).json({
-                status: 404,
-                message: "L'employé demandé n'existe pas."
-            });
+            throw createHttpError(404, "L'employé demandé n'existe pas.");
         }
 
         return res.status(200).json({
@@ -291,10 +265,7 @@ export async function assignPosteToEmployee(req, res, next) {
 
         if (!employe) {
             await transaction.rollback();
-            return res.status(404).json({
-                status: 404,
-                message: "L'employé demandé n'existe pas."
-            });
+            throw createHttpError(404, "L'employé demandé n'existe pas.");
         }
 
         let poste = null;
@@ -307,18 +278,12 @@ export async function assignPosteToEmployee(req, res, next) {
 
             if (!poste) {
                 await transaction.rollback();
-                return res.status(404).json({
-                    status: 404,
-                    message: "Le poste demandé n'existe pas."
-                });
+                throw createHttpError(404, "Le poste demandé n'existe pas.");
             }
 
             if (poste.archived) {
                 await transaction.rollback();
-                return res.status(400).json({
-                    status: 400,
-                    message: "Impossible d'assigner un poste archivé."
-                });
+                throw createHttpError(400, "Impossible d'assigner un poste archivé.");
             }
         }
 
