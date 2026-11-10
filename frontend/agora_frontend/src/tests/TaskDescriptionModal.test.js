@@ -36,21 +36,33 @@ describe('TaskDescriptionModal.vue', () => {
         occurrences: [
             {
                 journee: 'vendredi',
-                priorite: 3,
+                priority: {
+                    id: 3,
+                    task_priority: 'Libre',
+                    weigth: 3
+                },
                 heureDebut: '09:00',
                 heureFin: '10:00',
                 isRequired: true
             },
             {
                 journee: 'lundi',
-                priorite: 1,
+                priority: {
+                    id: 1,
+                    task_priority: 'Important',
+                    weigth: 1
+                },
                 heureDebut: '08:00',
                 heureFin: '09:00',
                 isRequired: false
             },
             {
                 journee: 'mercredi',
-                priorite: 2,
+                priority: {
+                    id: 2,
+                    task_priority: 'Normale',
+                    weigth: 2
+                },
                 heureDebut: '10:00',
                 heureFin: '11:00',
                 isRequired: true
@@ -160,9 +172,9 @@ describe('TaskDescriptionModal.vue', () => {
             '#taskModal .row > .card.card-body'
         )
 
-        expect(cartes[0].textContent).toContain('Priorité: 1')
-        expect(cartes[1].textContent).toContain('Priorité: 2')
-        expect(cartes[2].textContent).toContain('Priorité: 3')
+        expect(cartes[0].textContent).toContain('Priorité: Important')
+        expect(cartes[1].textContent).toContain('Priorité: Normale')
+        expect(cartes[2].textContent).toContain('Priorité: Libre')
     })
 
     test('devrait trier les occurrences par jour', async () => {
@@ -277,7 +289,10 @@ describe('TaskDescriptionModal.vue', () => {
             occurrences: [
                 {
                     journee: '',
-                    priorite: null,
+                    priority: {
+                        task_priority: null,
+                        weigth: null
+                    },
                     heureDebut: '',
                     heureFin: '',
                     isRequired: false
