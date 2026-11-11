@@ -9,7 +9,37 @@ import {
   TaskPoste,
   tachesAFaire,
   sous_taches_AFaire,
+  task_priority
 } from "../models/bd_index.mjs";
+
+let taskPrioritiesId = [];
+
+/**
+ * Retire l'entierté des tables de la base de donnée
+ */
+async function deleteTables() {
+  await sous_taches_AFaire.destroy({ where: {} });
+  await tachesAFaire.destroy({ where: {} });
+  await TaskPoste.destroy({ where: {} });
+  await occurrence_de_tache.destroy({ where: {} });
+  await sous_tache.destroy({ where: {} });
+  await TaskImage.destroy({ where: {} });
+  await Compte.destroy({ where: {} });
+  await Task.destroy({ where: {} });
+  await Poste.destroy({ where: {} });
+  await task_priority.destroy({ where: {} });
+}
+
+async function seedTaskPriorities(){
+  let taskPriorities = [
+    await task_priority.create({task_priority: "Important", weigth: 1}),
+    await task_priority.create({task_priority: "Normale", weigth: 2}),
+    await task_priority.create({task_priority: "Libre", weigth: 3})
+  ];
+  taskPriorities.map((task) => {
+    taskPrioritiesId.push(task.id);
+  });
+}
 
 /**
  * Remplit la base de données avec des données de test.
@@ -23,16 +53,8 @@ import {
  */
 const seedDatabase = async (req, res) => {
   try {
-    await sous_taches_AFaire.destroy({ where: {} });
-    await tachesAFaire.destroy({ where: {} });
-    await TaskPoste.destroy({ where: {} });
-    await occurrence_de_tache.destroy({ where: {} });
-    await sous_tache.destroy({ where: {} });
-    await TaskImage.destroy({ where: {} });
-    await Compte.destroy({ where: {} });
-    await Task.destroy({ where: {} });
-    await Poste.destroy({ where: {} });
-
+    await deleteTables();
+    await seedTaskPriorities();
     const hashedPassword = await bcrypt.hash("Test1234!", 15);
 
     const posteEntretien = await Poste.create({
@@ -292,7 +314,7 @@ const seedDatabase = async (req, res) => {
         journee,
         isRequired: true,
         tacheId: tachePiscine.id,
-        priorite: 3,
+        taskPriorityId: taskPrioritiesId[1],
       });
       if (!idOccurrence.tachePiscine_id) idOccurrence.tachePiscine_id = occ.id;
 
@@ -302,7 +324,7 @@ const seedDatabase = async (req, res) => {
         journee,
         isRequired: true,
         tacheId: tacheEntretienGeneral.id,
-        priorite: 3,
+        taskPriorityId: taskPrioritiesId[1],
       });
       if (!idOccurrence.tacheEntretienGeneral_id) idOccurrence.tacheEntretienGeneral_id = occ.id;
 
@@ -312,7 +334,7 @@ const seedDatabase = async (req, res) => {
         journee,
         isRequired: true,
         tacheId: tacheAppariteur.id,
-        priorite: 4,
+        taskPriorityId: taskPrioritiesId[1],
       });
       if (!idOccurrence.tacheAppariteur_id) idOccurrence.tacheAppariteur_id = occ.id;
 
@@ -322,7 +344,7 @@ const seedDatabase = async (req, res) => {
         journee,
         isRequired: true,
         tacheId: tacheESJM.id,
-        priorite: 3,
+        taskPriorityId: taskPrioritiesId[1],
       });
       if (!idOccurrence.tacheESJM_id) idOccurrence.tacheESJM_id = occ.id;
     }
@@ -333,7 +355,7 @@ const seedDatabase = async (req, res) => {
       journee: "mercredi",
       isRequired: true,
       tacheId: tacheBoxe.id,
-      priorite: 3,
+      taskPriorityId: taskPrioritiesId[1],
     });
     idOccurrence.tacheBoxe_id = occBoxe.id;
 

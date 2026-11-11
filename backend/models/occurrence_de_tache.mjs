@@ -36,14 +36,16 @@ const occurrence_de_tache = bd.define("occurence_de_tache", {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  priorite: {
+  taskPriorityId: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    validate: {
-      min: 1,
-      max: 5,
+    references: {
+      model: "task_priorities",
+      key: "id",
     },
-  },
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+  }
 });
 
 export { occurrence_de_tache };

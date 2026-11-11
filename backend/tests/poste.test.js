@@ -64,8 +64,9 @@ describe('Tests en lien avec les postes de travail', () => {
         description: 'Poste créé pendant un test'
       });
 
-    expect(response.status).toBe(400);
-  });
+    beforeEach(async () => {
+      await Poste.destroy({ where: {} });
+      await Compte.destroy({ where: {} });
 
   it('crée un poste avec les propriétés par défaut', async () => {
     const response = await request(app)
@@ -76,16 +77,15 @@ describe('Tests en lien avec les postes de travail', () => {
         description: 'Poste créé pendant un test'
       });
 
-    expect(response.status).toBe(201);
-
-    expect(response.body.poste).toMatchObject({
-      nom: 'Vitest test poste',
-      description: 'Poste créé pendant un test',
-      archived: false
+      token = jwt.sign(
+        { id: admin.id, role: admin.role },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
     });
 
-    const savedPoste = await Poste.findOne({
-      where: { nom: 'Vitest test poste' }
+    afterAll(async () => {
+      await bd.close();
     });
 
     expect(savedPoste).not.toBeNull();
@@ -101,8 +101,7 @@ describe('Tests en lien avec les postes de travail', () => {
         description: 'Sit amet consectetur'
       });
 
-    expect(response.status).toBe(404);
-  });
+      const savedPoste = await Poste.findByPk(poste.id);
 
   it('modifie correctement un poste', async () => {
     const response = await request(app)
@@ -115,8 +114,7 @@ describe('Tests en lien avec les postes de travail', () => {
 
     expect(response.status).toBe(201);
 
-    const savedPoste = await Poste.findOne({
-      where: { nom: 'Vitest test poste' }
+      await savedPoste.destroy();
     });
 
     const responseUpdate = await request(app)
@@ -141,13 +139,16 @@ describe('Tests en lien avec les postes de travail', () => {
       .set("Authorization", `Bearer ${adminToken}`)
       .send({
         nom: 'Vitest test poste',
-        description: 'Poste créé pendant un test'
+        description: 'Poste créé pendant un test',
+        archived: false
       });
 
-    expect(response.status).toBe(201);
+      const savedPoste = await Poste.findOne({
+        where: { nom: 'Vitest test poste' }
+      });
 
-    const savedPoste = await Poste.findOne({
-      where: { nom: 'Vitest test poste' }
+      expect(savedPoste).not.toBeNull();
+      expect(savedPoste.archived).toBe(false);
     });
 
     const responseDelete = await request(app)
@@ -171,10 +172,15 @@ describe('Tests en lien avec les postes de travail', () => {
         description: 'Poste créé pendant un test'
       });
 
-    expect(response.status).toBe(201);
+      const responseUpdate = await request(app)
+        .put('/api/poste/' + savedPoste.id)
+        .set('Authorization', 'Bearer ' + token)
+        .send({
+          nom: 'Vitest test poste updated',
+          description: 'Poste updaté pendant le test'
+        });
 
-    const savedPoste = await Poste.findOne({
-      where: { nom: 'Vitest test poste' }
+      expect(responseUpdate.status).toBe(200);
     });
 
     const responseDelete = await request(app)
@@ -182,7 +188,8 @@ describe('Tests en lien avec les postes de travail', () => {
       .set("Authorization", `Bearer ${adminToken}`)
       .send({});
 
-    expect(responseDelete.status).toBe(204);
+      expect(response.status).toBe(404);
+    });
 
     const responseUnArchive = await request(app)
       .patch('/api/poste/' + savedPoste.id + '/reactivate')
@@ -205,7 +212,24 @@ describe('Tests en lien avec les postes de travail', () => {
         description: 'Poste créé pendant un test'
       });
 
-    expect(response.status).toBe(201);
+      const responseDelete = await request(app)
+        .delete('/api/poste/' + savedPoste.id)
+        .set('Authorization', 'Bearer ' + token)
+        .send({});
+
+      expect(responseDelete.status).toBe(204);
+    });
+
+    it('retire correctement le statut archivé d’un poste', async () => {
+      const response = await request(app)
+        .post('/api/poste/add')
+        .set('Authorization', 'Bearer ' + token)
+        .send({
+          nom: 'Vitest test poste',
+          description: 'Poste créé pendant un test'
+        });
+
+      expect(response.status).toBe(201);
 
     const responseTwo = await request(app)
       .post('/api/poste/add')
@@ -215,7 +239,10 @@ describe('Tests en lien avec les postes de travail', () => {
         description: 'Poste 2 créé pendant un test'
       });
 
-    expect(responseTwo.status).toBe(201);
+      const responseDelete = await request(app)
+        .delete('/api/poste/' + savedPoste.id)
+        .set('Authorization', 'Bearer ' + token)
+        .send({});
 
     const responseList = await request(app)
       .get('/api/poste/list')
@@ -290,7 +317,19 @@ describe('Tests en lien avec les postes de travail', () => {
         posteId: poste2.id
       });
 
-    expect(response.status).toBe(200);
+      const employe2 = await Compte.create({
+        prenom: 'Marie',
+        nom: 'Test',
+        courriel: 'marie.test.vitest@example.com',
+        motDePasse: 'password123'
+      });
+
+      const response = await request(app)
+        .put(`/api/poste/${poste.id}/employes`)
+        .set('Authorization', 'Bearer ' + token)
+        .send({
+          comptes: [employe1.id, employe2.id]
+        });
 
     const employeUpdated = await Compte.findByPk(employe.id);
 

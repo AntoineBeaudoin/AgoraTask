@@ -9,12 +9,13 @@ import {
   tachesAFaire,
   sous_tache,
   sous_taches_AFaire,
+  task_priority,
 } from "../models/bd_index.mjs";
 import app from "../app.mjs";
 
 describe("Tests des tâches de l'employé", function () {
   let employe, autreEmploye, token;
-  let tache, autreTache, occurrence, autreOccurrence;
+  let tache, autreTache, priorite, occurrence, autreOccurrence;
   let assignation, autreAssignation, sousTache, sousTacheAutreTache;
 
   function corps(isCompleted, commentaire, sousTaches) {
@@ -67,16 +68,21 @@ describe("Tests des tâches de l'employé", function () {
     });
     autreTache = await Task.create({ title: "Vitest autre tâche", room: "B-202" });
 
+    priorite = await task_priority.create({
+      task_priority: "Normale",
+      weigth: 2,
+    });
+
     occurrence = await occurrence_de_tache.create({
       tacheId: tache.id,
       journee: "lundi",
       heureDebut: "08:00",
       heureFin: "09:00",
-      priorite: 3,
+      taskPriorityId: priorite.id,
     });
     autreOccurrence = await occurrence_de_tache.create({
       tacheId: autreTache.id,
-      priorite: 3,
+      taskPriorityId: priorite.id,
     });
 
     assignation = await tachesAFaire.create({
@@ -104,6 +110,9 @@ describe("Tests des tâches de l'employé", function () {
     await tachesAFaire.destroy({ where: { id: assignationIds } });
     await sous_tache.destroy({ where: { id: [sousTache.id, sousTacheAutreTache.id] } });
     await occurrence_de_tache.destroy({ where: { id: [occurrence.id, autreOccurrence.id] } });
+    if (priorite) {
+      await task_priority.destroy({ where: { id: priorite.id } });
+    }
     await Task.destroy({ where: { id: [tache.id, autreTache.id] } });
     await Compte.destroy({ where: { id: [employe.id, autreEmploye.id] } });
   });
