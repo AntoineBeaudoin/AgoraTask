@@ -13,11 +13,15 @@ export const usePosteStore = defineStore("postes", {
       return this.postes.find((poste) => poste.id == id);
     },
 
-    async loadPostes(url = '/poste/list', forceRefresh = false) {
-      if (this.loaded && !forceRefresh && url === '/poste/list') return;
+    async loadPostes(url = '/poste/list', forceRefresh = false, includeArchived = true) {
+      const requestUrl = includeArchived
+        ? url
+        : `${url}${url.includes('?') ? '&' : '?'}archived=false`;
+
+      if (this.loaded && !forceRefresh && requestUrl === '/poste/list') return;
 
       try {
-        const response = await apiFetch(url);
+        const response = await apiFetch(requestUrl);
 
         this.lastErrorStatus = response.status;
 
@@ -29,6 +33,27 @@ export const usePosteStore = defineStore("postes", {
         this.loaded = true;
       } catch (err) {
         console.error('Error loading postes:', err);
+      }
+    },
+
+    async getEmployeePosteId(idEmployee) {
+      try {
+        const response = await apiFetch(`/poste/employe/${idEmployee}`, {
+          method: 'GET'
+        });
+
+        this.lastErrorStatus = response.status;
+
+        if (response.status !== 200) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        return response.data.posteId;
+
+      } catch (err) {
+        this.lastErrorStatus = err.status || this.lastErrorStatus;
+        console.error("get employee poste error:", err);
+        return null;
       }
     },
 
@@ -96,15 +121,15 @@ export const usePosteStore = defineStore("postes", {
       }
     },
 
-    async assignPosteToEmployees(posteId, comptes) {
+    async assignPosteToEmployee(compteId, posteId) {
       try {
-        const response = await apiFetch(`/poste/${posteId}/employes`, {
-          method: 'PUT',
+        const response = await apiFetch(`/poste/employe/${compteId}`, {
+          method: 'PATCH',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            comptes
+            posteId
           })
         });
 
@@ -114,11 +139,9 @@ export const usePosteStore = defineStore("postes", {
           throw new Error(`HTTP ${response.status}`);
         }
 
-        await this.loadPostes('/poste/list', true);
-
         return true;
       } catch (err) {
-        console.error('assign employees to poste error:', err);
+        console.error('assign poste to employee error:', err);
         return false;
       }
     },

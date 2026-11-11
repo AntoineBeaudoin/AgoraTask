@@ -37,7 +37,7 @@ describe("Tests des tâches de l'employé", function () {
       .set("Authorization", "Bearer " + token)
       .send(body);
   }
-  
+
   beforeAll(async function () {
     await bd.authenticate();
   });
@@ -250,6 +250,56 @@ describe("Tests des tâches de l'employé", function () {
         where: { tachesAFaireId: assignation.id },
       });
       expect(rows).toHaveLength(0);
+    });
+
+    describe("GET /api/task/occurences/:id", function () {
+      it("retourne les occurrences liées à une tâche", async function () {
+        const response = await request(app)
+          .get(`/api/task/occurences/${tache.id}`)
+          .set("Authorization", "Bearer " + token);
+
+        expect(response.status).toBe(200);
+        expect(response.body.data).toHaveLength(1);
+
+        expect(response.body.data[0]).toMatchObject({
+          id: occurrence.id,
+          tacheId: tache.id,
+          journee: "lundi",
+          heureDebut: "08:00:00",
+          heureFin: "09:00:00",
+          priorite: 3,
+        });
+
+        expect(response.body.data.some(
+          (item) => item.id === autreOccurrence.id
+        )).toBe(false);
+      });
+
+      it("retourne une liste vide si la tâche ne possède aucune occurrence", async function () {
+        await tachesAFaire.destroy({
+          where: { occurrence_de_tacheId: occurrence.id },
+        });
+
+        await occurrence_de_tache.destroy({
+          where: { id: occurrence.id },
+        });
+
+        const response = await request(app)
+          .get(`/api/task/occurences/${tache.id}`)
+          .set("Authorization", "Bearer " + token);
+
+        expect(response.status).toBe(200);
+        expect(response.body.data).toHaveLength(0);
+      });
+
+      it("retourne 404 si la tâche n'existe pas", async function () {
+        const response = await request(app)
+          .get("/api/task/occurences/999999")
+          .set("Authorization", "Bearer " + token);
+
+        expect(response.status).toBe(404);
+        expect(response.body.message).toBe("Tâche introuvable");
+      });
     });
   });
 });
