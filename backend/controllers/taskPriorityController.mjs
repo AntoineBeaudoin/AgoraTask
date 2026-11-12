@@ -20,7 +20,7 @@ function validateTaskPriorityInput(priorityName, weigth) {
     }
 
     if (weigth < 0){
-        const error = new Error("Le poids de la priorité doit être un nombre suppérieur ou égale à 0.");
+        const error = new Error("Le poids de la priorité doit être un nombre supérieur ou égale à 0.");
         error.statusCode = 400;
         throw error;
     }
