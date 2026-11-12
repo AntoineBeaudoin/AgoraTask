@@ -6,8 +6,9 @@ import hasWritePosteRights from "../Middleware/hasWritePosteRights.mjs";
 const router = express.Router();
 
 router.get("/list", isConnected, posteController.getPostes);
+router.get("/employe/:id", isConnected, posteController.getEmployeePosteId);
 router.put("/:id", isConnected, hasWritePosteRights, posteController.updatePoste);
-router.put('/:id/employes', isConnected, hasWritePosteRights, posteController.assignPosteToEmployees);
+router.patch("/employe/:id", isConnected, hasWritePosteRights, posteController.assignPosteToEmployee);
 router.post("/add", isConnected, hasWritePosteRights, posteController.createPoste);
 router.delete("/:id", isConnected, hasWritePosteRights, posteController.deletePoste);
 router.patch("/:id/reactivate", isConnected, hasWritePosteRights, posteController.reactivatePoste);
