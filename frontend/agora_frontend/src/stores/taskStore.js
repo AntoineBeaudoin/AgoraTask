@@ -1,7 +1,7 @@
 /** @file Fichier qui définit la logique pour la gestion des tâches */
 import { defineStore } from 'pinia'
 import { apiFetch, apiFetchFormData } from '@/utils/api'
-import { isNumber } from '@/utils/checks'
+import { isNumber, stringVide } from '@/utils/checks'
 
 export const useTaskStore = defineStore('tasks', {
   state: () => ({
@@ -9,6 +9,7 @@ export const useTaskStore = defineStore('tasks', {
     loaded: false,
     myTasks: [],
     myTasksLoaded: false,
+    dailyComment: ''
   }),
 
   actions: {
@@ -31,8 +32,9 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
 
-    async loadMyTasks() {
+    async loadEmployeeInterface() {
       try {
+        this.dailyComment = ''
         const response = await apiFetch('/task/mine')
         if (!response || response.status !== 200) {
           throw new Error(`HTTP ${response ? response.status : 'erreur'}`)
@@ -71,6 +73,16 @@ export const useTaskStore = defineStore('tasks', {
           commentaire: task.commentaire,
           sousTaches: sousTaches,
         })
+      }
+
+      let numberOfCompletedTasks = 0
+      for (let i = 0; i < tasks.length; i++){
+          numberOfCompletedTasks += tasks[i].isCompleted ? 1 : 0
+      }
+      console.log('NUMBER OF COMPLETED TASKS ', numberOfCompletedTasks);
+      console.log('NUMBER OF TASKS LENGTH ', this.myTasks.length);
+      if (numberOfCompletedTasks !== tasks.length && stringVide(this.dailyComment)){
+          return false
       }
 
       try {
