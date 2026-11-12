@@ -24,7 +24,7 @@
                 <h3 class="fs-5 mb-3 text-primary">
                   {{ isEditing ? '1. Modifier la priorité' : '1. Ajouter une priorité' }}
                 </h3>
-                <div class="form-group mb-3">
+                <div class="form-group my-3">
                   <label for="priorityName" class="form-label">Nom de la priorité *</label>
                   <input v-model="priorityName" id="priorityName" class="form-control" type="text"
                     placeholder="Ex: Important" required />
@@ -33,7 +33,8 @@
                   </div>
                 </div>
                 <div class="form-group mb-3">
-                  <label for="priorityWeigth" class="form-label">Poids *</label>
+                  <label for="priorityWeigth" class="form-label d-block">Poids *</label>
+                  <span><em class="blockquote-footer">Plus le poids est élevé plus il est important</em></span>
                   <input v-model.number="weigth" id="priorityWeigth" class="form-control" type="number" min="0"
                     placeholder="Ex: 1" required />
                   <div id="priorityWeigthError" class="invalid-feedback">

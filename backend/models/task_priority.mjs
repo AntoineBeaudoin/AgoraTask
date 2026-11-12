@@ -14,7 +14,10 @@ const task_priority = bd.define("task_priority", {
   },
   weigth: {
     type: DataTypes.INTEGER,
-    defaultValue: 0
+    defaultValue: 0,
+    validate: {
+      min: 0,
+    }
   }
 }, {
   tableName: "task_priorities",
