@@ -11,53 +11,36 @@
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center">
             <div class="form-check d-flex align-items-center gap-2">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                :id="'task-' + task.tacheAFaireId"
-                v-model="task.isCompleted"
-              />
+              <input class="form-check-input" type="checkbox" :id="'task-' + task.tacheAFaireId"
+                v-model="task.isCompleted" />
               <label class="form-check-label" :for="'task-' + task.tacheAFaireId">
                 {{ task.title }}
                 <span class="badge bg-secondary ms-2">Début : {{ task.heureDebut }}</span>
                 <span class="badge bg-secondary ms-2">Fin : {{ task.heureFin }}</span>
               </label>
             </div>
-            <button
-              type="button"
-              class="btn btn-outline-primary btn-sm"
-              @click="toggleDetails(task.tacheAFaireId)"
-            >
+            <button type="button" class="btn btn-outline-primary btn-sm" @click="toggleDetails(task.tacheAFaireId)">
               {{ detailledTasks.has(task.tacheAFaireId) ? 'Moins de détails' : 'Plus de détails' }}
             </button>
           </div>
 
           <div v-for="sub in task.sousTaches" :key="sub.id" class="form-check ms-4 mt-2">
-            <input
-              class="form-check-input"
-              type="checkbox"
-              :id="'sub-' + task.tacheAFaireId + '-' + sub.id"
-              v-model="sub.isCompleted"
-            />
+            <input class="form-check-input" type="checkbox" :id="'sub-' + task.tacheAFaireId + '-' + sub.id"
+              v-model="sub.isCompleted" />
             <label class="form-check-label" :for="'sub-' + task.tacheAFaireId + '-' + sub.id">
               {{ sub.titre }}
             </label>
           </div>
         </div>
 
-        <div v-if="detailledTasks.has(task.tacheAFaireId)" class="card-footer bg-light">
+        <div v-if="printing || detailledTasks.has(task.tacheAFaireId)" class="card-footer bg-light task-details">
           <p class="mb-1"><strong>Local :</strong> {{ task.room }}</p>
           <p class="mb-2"><strong>Description :</strong> {{ task.description }}</p>
           <label :for="'comment-' + task.tacheAFaireId" class="form-label">
             <strong>Commentaire :</strong>
           </label>
-          <textarea
-            class="form-control"
-            rows="2"
-            maxlength="1000"
-            :id="'comment-' + task.tacheAFaireId"
-            v-model="task.commentaire"
-          ></textarea>
+          <textarea class="form-control" rows="2" maxlength="1000" :id="'comment-' + task.tacheAFaireId"
+            v-model="task.commentaire"></textarea>
         </div>
       </div>
 
@@ -72,14 +55,29 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useTaskStore } from '@/stores/taskStore.js'
+import { nextTick } from 'vue'
 
 const taskStore = useTaskStore()
 const detailledTasks = reactive(new Set())
 const checkedIds = ref([])
 const saving = ref(false)
 const message = ref('')
+const printing = ref(false)
+
+async function printPage() {
+  printing.value = true
+
+  await nextTick()
+
+  await new Promise(resolve => requestAnimationFrame(() => {
+    requestAnimationFrame(resolve)
+  }))
+
+  window.print()
+}
+
 
 function toggleDetails(id) {
   if (detailledTasks.has(id)) {
@@ -87,6 +85,11 @@ function toggleDetails(id) {
   } else {
     detailledTasks.add(id)
   }
+}
+
+async function afterPrint() {
+  printing.value = false
+  await nextTick();
 }
 
 async function save() {
@@ -100,8 +103,53 @@ async function save() {
   }
 }
 
+function handleKeydown(event) {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p') {
+    event.preventDefault()
+    printPage()
+  }
+}
+
 onMounted(() => {
   taskStore.loadTasks()
   taskStore.loadMyTasks()
+
+  window.addEventListener('keydown', handleKeydown)
+  window.addEventListener('afterprint', afterPrint)
+})
+
+onUnmounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+  window.removeEventListener('afterprint', afterPrint)
 })
 </script>
+
+<style scoped>
+@media print {
+  .btn {
+    display: none !important;
+  }
+
+  .card-footer {
+    display: block !important;
+    break-inside: avoid;
+  }
+
+  textarea {
+    border: none;
+    resize: none;
+  }
+
+  .task-details {
+    display: block !important;
+    break-inside: avoid;
+  }
+
+  textarea {
+    border: none !important;
+    resize: none;
+    background: transparent !important;
+    color: black !important;
+  }
+}
+</style>
