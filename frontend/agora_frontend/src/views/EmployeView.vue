@@ -6,7 +6,7 @@
       Aucune tâche ne vous est assignée.
     </p>
 
-    <form v-else class="mx-auto" @submit.prevent="save" @reset.prevent="taskStore.loadMyTasks()">
+    <form v-else class="mx-auto" @submit.prevent="save" @reset.prevent="taskStore.loadEmployeeInterface()">
       <div v-for="task in taskStore.myTasks" :key="task.tacheAFaireId" class="card mb-3">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center">
@@ -61,11 +61,18 @@
         </div>
       </div>
 
+      <div class="card-footer bg-light">
+          <label for="dailyComment" class="form-label">Commentaire de la journée</label>
+          <textarea class="form-control" rows="2" maxlength="1000" :id="dailyComment" name="dailyComment" v-model="taskStore.dailyComment"></textarea>
+      </div>
+
       <p v-if="message" class="text-center">{{ message }}</p>
 
       <div class="d-flex justify-content-center gap-2 mt-4">
-        <button type="submit" class="btn btn-primary" :disabled="saving">Sauvegarder</button>
         <button type="reset" class="btn btn-danger">Réinitialiser</button>
+      </div>
+      <div class="d-flex justify-content-center gap-2 mt-4">
+        <button type="submit" class="btn btn-primary" :disabled="saving">Soumettre</button>
       </div>
     </form>
   </section>
@@ -102,6 +109,6 @@ async function save() {
 
 onMounted(() => {
   taskStore.loadTasks()
-  taskStore.loadMyTasks()
+  taskStore.loadEmployeeInterface()
 })
 </script>
