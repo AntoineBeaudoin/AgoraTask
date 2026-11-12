@@ -24,7 +24,8 @@
                 <h3 class="fs-5 mb-3 text-primary">
                   {{ isEditing ? '1. Modifier la priorité' : '1. Ajouter une priorité' }}
                 </h3>
-                <div class="form-group mb-3">
+                <span><em class="text-muted">1 est plus important que 2. 2 est plus important que 3...</em></span>
+                <div class="form-group my-3">
                   <label for="priorityName" class="form-label">Nom de la priorité *</label>
                   <input v-model="priorityName" id="priorityName" class="form-control" type="text"
                     placeholder="Ex: Important" required />
