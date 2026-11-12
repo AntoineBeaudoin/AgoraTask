@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar navbar-expand navbar-dark bg-dark mb-4">
+  <nav class="navbar navbar-expand navbar-dark bg-dark mb-4" id="navBar">
     <RouterLink to="/" class="navbar-brand ms-3">AgoraTask</RouterLink>
     <ul class="navbar-nav ms-auto">
       <li class="nav-item me-3" v-if="isAuthenticated && role === 'personnel_de_terrain'">

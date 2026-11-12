@@ -748,3 +748,9 @@
 .employees-card > .card-header {
   padding: 27px 26px 24px;
 }
+
+@media print{
+  nav *{
+    display: none;
+  }
+}
