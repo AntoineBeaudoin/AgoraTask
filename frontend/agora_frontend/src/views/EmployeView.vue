@@ -2,12 +2,12 @@
   <section class="container py-5">
     <h1 class="mb-4 text-center">Vos tâches</h1>
     <TaskDescriptionModal />
-    <button class="btn btn-primary mb-3" @click="printPage()">Imprimer l'horaire</button>
+    <button class="btn btn-primary mb-3" @click="printPage()"><i class="bi bi-printer" aria-hidden="true"></i> Imprimer l'horaire</button>
+    <link rel="stylesheet" href="">
 
     <p v-if="taskStore.myTasksLoaded && taskStore.myTasks.length === 0" class="text-center text-muted">
       Aucune tâche ne vous est assignée.
     </p>
-
 
     <form v-else class="mx-auto" @submit.prevent="save" @reset.prevent="taskStore.loadMyTasks()">
       <div v-for="task in taskStore.myTasks" :key="task.tacheAFaireId" class="card mb-3">
@@ -61,6 +61,7 @@
 import { onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useTaskStore } from '@/stores/taskStore.js'
 import { nextTick } from 'vue'
+import 'bootstrap-icons/font/bootstrap-icons.css'
 
 const taskStore = useTaskStore()
 const detailledTasks = reactive(new Set())
@@ -80,7 +81,6 @@ async function printPage() {
 
   window.print()
 }
-
 
 function toggleDetails(id) {
   if (detailledTasks.has(id)) {
