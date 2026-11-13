@@ -2,7 +2,8 @@
   <section class="container py-5">
     <h1 class="mb-4 text-center">Vos tâches</h1>
     <TaskDescriptionModal />
-    <button class="btn btn-primary mb-3" @click="printPage()"><i class="bi bi-printer" aria-hidden="true"></i> Imprimer l'horaire</button>
+    <button class="btn btn-primary mb-3" @click="printPage()" v-if="taskStore.myTasksLoaded && taskStore.myTasks.length > 0">
+      <i class="bi bi-printer" aria-hidden="true"></i> Imprimer l'horaire</button>
     <link rel="stylesheet" href="">
 
     <p v-if="taskStore.myTasksLoaded && taskStore.myTasks.length === 0" class="text-center text-muted">
