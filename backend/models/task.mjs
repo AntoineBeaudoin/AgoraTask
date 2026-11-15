@@ -32,6 +32,16 @@ const Task = bd.define("Task", {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  taskPriorityId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: "task_priorities",
+      key: "id",
+    },
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
+  },
 });
 
 export default Task;
