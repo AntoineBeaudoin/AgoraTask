@@ -204,6 +204,53 @@ describe('TaskModal.vue', () => {
     )
   })
 
+  test('permet d’ajouter plusieurs aperçus PDF (fichier) ayant le même filename lors de la création ou modification', async () => {
+    createWrapper()
+    await nextTick()
+    await Promise.resolve()
+    await nextTick()
+
+    const modal = document.body.querySelector('#taskModal')
+
+    const titleInput = modal.querySelector('#title')
+    const roomInput = modal.querySelector('#room')
+    titleInput.value = 'Tâche documentée'
+    titleInput.dispatchEvent(new Event('input'))
+    roomInput.value = 'Salle 204'
+    roomInput.dispatchEvent(new Event('input'))
+
+    // Sélectionne Libre pour ne pas exiger d'occurrence
+    const prioritySelect = modal.querySelector('#taskPriority')
+    prioritySelect.value = '3'
+    prioritySelect.dispatchEvent(new Event('change'))
+    await nextTick()
+
+    const pdfInput = modal.querySelector('#pdfInput')
+    
+    // Ajoute un premier fichier PDF
+    const pdfFile = new File(['%PDF-1.4'], 'guide.pdf', { type: 'application/pdf' })
+    Object.defineProperty(pdfInput, 'files', { value: [pdfFile], configurable: true })
+    pdfInput.dispatchEvent(new Event('change'))
+    await nextTick()
+
+    // Ajoute un second fichier PDF avec le même nom que le premier
+    const pdfFile2 = new File(['%PDF-1.4'], 'guide.pdf', { type: 'application/pdf' })
+    Object.defineProperty(pdfInput, 'files', { value: [pdfFile2], configurable: true })
+    pdfInput.dispatchEvent(new Event('change'))
+    await nextTick()
+
+    expect(modal.querySelectorAll('.pdf-item')).toHaveLength(2)
+    expect(modal.querySelectorAll('.pdf-preview-frame')).toHaveLength(2)
+
+    modal.querySelector('form').dispatchEvent(new Event('submit'))
+    await nextTick()
+
+    expect(taskStore.addTask).toHaveBeenCalledTimes(1)
+    const submittedPayload = taskStore.addTask.mock.calls[0][0]
+    expect(submittedPayload.documents).toHaveLength(2)
+    expect(submittedPayload.documents[0].filename).not.toMatch(submittedPayload.documents[1].filename)
+  })
+
   test('permet d’ajouter des aperçus PDF (fichier et URL) et des liens externes lors de la création ou modification', async () => {
     createWrapper()
     await nextTick()
