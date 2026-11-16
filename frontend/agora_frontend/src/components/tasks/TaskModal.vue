@@ -225,7 +225,7 @@
             <div class="modal-footer">
               <button type="button" class="btn btn-danger" @click="close">Annuler</button>
               <button id="submitBtn" type="submit" class="btn btn-success">{{ isEditing ? 'Modifier' : 'Ajouter'
-              }}</button>
+                }}</button>
             </div>
           </form>
         </div>
@@ -561,13 +561,17 @@ function handlePdfChange(event) {
   event.target.value = ''
 }
 
+function generateRandomFileName(file) {
+  const ext = file.name.split('.').pop()
+  return `${generateGUID()}.${ext}`
+}
+
 function addFiles(files) {
   const remainingSlots = MAX_IMAGES - images.value.length
   if (remainingSlots <= 0) return
   files.slice(0, remainingSlots).forEach((file) => {
     if (!isValidImage(file)) return
-    const ext = file.name.split('.').pop()
-    const randomFileName = `${generateGUID()}.${ext}`
+    const randomFileName = generateRandomFileName(file)
     const renamedFile = new File([file], randomFileName, { type: file.type })
     images.value.push({
       file: renamedFile,
@@ -580,11 +584,13 @@ function addFiles(files) {
 function addPdfFiles(files) {
   files.forEach((file) => {
     if (!isValidPdf(file)) return
-    const preview = URL.createObjectURL(file)
+    const randomFileName = generateRandomFileName(file)
+    const renamedFile = new File([file], randomFileName, { type: file.type })
+    const preview = URL.createObjectURL(renamedFile)
     documents.value.push({
-      file,
-      filename: file.name,
-      name: file.name,
+      file: renamedFile,
+      filename: randomFileName,
+      name: randomFileName,
       mimeType: 'application/pdf',
       preview,
     })
