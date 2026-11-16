@@ -2,6 +2,33 @@
 import { defineStore } from 'pinia'
 import { apiFetch, apiFetchFormData } from '@/utils/api'
 import { isNumber, stringVide } from '@/utils/checks'
+import { appendFilesToFormData } from '@/utils/fileHelper'
+
+function buildTaskFormData(task, isUpdate = false) {
+  const formData = new FormData()
+  formData.append('title', task.title)
+  formData.append('room', task.room)
+  formData.append('description', task.description ?? '')
+  formData.append('recurring', task.recurring)
+  formData.append('automaticAssignment', task.automaticAssignment)
+  if (task.taskPriorityId !== undefined && task.taskPriorityId !== null) {
+    formData.append('taskPriorityId', task.taskPriorityId)
+  }
+  formData.append('occurrences', JSON.stringify(task.occurrences ?? []))
+  formData.append('subTasks', JSON.stringify(task.subTasks ?? []))
+  formData.append('externalLinks', JSON.stringify(task.externalLinks ?? []))
+  const embeddedDocs = (task.documents ?? []).filter((doc) => !doc.file)
+  formData.append('documents', JSON.stringify(embeddedDocs))
+  if (isUpdate) {
+    const existingImageIds = (task.images ?? []).filter((i) => !i.file && i.id).map((i) => i.id)
+    const existingDocIds = embeddedDocs.filter((d) => d.id).map((d) => d.id)
+    formData.append('existingImageIds', JSON.stringify(existingImageIds))
+    formData.append('existingDocumentIds', JSON.stringify(existingDocIds))
+  }
+  appendFilesToFormData(formData, task.images, 'images')
+  appendFilesToFormData(formData, task.documents, 'documents')
+  return formData
+}
 
 export const useTaskStore = defineStore('tasks', {
   state: () => ({
@@ -46,10 +73,10 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
 
-    async getNumberOfTaskOccurences(id){
+    async getNumberOfTaskOccurences(id) {
       try {
         const response = await apiFetch(`/task/occurences/${id}`);
-        if (!response || response.status !== 200){
+        if (!response || response.status !== 200) {
           throw new Error(`HTTP ${response ? response.status : 'erreur'}`);
         }
         return response.data.length;
@@ -101,19 +128,7 @@ export const useTaskStore = defineStore('tasks', {
     },
 
     async addTask(task) {
-      const formData = new FormData()
-      formData.append('title', task.title)
-      formData.append('room', task.room)
-      formData.append('description', task.description ?? '')
-      formData.append('recurring', task.recurring)
-      formData.append('automaticAssignment', task.automaticAssignment)
-      formData.append('occurrences', JSON.stringify(task.occurrences ?? []))
-      formData.append('subTasks', JSON.stringify(task.subTasks ?? []))
-      for (const image of task.images ?? []) {
-        if (image.file) {
-          formData.append('images', image.file)
-        }
-      }
+      const formData = buildTaskFormData(task, false)
       try {
         const response = await apiFetchFormData('/task/add', {
           method: 'POST',
@@ -133,25 +148,7 @@ export const useTaskStore = defineStore('tasks', {
     },
 
     async updateTask(task) {
-      const formData = new FormData()
-      formData.append('title', task.title)
-      formData.append('room', task.room)
-      formData.append('description', task.description ?? '')
-      formData.append('recurring', task.recurring)
-      formData.append('automaticAssignment', task.automaticAssignment)
-      formData.append('occurrences', JSON.stringify(task.occurrences ?? []))
-      formData.append('subTasks', JSON.stringify(task.subTasks ?? []))
-
-      const existingImageIds = (task.images ?? [])
-        .filter((img) => !img.file && img.id)
-        .map((img) => img.id)
-      formData.append('existingImageIds', JSON.stringify(existingImageIds))
-      for (const image of task.images ?? []) {
-        if (image.file) {
-          formData.append('images', image.file)
-        }
-      }
-
+      const formData = buildTaskFormData(task, true)
       try {
         const response = await apiFetchFormData(`/task/${task.id}`, {
           method: 'PUT',
