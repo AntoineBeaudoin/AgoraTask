@@ -65,11 +65,13 @@ describe('EmployeView.vue', () => {
     })
 
     taskStore = reactive({
+      dailyComment: '',
       tasks: [assignedTask],
       myTasks: [assignedTask],
       myTasksLoaded: true,
       loadTasks: vi.fn().mockResolvedValue(),
       loadMyTasks: vi.fn().mockResolvedValue(),
+      loadEmployeeInterface: vi.fn().mockResolvedValue(),
       getTaskById: vi.fn().mockResolvedValue(assignedTask),
       saveProgress: vi.fn().mockResolvedValue(true),
     })
@@ -134,4 +136,27 @@ describe('EmployeView.vue', () => {
       'https://example.com/normes'
     )
   })
+
+  test("le bouton Soumettre enregistre le commentaire de fin de journée", async () => {
+  const wrapper = createWrapper()
+  await nextTick()
+
+  const dailyCommentField = wrapper.find('#dailyComment')
+  const soumettreBtn = wrapper.find('#btn-soumettre')
+
+  expect(dailyCommentField.exists()).toBe(true)
+  expect(soumettreBtn.exists()).toBe(true)
+
+  const commentaire = 'Lorem ipsum dolor sit amet'
+
+  await dailyCommentField.setValue(commentaire)
+
+  expect(taskStore.dailyComment).toBe(commentaire)
+
+  await soumettreBtn.trigger('click')
+  await nextTick()
+
+  expect(taskStore.saveProgress).toHaveBeenCalledTimes(1)
+  expect(taskStore.dailyComment).toBe(commentaire)
+})
 })
