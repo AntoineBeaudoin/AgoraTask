@@ -106,8 +106,7 @@ export const useTaskStore = defineStore('tasks', {
       for (let i = 0; i < tasks.length; i++){
           numberOfCompletedTasks += tasks[i].isCompleted ? 1 : 0
       }
-      console.log('NUMBER OF COMPLETED TASKS ', numberOfCompletedTasks);
-      console.log('NUMBER OF TASKS LENGTH ', this.myTasks.length);
+  
       if (numberOfCompletedTasks !== tasks.length && stringVide(this.dailyComment)){
           return false
       }
