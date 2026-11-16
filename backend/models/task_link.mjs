@@ -22,5 +22,4 @@ const TaskLink = bd.define("TaskLink", {
   },
 });
 
-export default TaskLink;
 export { TaskLink };

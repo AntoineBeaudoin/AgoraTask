@@ -27,5 +27,4 @@ const TaskDocument = bd.define("TaskDocument", {
   },
 });
 
-export default TaskDocument;
 export { TaskDocument };

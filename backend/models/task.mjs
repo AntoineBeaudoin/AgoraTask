@@ -44,5 +44,4 @@ const Task = bd.define("Task", {
   },
 });
 
-export default Task;
 export { Task };
