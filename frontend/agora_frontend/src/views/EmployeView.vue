@@ -32,7 +32,7 @@
 
           <div v-for="sub in task.sousTaches" :key="sub.id" class="form-check ms-4 mt-2">
             <input class="form-check-input" type="checkbox" :id="'sub-' + task.tacheAFaireId + '-' + sub.id"
-              v-model="sub.isCompleted" />
+              v-model="sub.isCompleted" v-on:change="save" v-on:click="save"/>
             <label class="form-check-label" :for="'sub-' + task.tacheAFaireId + '-' + sub.id">
               {{ sub.titre }}
             </label>
@@ -104,6 +104,7 @@ async function save() {
   try {
     const ok = await taskStore.saveProgress(checkedIds.value)
     message.value = ok ? 'Progression enregistrée.' : "Échec de l'enregeistrement."
+    console.log("Saved")
   } finally {
     saving.value = false
   }
