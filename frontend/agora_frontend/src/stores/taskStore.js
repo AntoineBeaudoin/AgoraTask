@@ -44,6 +44,18 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
 
+    async getNumberOfTaskOccurences(id){
+      try {
+        const response = await apiFetch(`/task/occurences/${id}`);
+        if (!response || response.status !== 200){
+          throw new Error(`HTTP ${response ? response.status : 'erreur'}`);
+        }
+        return response.data.length;
+      } catch (err) {
+        console.log(`HTTP ${err}`);
+      }
+    },
+
     async saveProgress() {
       const tasks = []
       for (let i = 0; i < this.myTasks.length; i++) {

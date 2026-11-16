@@ -39,7 +39,7 @@
                     <p><strong>Journée: </strong>{{ occ.journee ? occ.journee.charAt(0).toUpperCase() +
                       occ.journee.slice(1) : 'Non définie' }}</p>
                     <div class="d-flex justify-content-between">
-                      <p><strong>Priorité:</strong> {{ occ.priorite ?? 'Non définie' }}</p>
+                      <p><strong>Priorité:</strong> {{ occ.priority.task_priority ?? 'Non définie' }}</p>
                       <i class="ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
                         title="Indique le niveau de priorité : 1 = très élevée, 2 = élevé, 3 = moyenne, 4 = basse, 5 = très basse."
                         style="cursor: help;">
@@ -128,7 +128,7 @@ function sortOccurrences(type) {
   sortedOccurrences.value = [...sortedOccurrences.value].sort((a, b) => {
     switch (type) {
       case 'priorities':
-        return (a.priorite ?? Infinity) - (b.priorite ?? Infinity);
+        return (a.priority.weigth ?? Infinity) - (b.priority.weigth ?? Infinity);
       case 'days':
         return days.indexOf(a.journee?.toLowerCase()) - days.indexOf(b.journee?.toLowerCase());
       default:

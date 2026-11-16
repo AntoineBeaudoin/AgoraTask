@@ -58,7 +58,7 @@
               <div v-else-if="group.error" class="text-danger">
                 {{ group.error }}
                 <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
-                  @click="group.type === 'task' ? loadTasks() : loadComptes()">Réessayer</button>
+                  @click="loadTasks()">Réessayer</button>
               </div>
               <div v-else class="row g-3">
                 <div class="col-6">
@@ -126,10 +126,8 @@ import { computed, ref, watch } from 'vue';
 import { usePosteStore } from '@/stores/posteStore';
 import { useModalStore } from '@/stores/modalStore';
 import { useTaskStore } from '@/stores/taskStore';
-import { useAuthStore } from '@/stores/auth';
 
 const posteStore = usePosteStore();
-const authStore = useAuthStore();
 const modalStore = useModalStore();
 const taskStore = useTaskStore();
 
@@ -143,16 +141,23 @@ const tasksError = ref('');
 const posteError = ref('');
 const saving = ref(false);
 
-const comptesDisponibles = ref([]);
-const comptesSelectionnes = ref([]);
 const loadingComptes = ref(false);
-const comptesError = ref('');
 
 const isEditing = computed(() => !!modalStore.editingPoste);
 
-const tasksDisponibles = computed(() =>
-  taskStore.tasks.filter(task => !task.IsArchived && !task.archived)
-);
+const tasksDisponibles = ref([]);
+
+async function updateTasksDisponibles() {
+  tasksDisponibles.value = (await Promise.all(
+    taskStore.tasks.map(async task => ({
+      task,
+      disponible: task.recurring &&
+        await taskStore.getNumberOfTaskOccurences(task.id) > 0
+    }))
+  ))
+    .filter(result => result.disponible)
+    .map(result => result.task);
+}
 
 const assignmentGroups = computed(() => [
   {
@@ -162,13 +167,6 @@ const assignmentGroups = computed(() => [
     selected: tasksDisponibles.value.filter(t => tasksSelectionnees.value.some(id => String(id) === String(t.id))),
     format: t => `${t.title} (${t.room})`
   },
-  {
-    type: 'compte', title: 'Employés assignés', loading: loadingComptes.value,
-    error: comptesError.value,
-    available: comptesDisponibles.value.filter(c => !comptesSelectionnes.value.some(id => String(id) === String(c.id))),
-    selected: comptesDisponibles.value.filter(c => comptesSelectionnes.value.some(id => String(id) === String(c.id))),
-    format: c => `${c.prenom} ${c.nom} (${c.courriel})`
-  }
 ]);
 
 const draggedItem = ref(null);
@@ -180,7 +178,7 @@ function startDrag(type, id, event) {
 }
 
 function moveItem(type, id, assign) {
-  const selection = type === 'task' ? tasksSelectionnees : comptesSelectionnes;
+  const selection = tasksSelectionnees;
   const exists = selection.value.some(value => String(value) === String(id));
   if (assign && !exists) selection.value = [...selection.value, id];
   else if (!assign && exists) selection.value = selection.value.filter(value => String(value) !== String(id));
@@ -192,33 +190,13 @@ function dropItem(type, assign) {
   draggedItem.value = null;
 }
 
-async function loadComptes() {
-  loadingComptes.value = true;
-  comptesError.value = '';
-
-  try {
-    const result = await authStore.getEmployes();
-
-    if (Array.isArray(result)) {
-      comptesDisponibles.value = result;
-    } else {
-      comptesDisponibles.value = authStore.employes ?? [];
-    }
-
-  } catch {
-    comptesError.value =
-      'Une erreur est survenue lors du chargement des employés.';
-  } finally {
-    loadingComptes.value = false;
-  }
-}
-
 async function loadTasks() {
   loadingTasks.value = true;
   tasksError.value = '';
 
   try {
     await taskStore.loadTasks();
+    await updateTasksDisponibles();
   } catch {
     tasksError.value =
       'Une erreur est survenue lors du chargement des tâches.';
@@ -234,10 +212,7 @@ watch(
 
     resetForm();
 
-    await Promise.all([
-      loadTasks(),
-      loadComptes()
-    ]);
+    await loadTasks();
 
     const poste = modalStore.editingPoste;
 
@@ -248,12 +223,6 @@ watch(
       tasksSelectionnees.value = (poste.tasks ?? []).map(
         task => typeof task === 'object' ? task.id : task
       );
-
-      const assigned = poste.employes ?? poste.comptes;
-      comptesSelectionnes.value = Array.isArray(assigned)
-        ? assigned.map(compte => typeof compte === 'object' ? compte.id : compte)
-        : comptesDisponibles.value.filter(compte => String(compte.posteId) === String(poste.id))
-            .map(compte => compte.id);
     }
   }
 );
@@ -262,9 +231,7 @@ function resetForm() {
   nom.value = '';
   description.value = '';
   tasksSelectionnees.value = [];
-  comptesSelectionnes.value = [];
   tasksError.value = '';
-  comptesError.value = '';
   posteError.value = '';
 
   document.querySelectorAll('#posteModal .is-invalid').forEach(input => {
@@ -344,17 +311,6 @@ async function submit() {
     if (posteId == null) {
       posteError.value =
         'Le poste a été enregistré, mais son identifiant est introuvable. Les employés n’ont pas été assignés.';
-      return;
-    }
-
-    const assignmentResult = await posteStore.assignPosteToEmployees(
-      posteId,
-      comptesSelectionnes.value
-    );
-
-    if (!assignmentResult) {
-      posteError.value =
-        'Le poste a été enregistré, mais une erreur est survenue lors de l’assignation des employés.';
       return;
     }
 
