@@ -58,6 +58,10 @@
                 {{ employe.role?.replaceAll('_', ' ') }}
               </span>
             </div>
+            <span v-if="aDesTachesNonTerminees(employe)" class="badge-statut ms-auto me-2">
+              Non terminée
+            </span>
+            <span v-else class="me-2 ms-auto badge-statut"> Terminée </span>
 
             <span class="fleche"> › </span>
           </button>
@@ -290,6 +294,9 @@ async function rafraichirHistorique() {
   indexTache.value = 0
   await getEmployeEnService()
 }
+function aDesTachesNonTerminees(employe) {
+  return employe.taches?.some((tache) => tache.TachesAFaire?.isCompleted === false) ?? false
+}
 </script>
 <style scoped>
 .historique-page {
@@ -448,6 +455,12 @@ async function rafraichirHistorique() {
   font-size: 0.8rem;
 }
 
+.badge-statuts {
+  padding: 5px 9px;
+  border-radius: 20px;
+  background: #cdffd1;
+  font-size: 0.8rem;
+}
 .badge-statut.complete,
 .etat-sous-tache.complete {
   background: #198754;
