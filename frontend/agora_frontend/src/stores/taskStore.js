@@ -2,14 +2,7 @@
 import { defineStore } from 'pinia'
 import { apiFetch, apiFetchFormData } from '@/utils/api'
 import { isNumber } from '@/utils/checks'
-
-function appendFilesToFormData(formData, items = [], fieldName) {
-  for (const item of items) {
-    if (item?.file) {
-      formData.append(fieldName, item.file)
-    }
-  }
-}
+import { appendFilesToFormData } from '@/utils/fileHelper'
 
 function buildTaskFormData(task, isUpdate = false) {
   const formData = new FormData()
