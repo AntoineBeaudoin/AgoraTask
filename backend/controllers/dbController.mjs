@@ -3,6 +3,8 @@ import {
   Compte,
   Task,
   TaskImage,
+  TaskDocument,
+  TaskLink,
   Poste,
   occurrence_de_tache,
   sous_tache,
@@ -24,17 +26,20 @@ async function deleteTables() {
   await occurrence_de_tache.destroy({ where: {} });
   await sous_tache.destroy({ where: {} });
   await TaskImage.destroy({ where: {} });
+  await TaskDocument.destroy({ where: {} });
+  await TaskLink.destroy({ where: {} });
   await Compte.destroy({ where: {} });
   await Task.destroy({ where: {} });
   await Poste.destroy({ where: {} });
   await task_priority.destroy({ where: {} });
 }
 
-async function seedTaskPriorities(){
+async function seedTaskPriorities() {
+  taskPrioritiesId = [];
   let taskPriorities = [
-    await task_priority.create({task_priority: "Important", weigth: 1}),
-    await task_priority.create({task_priority: "Normale", weigth: 2}),
-    await task_priority.create({task_priority: "Libre", weigth: 3})
+    await task_priority.create({ task_priority: "Important", weigth: 1 }),
+    await task_priority.create({ task_priority: "Normale", weigth: 2 }),
+    await task_priority.create({ task_priority: "Libre", weigth: 3 })
   ];
   taskPriorities.map((task) => {
     taskPrioritiesId.push(task.id);
@@ -73,7 +78,7 @@ const seedDatabase = async (req, res) => {
         "Responsable de la préparation, du rangement et de l'entretien des installations.",
     });
 
- 
+
 
     await Compte.create({
       prenom: "Antoine",
@@ -260,6 +265,7 @@ const seedDatabase = async (req, res) => {
       recurring: true,
       automaticAssignment: false,
       archived: false,
+      taskPriorityId: taskPrioritiesId[1],
     });
 
     const tacheBoxe = await Task.create({
@@ -269,6 +275,7 @@ const seedDatabase = async (req, res) => {
       recurring: true,
       automaticAssignment: false,
       archived: false,
+      taskPriorityId: taskPrioritiesId[1],
     });
 
     const tacheAppariteur = await Task.create({
@@ -278,6 +285,7 @@ const seedDatabase = async (req, res) => {
       recurring: true,
       automaticAssignment: false,
       archived: false,
+      taskPriorityId: taskPrioritiesId[1],
     });
 
     const tacheEntretienGeneral = await Task.create({
@@ -287,6 +295,7 @@ const seedDatabase = async (req, res) => {
       recurring: true,
       automaticAssignment: false,
       archived: false,
+      taskPriorityId: taskPrioritiesId[1],
     });
 
     const tacheESJM = await Task.create({
@@ -296,6 +305,7 @@ const seedDatabase = async (req, res) => {
       recurring: true,
       automaticAssignment: false,
       archived: false,
+      taskPriorityId: taskPrioritiesId[1],
     });
 
     await TaskPoste.create({ posteId: posteEntretien.id, tacheId: tachePiscine.id });
