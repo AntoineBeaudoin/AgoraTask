@@ -134,4 +134,34 @@ describe('EmployeView.vue', () => {
       'https://example.com/normes'
     )
   })
+
+  test('sauvegarde automatiquement lorsqu’une case de tâche ou de sous-tâche est cochée ou décochée', async () => {
+    const savedStates = []
+    taskStore.saveProgress.mockImplementation(async () => {
+      savedStates.push({
+        taskCompleted: taskStore.myTasks[0].isCompleted,
+        subTaskCompleted: taskStore.myTasks[0].sousTaches[0].isCompleted,
+      })
+      return true
+    })
+
+    const wrapper = createWrapper()
+    await nextTick()
+
+    const taskCheckbox = wrapper.find('#task-101')
+    const subCheckbox = wrapper.find('#sub-101-1')
+
+    await taskCheckbox.setValue(true)
+    await taskCheckbox.setValue(false)
+    await subCheckbox.setValue(true)
+    await subCheckbox.setValue(false)
+
+    expect(taskStore.saveProgress).toHaveBeenCalledTimes(4)
+    expect(savedStates).toEqual([
+      { taskCompleted: true, subTaskCompleted: false },
+      { taskCompleted: false, subTaskCompleted: false },
+      { taskCompleted: false, subTaskCompleted: true },
+      { taskCompleted: false, subTaskCompleted: false },
+    ])
+  })
 })
