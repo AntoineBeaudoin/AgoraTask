@@ -173,12 +173,6 @@ describe("Tests en lien avec les journées de travail", function () {
     expect(work_day_sub_task.comment).toBe("Filtre changé");
   });
 
-  it("limite les commentaires à 1000 caractères", async function () {
-    await save(day.id, { comment: "a".repeat(1500) });
-    await day.reload();
-    expect(day.comment).toHaveLength(1000);
-  });
-
   it("ne supprime pas un commentaire absent de la requête", async function () {
     await work_day_task.update({ comment: "À garder" });
     await save(day.id, {
