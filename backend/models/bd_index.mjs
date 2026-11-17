@@ -1,7 +1,10 @@
 // Relation between Task and TaskImage
+import bd from "./bd.mjs";
 import { Task } from "./task.mjs";
-import TaskPoste from "./task_poste.mjs"
+import TaskPoste from "./task_poste.mjs";
 import { TaskImage } from "./task_image.mjs";
+import { TaskDocument } from "./task_document.mjs";
+import { TaskLink } from "./task_link.mjs";
 import { occurrence_de_tache } from "./occurrence_de_tache.mjs";
 import { sous_tache } from "./sous_taches.mjs";
 import Poste from "./poste.mjs";
@@ -18,6 +21,39 @@ Task.hasMany(TaskImage, {
 TaskImage.belongsTo(Task, {
   foreignKey: "taskId",
   as: "task",
+});
+
+Task.hasMany(TaskDocument, {
+  foreignKey: "taskId",
+  as: "documents",
+  onDelete: "CASCADE",
+});
+TaskDocument.belongsTo(Task, {
+  foreignKey: "taskId",
+  as: "task",
+});
+
+Task.hasMany(TaskLink, {
+  foreignKey: "taskId",
+  as: "externalLinks",
+  onDelete: "CASCADE",
+});
+TaskLink.belongsTo(Task, {
+  foreignKey: "taskId",
+  as: "task",
+});
+
+task_priority.hasMany(Task, {
+  foreignKey: "taskPriorityId",
+  as: "tasks",
+  onDelete: "SET NULL",
+  onUpdate: "CASCADE",
+});
+Task.belongsTo(task_priority, {
+  foreignKey: "taskPriorityId",
+  as: "priority",
+  onDelete: "SET NULL",
+  onUpdate: "CASCADE",
 });
 
 Task.hasMany(occurrence_de_tache, {
@@ -40,7 +76,6 @@ sous_tache.belongsTo(Task, {
   as: "task",
 });
 // Relation between poste and compte
-
 
 Poste.hasMany(Compte, {
   foreignKey: "posteId",
@@ -68,8 +103,7 @@ Task.belongsToMany(Poste, {
 // Relation between employe and tache
 
 Compte.belongsToMany(Task, {
-  through: tachesAFaire,
-  through: { model: tachesAFaire, unique: false},
+  through: { model: tachesAFaire, unique: false },
   foreignKey: "compteId",
   otherKey: "tacheId",
   as: "taches",
@@ -118,9 +152,34 @@ occurrence_de_tache.belongsTo(task_priority, {
   onDelete: "RESTRICT",
   onUpdate: "CASCADE",
 });
+
+let schemaEnsuredPromise = null;
+const originalAuthenticate = bd.authenticate.bind(bd);
+
+async function ensureTaskSchema() {
+  await bd.query(
+    'ALTER TABLE IF EXISTS "Tasks" ADD COLUMN IF NOT EXISTS "taskPriorityId" INTEGER REFERENCES "task_priorities" ("id") ON UPDATE CASCADE ON DELETE SET NULL;'
+  );
+  await TaskDocument.sync();
+  await TaskLink.sync();
+}
+
+bd.authenticate = async function (...args) {
+  const result = await originalAuthenticate(...args);
+  if (!schemaEnsuredPromise) {
+    schemaEnsuredPromise = ensureTaskSchema().catch(() => {
+      schemaEnsuredPromise = null;
+    });
+  }
+  await schemaEnsuredPromise;
+  return result;
+};
+
 export {
   Task,
   TaskImage,
+  TaskDocument,
+  TaskLink,
   Compte,
   Poste,
   TaskPoste,
@@ -128,5 +187,5 @@ export {
   sous_tache,
   sous_taches_AFaire,
   tachesAFaire,
-  task_priority
+  task_priority,
 };
