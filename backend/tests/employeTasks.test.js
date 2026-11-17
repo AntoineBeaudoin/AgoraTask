@@ -1,4 +1,12 @@
-import { describe, expect, it, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  expect,
+  it,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+} from "vitest";
 import request from "supertest";
 import jwt from "jsonwebtoken";
 import bd from "../models/bd.mjs";
@@ -66,7 +74,10 @@ describe("Tests des tâches de l'employé", function () {
       room: "A-101",
       description: "Tâche de test",
     });
-    autreTache = await Task.create({ title: "Vitest autre tâche", room: "B-202" });
+    autreTache = await Task.create({
+      title: "Vitest autre tâche",
+      room: "B-202",
+    });
 
     priorite = await task_priority.create({
       task_priority: "Normale",
@@ -96,7 +107,10 @@ describe("Tests des tâches de l'employé", function () {
       occurrence_de_tacheId: autreOccurrence.id,
     });
 
-    sousTache = await sous_tache.create({ tacheId: tache.id, titre: "Vitest sous-tâche" });
+    sousTache = await sous_tache.create({
+      tacheId: tache.id,
+      titre: "Vitest sous-tâche",
+    });
     sousTacheAutreTache = await sous_tache.create({
       tacheId: autreTache.id,
       titre: "Vitest sous-tâche autre",
@@ -106,10 +120,16 @@ describe("Tests des tâches de l'employé", function () {
   afterEach(async function () {
     if (!assignation || !autreAssignation) return;
     const assignationIds = [assignation.id, autreAssignation.id];
-    await sous_taches_AFaire.destroy({ where: { tachesAFaireId: assignationIds } });
+    await sous_taches_AFaire.destroy({
+      where: { tachesAFaireId: assignationIds },
+    });
     await tachesAFaire.destroy({ where: { id: assignationIds } });
-    await sous_tache.destroy({ where: { id: [sousTache.id, sousTacheAutreTache.id] } });
-    await occurrence_de_tache.destroy({ where: { id: [occurrence.id, autreOccurrence.id] } });
+    await sous_tache.destroy({
+      where: { id: [sousTache.id, sousTacheAutreTache.id] },
+    });
+    await occurrence_de_tache.destroy({
+      where: { id: [occurrence.id, autreOccurrence.id] },
+    });
     if (priorite) {
       await task_priority.destroy({ where: { id: priorite.id } });
     }
@@ -200,7 +220,9 @@ describe("Tests des tâches de l'employé", function () {
     });
 
     it("enregistre la progression d'une sous-tâche sans créer de doublon", async function () {
-      await sauvegarder(corps(false, null, [{ id: sousTache.id, isCompleted: true }]));
+      await sauvegarder(
+        corps(false, null, [{ id: sousTache.id, isCompleted: true }]),
+      );
 
       let rows = await sous_taches_AFaire.findAll({
         where: { tachesAFaireId: assignation.id },
@@ -209,7 +231,9 @@ describe("Tests des tâches de l'employé", function () {
       expect(rows[0].sousTacheId).toBe(sousTache.id);
       expect(rows[0].isCompleted).toBe(true);
 
-      await sauvegarder(corps(false, null, [{ id: sousTache.id, isCompleted: false }]));
+      await sauvegarder(
+        corps(false, null, [{ id: sousTache.id, isCompleted: false }]),
+      );
 
       rows = await sous_taches_AFaire.findAll({
         where: { tachesAFaireId: assignation.id },
@@ -219,7 +243,9 @@ describe("Tests des tâches de l'employé", function () {
     });
 
     it("retourne la progression sauvegardée d'une sous-tâche dans la liste", async function () {
-      await sauvegarder(corps(false, null, [{ id: sousTache.id, isCompleted: true }]));
+      await sauvegarder(
+        corps(false, null, [{ id: sousTache.id, isCompleted: true }]),
+      );
 
       const response = await request(app)
         .get("/api/task/mine")
@@ -231,7 +257,11 @@ describe("Tests des tâches de l'employé", function () {
     it("ne modifie pas la tâche assignée à un autre compte", async function () {
       const response = await sauvegarder({
         tasks: [
-          { tacheAFaireId: autreAssignation.id, isCompleted: true, commentaire: "Piraté" },
+          {
+            tacheAFaireId: autreAssignation.id,
+            isCompleted: true,
+            commentaire: "Piraté",
+          },
         ],
       });
       expect(response.status).toBe(200);
@@ -252,10 +282,10 @@ describe("Tests des tâches de l'employé", function () {
       expect(rows).toHaveLength(0);
     });
 
-    describe("GET /api/task/occurences/:id", function () {
+    describe("GET /api/task/occurrences/:id", function () {
       it("retourne les occurrences liées à une tâche", async function () {
         const response = await request(app)
-          .get(`/api/task/occurences/${tache.id}`)
+          .get(`/api/task/occurrences/${tache.id}`)
           .set("Authorization", "Bearer " + token);
 
         expect(response.status).toBe(200);
@@ -270,9 +300,9 @@ describe("Tests des tâches de l'employé", function () {
           priorite: 3,
         });
 
-        expect(response.body.data.some(
-          (item) => item.id === autreOccurrence.id
-        )).toBe(false);
+        expect(
+          response.body.data.some((item) => item.id === autreOccurrence.id),
+        ).toBe(false);
       });
 
       it("retourne une liste vide si la tâche ne possède aucune occurrence", async function () {
@@ -285,7 +315,7 @@ describe("Tests des tâches de l'employé", function () {
         });
 
         const response = await request(app)
-          .get(`/api/task/occurences/${tache.id}`)
+          .get(`/api/task/occurrences/${tache.id}`)
           .set("Authorization", "Bearer " + token);
 
         expect(response.status).toBe(200);
@@ -294,7 +324,7 @@ describe("Tests des tâches de l'employé", function () {
 
       it("retourne 404 si la tâche n'existe pas", async function () {
         const response = await request(app)
-          .get("/api/task/occurences/999999")
+          .get("/api/task/occurrences/999999")
           .set("Authorization", "Bearer " + token);
 
         expect(response.status).toBe(404);

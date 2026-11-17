@@ -13,7 +13,7 @@ export const useTaskStore = defineStore('tasks', {
 
   actions: {
     async getTaskById(id) {
-      return await this.tasks.find((task) => task.id == id);
+      return await this.tasks.find((task) => task.id == id)
     },
     async loadTasks() {
       if (this.loaded) {
@@ -44,15 +44,15 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
 
-    async getNumberOfTaskOccurences(id){
+    async getNumberOfTaskOccurrences(id) {
       try {
-        const response = await apiFetch(`/task/occurences/${id}`);
-        if (!response || response.status !== 200){
-          throw new Error(`HTTP ${response ? response.status : 'erreur'}`);
+        const response = await apiFetch(`/task/occurrences/${id}`)
+        if (!response || response.status !== 200) {
+          throw new Error(`HTTP ${response ? response.status : 'erreur'}`)
         }
-        return response.data.length;
+        return response.data.length
       } catch (err) {
-        console.log(`HTTP ${err}`);
+        console.log(`HTTP ${err}`)
       }
     },
 
