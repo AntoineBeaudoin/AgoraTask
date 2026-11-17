@@ -6,8 +6,6 @@ import { occurrence_de_tache } from "./occurrence_de_tache.mjs";
 import { sous_tache } from "./sous_taches.mjs";
 import Poste from "./poste.mjs";
 import Compte from "./compte.mjs";
-import { sous_taches_AFaire } from "./sousTachesAFaire.mjs";
-import { tachesAFaire } from "./tachesAFaire.mjs";
 import { task_priority } from "./task_priority.mjs";
 import { work_day } from "./work_day.mjs";
 import { work_day_task } from "./work_day_task.mjs";
@@ -66,45 +64,6 @@ Task.belongsToMany(Poste, {
   foreignKey: "tacheId",
   otherKey: "posteId",
   as: "postes",
-});
-// Relation between employe and tache
-
-Compte.belongsToMany(Task, {
-  through: tachesAFaire,
-  through: { model: tachesAFaire, unique: false },
-  foreignKey: "compteId",
-  otherKey: "tacheId",
-  as: "taches",
-});
-Task.belongsToMany(Compte, {
-  through: { model: tachesAFaire, unique: false },
-  foreignKey: "tacheId",
-  otherKey: "compteId",
-  as: "comptes",
-});
-// relation between tacheafaire and sous_tache
-
-tachesAFaire.belongsToMany(sous_tache, {
-  through: sous_taches_AFaire,
-  foreignKey: "tachesAFaireId",
-  otherKey: "sousTacheId",
-  as: "sous_taches",
-});
-sous_tache.belongsToMany(tachesAFaire, {
-  through: sous_taches_AFaire,
-  foreignKey: "sousTacheId",
-  otherKey: "tachesAFaireId",
-  as: "tachesAFaires",
-});
-
-//Relation entre tacheAFaire et occurrence_de_tache
-tachesAFaire.belongsTo(occurrence_de_tache, {
-  foreignKey: "occurrence_de_tacheId",
-  as: "occurrence_de_tache",
-});
-occurrence_de_tache.hasMany(tachesAFaire, {
-  foreignKey: "occurrence_de_tacheId",
-  as: "tachesAFaire",
 });
 
 task_priority.hasMany(occurrence_de_tache, {
@@ -174,10 +133,12 @@ work_day_sub_task.belongsTo(work_day_task, {
 work_day_sub_task.belongsTo(sous_tache, {
   foreignKey: "subTaskId",
   as: "subTask",
+  onDelete: "RESTRICT",
 });
 sous_tache.hasMany(work_day_sub_task, {
   foreignKey: "subTaskId",
   as: "workDaySubTasks",
+  onDelete: "RESTRICT",
 });
 
 export {
@@ -188,8 +149,6 @@ export {
   TaskPoste,
   occurrence_de_tache,
   sous_tache,
-  sous_taches_AFaire,
-  tachesAFaire,
   task_priority,
   work_day,
   work_day_task,

@@ -14,16 +14,20 @@ import {
   Task,
   Compte,
   occurrence_de_tache,
-  tachesAFaire,
   sous_tache,
-  sous_taches_AFaire,
   task_priority,
+  work_day,
+  work_day_task,
+  work_day_sub_task,
 } from "../models/bd_index.mjs";
 import app from "../app.mjs";
+
+const DATE = "2030-01-15";
 
 describe("Tests des tâches de l'employé", function () {
   let employe, autreEmploye, token;
   let tache, autreTache, priorite, occurrence, autreOccurrence;
+  let journee, autreJournee;
   let assignation, autreAssignation, sousTache, sousTacheAutreTache;
 
   function corps(isCompleted, commentaire, sousTaches) {
@@ -44,6 +48,12 @@ describe("Tests des tâches de l'employé", function () {
       .patch("/api/task/progress")
       .set("Authorization", "Bearer " + token)
       .send(body);
+  }
+
+  function mesTaches(date) {
+    return request(app)
+      .get("/api/task/mine?date=" + (date || DATE))
+      .set("Authorization", "Bearer " + token);
   }
 
   beforeAll(async function () {
@@ -96,17 +106,6 @@ describe("Tests des tâches de l'employé", function () {
       taskPriorityId: priorite.id,
     });
 
-    assignation = await tachesAFaire.create({
-      tacheId: tache.id,
-      compteId: employe.id,
-      occurrence_de_tacheId: occurrence.id,
-    });
-    autreAssignation = await tachesAFaire.create({
-      tacheId: autreTache.id,
-      compteId: autreEmploye.id,
-      occurrence_de_tacheId: autreOccurrence.id,
-    });
-
     sousTache = await sous_tache.create({
       tacheId: tache.id,
       titre: "Vitest sous-tâche",
@@ -115,15 +114,38 @@ describe("Tests des tâches de l'employé", function () {
       tacheId: autreTache.id,
       titre: "Vitest sous-tâche autre",
     });
+
+    journee = await work_day.create({ accountId: employe.id, date: DATE });
+    autreJournee = await work_day.create({
+      accountId: autreEmploye.id,
+      date: DATE,
+    });
+
+    assignation = await work_day_task.create({
+      workDayId: journee.id,
+      taskId: tache.id,
+      occurrenceId: occurrence.id,
+    });
+    autreAssignation = await work_day_task.create({
+      workDayId: autreJournee.id,
+      taskId: autreTache.id,
+      occurrenceId: autreOccurrence.id,
+    });
+
+    await work_day_sub_task.create({
+      workDayTaskId: assignation.id,
+      subTaskId: sousTache.id,
+    });
   });
 
   afterEach(async function () {
     if (!assignation || !autreAssignation) return;
     const assignationIds = [assignation.id, autreAssignation.id];
-    await sous_taches_AFaire.destroy({
-      where: { tachesAFaireId: assignationIds },
+    await work_day_sub_task.destroy({
+      where: { workDayTaskId: assignationIds },
     });
-    await tachesAFaire.destroy({ where: { id: assignationIds } });
+    await work_day_task.destroy({ where: { id: assignationIds } });
+    await work_day.destroy({ where: { id: [journee.id, autreJournee.id] } });
     await sous_tache.destroy({
       where: { id: [sousTache.id, sousTacheAutreTache.id] },
     });
@@ -147,10 +169,13 @@ describe("Tests des tâches de l'employé", function () {
       expect(response.status).toBe(401);
     });
 
+    it("refuse une date invalide", async function () {
+      const response = await mesTaches("pas-une-date");
+      expect(response.status).toBe(400);
+    });
+
     it("retourne seulement les tâches du compte connecté, avec leurs sous-tâches", async function () {
-      const response = await request(app)
-        .get("/api/task/mine")
-        .set("Authorization", "Bearer " + token);
+      const response = await mesTaches();
 
       expect(response.status).toBe(200);
       expect(response.body.data).toHaveLength(1);
@@ -167,12 +192,17 @@ describe("Tests des tâches de l'employé", function () {
       });
     });
 
+    it("ne retourne rien pour une date sans journée de travail", async function () {
+      const response = await mesTaches("2030-01-16");
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toHaveLength(0);
+    });
+
     it("ignore les tâches archivées", async function () {
       await tache.update({ archived: true });
 
-      const response = await request(app)
-        .get("/api/task/mine")
-        .set("Authorization", "Bearer " + token);
+      const response = await mesTaches();
 
       expect(response.status).toBe(200);
       expect(response.body.data).toHaveLength(0);
@@ -198,7 +228,7 @@ describe("Tests des tâches de l'employé", function () {
 
       await assignation.reload();
       expect(assignation.isCompleted).toBe(true);
-      expect(assignation.commentaire).toBe("Terminé sans problème");
+      expect(assignation.comment).toBe("Terminé sans problème");
     });
 
     it("permet de décocher une tâche déjà complétée", async function () {
@@ -212,11 +242,11 @@ describe("Tests des tâches de l'employé", function () {
     it("retire les espaces autour du commentaire et le limite à 1000 caractères", async function () {
       await sauvegarder(corps(false, "   Bonjour   "));
       await assignation.reload();
-      expect(assignation.commentaire).toBe("Bonjour");
+      expect(assignation.comment).toBe("Bonjour");
 
       await sauvegarder(corps(false, "a".repeat(1500)));
       await assignation.reload();
-      expect(assignation.commentaire).toHaveLength(1000);
+      expect(assignation.comment).toHaveLength(1000);
     });
 
     it("enregistre la progression d'une sous-tâche sans créer de doublon", async function () {
@@ -224,19 +254,19 @@ describe("Tests des tâches de l'employé", function () {
         corps(false, null, [{ id: sousTache.id, isCompleted: true }]),
       );
 
-      let rows = await sous_taches_AFaire.findAll({
-        where: { tachesAFaireId: assignation.id },
+      let rows = await work_day_sub_task.findAll({
+        where: { workDayTaskId: assignation.id },
       });
       expect(rows).toHaveLength(1);
-      expect(rows[0].sousTacheId).toBe(sousTache.id);
+      expect(rows[0].subTaskId).toBe(sousTache.id);
       expect(rows[0].isCompleted).toBe(true);
 
       await sauvegarder(
         corps(false, null, [{ id: sousTache.id, isCompleted: false }]),
       );
 
-      rows = await sous_taches_AFaire.findAll({
-        where: { tachesAFaireId: assignation.id },
+      rows = await work_day_sub_task.findAll({
+        where: { workDayTaskId: assignation.id },
       });
       expect(rows).toHaveLength(1);
       expect(rows[0].isCompleted).toBe(false);
@@ -247,9 +277,7 @@ describe("Tests des tâches de l'employé", function () {
         corps(false, null, [{ id: sousTache.id, isCompleted: true }]),
       );
 
-      const response = await request(app)
-        .get("/api/task/mine")
-        .set("Authorization", "Bearer " + token);
+      const response = await mesTaches();
 
       expect(response.body.data[0].sousTaches[0].isCompleted).toBe(true);
     });
@@ -268,7 +296,7 @@ describe("Tests des tâches de l'employé", function () {
 
       await autreAssignation.reload();
       expect(autreAssignation.isCompleted).toBe(false);
-      expect(autreAssignation.commentaire).toBeNull();
+      expect(autreAssignation.comment).toBeNull();
     });
 
     it("ignore une sous-tâche qui n'appartient pas à la tâche", async function () {
@@ -276,10 +304,12 @@ describe("Tests des tâches de l'employé", function () {
         corps(false, null, [{ id: sousTacheAutreTache.id, isCompleted: true }]),
       );
 
-      const rows = await sous_taches_AFaire.findAll({
-        where: { tachesAFaireId: assignation.id },
+      const rows = await work_day_sub_task.findAll({
+        where: { workDayTaskId: assignation.id },
       });
-      expect(rows).toHaveLength(0);
+      expect(rows).toHaveLength(1);
+      expect(rows[0].subTaskId).toBe(sousTache.id);
+      expect(rows[0].isCompleted).toBe(false);
     });
 
     describe("GET /api/task/occurrences/:id", function () {
@@ -306,8 +336,8 @@ describe("Tests des tâches de l'employé", function () {
       });
 
       it("retourne une liste vide si la tâche ne possède aucune occurrence", async function () {
-        await tachesAFaire.destroy({
-          where: { occurrence_de_tacheId: occurrence.id },
+        await work_day_task.destroy({
+          where: { occurrenceId: occurrence.id },
         });
 
         await occurrence_de_tache.destroy({

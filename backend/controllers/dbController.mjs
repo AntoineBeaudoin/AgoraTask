@@ -7,8 +7,6 @@ import {
   occurrence_de_tache,
   sous_tache,
   TaskPoste,
-  tachesAFaire,
-  sous_taches_AFaire,
   task_priority,
   work_day,
   work_day_task,
@@ -24,8 +22,6 @@ async function deleteTables() {
   await work_day_sub_task.destroy({ where: {} });
   await work_day_task.destroy({ where: {} });
   await work_day.destroy({ where: {} });
-  await sous_taches_AFaire.destroy({ where: {} });
-  await tachesAFaire.destroy({ where: {} });
   await TaskPoste.destroy({ where: {} });
   await occurrence_de_tache.destroy({ where: {} });
   await sous_tache.destroy({ where: {} });
@@ -58,7 +54,17 @@ function dateString(daysAgo) {
 
 let workDaysByAccount = {};
 
-async function addToWorkDay(compte, tache, occurrenceId, sousTaches) {
+/**
+ * Ajoute une tâche (et ses sous-tâches) à la journée de travail d'un compte.
+ * La journée de travail est créée au besoin.
+ */
+async function addToWorkDay(
+  compte,
+  tache,
+  occurrenceId,
+  commentaire,
+  sousTaches,
+) {
   let day = workDaysByAccount[compte.id];
   if (!day) {
     day = await work_day.create({ accountId: compte.id, date: dateString(0) });
@@ -69,14 +75,19 @@ async function addToWorkDay(compte, tache, occurrenceId, sousTaches) {
     workDayId: day.id,
     taskId: tache.id,
     occurrenceId: occurrenceId,
+    comment: commentaire ?? null,
+    isCompleted: false,
   });
 
   for (let i = 0; i < sousTaches.length; i++) {
     await work_day_sub_task.create({
       workDayTaskId: dayTask.id,
       subTaskId: sousTaches[i].id,
+      isCompleted: false,
     });
   }
+
+  return dayTask;
 }
 
 /**
@@ -454,33 +465,13 @@ const seedDatabase = async (req, res) => {
       description: "Vider et remplacer les sacs.",
     });
 
-    const creerAffectation = async (
+    const creerAffectation = (
       compte,
       tache,
       occurrenceId,
       commentaire,
       sousTaches = [],
-    ) => {
-      const affectation = await tachesAFaire.create({
-        tacheId: tache.id,
-        compteId: compte.id,
-        occurrence_de_tacheId: occurrenceId,
-        commentaire,
-        isCompleted: false,
-      });
-
-      for (const sousTache of sousTaches) {
-        await sous_taches_AFaire.create({
-          sousTacheId: sousTache.id,
-          tachesAFaireId: affectation.id,
-          commentaire: null,
-          isCompleted: false,
-        });
-      }
-
-      await addToWorkDay(compte, tache, occurrenceId, sousTaches);
-      return affectation;
-    };
+    ) => addToWorkDay(compte, tache, occurrenceId, commentaire, sousTaches);
 
     if (comptes["Romain"]) {
       await creerAffectation(

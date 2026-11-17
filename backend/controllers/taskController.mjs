@@ -3,9 +3,10 @@ import {
   TaskImage,
   occurrence_de_tache,
   sous_tache,
-  tachesAFaire,
-  sous_taches_AFaire,
   task_priority,
+  work_day,
+  work_day_task,
+  work_day_sub_task,
 } from "../models/bd_index.mjs";
 import { put, del } from "@vercel/blob";
 import { Op } from "sequelize";
@@ -13,6 +14,15 @@ import dotenv from "dotenv";
 import bd from "../models/bd.mjs";
 
 dotenv.config();
+
+const FORMAT_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function todayString() {
+  const date = new Date();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const dayOfMonth = String(date.getDate()).padStart(2, "0");
+  return date.getFullYear() + "-" + month + "-" + dayOfMonth;
+}
 
 /**
  * Valide qu'une tâche n'existe pas déjà. Si la tâche existe déjà lance une erreur 409
@@ -296,82 +306,63 @@ export async function getAllTasks(req, res, next) {
   }
 }
 
+/**
+ * Retourne les tâches de la journée de travail du compte connecté.
+ * La date peut être précisée avec ?date=YYYY-MM-DD (aujourd'hui par défaut).
+ */
 export async function getMyTasks(req, res, next) {
   try {
-    const assignments = await tachesAFaire.findAll({
-      where: { compteId: req.user.id },
-      include: { model: occurrence_de_tache, as: "occurrence_de_tache" },
-      order: [
-        [
-          { model: occurrence_de_tache, as: "occurrence_de_tache" },
-          "heureDebut",
-          "ASC",
-        ],
-        ["id", "ASC"],
+    const date = req.query.date ?? todayString();
+    if (!FORMAT_DATE.test(date)) {
+      return res.status(400).json({
+        status: 400,
+        message: "La date est invalide (format attendu : YYYY-MM-DD).",
+      });
+    }
+
+    const workTasks = await work_day_task.findAll({
+      include: [
+        {
+          model: work_day,
+          as: "workDay",
+          where: { accountId: req.user.id, date },
+          attributes: [],
+        },
+        {
+          model: Task,
+          as: "task",
+          where: { archived: false },
+          include: [{ model: TaskImage, as: "images" }],
+        },
+        { model: occurrence_de_tache, as: "occurrence" },
+        {
+          model: work_day_sub_task,
+          as: "subTasks",
+          include: [{ model: sous_tache, as: "subTask" }],
+        },
       ],
     });
 
-    const taskIds = [];
-    const assignmentIds = [];
-    for (let i = 0; i < assignments.length; i++) {
-      taskIds.push(assignments[i].tacheId);
-      assignmentIds.push(assignments[i].id);
-    }
-
-    const tasks = await Task.findAll({
-      where: { id: taskIds, archived: false },
-      include: { model: TaskImage, as: "images" },
+    const data = workTasks.map((wt) => {
+      const subTasks = [...wt.subTasks].sort((a, b) => a.id - b.id);
+      return {
+        ...wt.task.toJSON(),
+        tacheAFaireId: wt.id,
+        isCompleted: wt.isCompleted,
+        commentaire: wt.comment,
+        journee: wt.occurrence ? wt.occurrence.journee : null,
+        heureDebut: wt.occurrence ? wt.occurrence.heureDebut : null,
+        heureFin: wt.occurrence ? wt.occurrence.heureFin : null,
+        sousTaches: subTasks.map((s) => ({
+          id: s.subTaskId,
+          titre: s.subTask ? s.subTask.titre : null,
+          description: s.subTask ? s.subTask.description : null,
+          isCompleted: s.isCompleted,
+        })),
+      };
     });
-    const tasksById = {};
-    for (let i = 0; i < tasks.length; i++) {
-      tasksById[tasks[i].id] = tasks[i];
-    }
 
-    const subTasks = await sous_tache.findAll({
-      where: { tacheId: taskIds },
-      order: [["id", "ASC"]],
-    });
-    const progressRows = await sous_taches_AFaire.findAll({
-      where: { tachesAFaireId: assignmentIds },
-    });
-    const progress = {};
-    for (let i = 0; i < progressRows.length; i++) {
-      progress[
-        progressRows[i].tachesAFaireId + "-" + progressRows[i].sousTacheId
-      ] = progressRows[i].isCompleted;
-    }
-
-    const data = [];
-    for (let i = 0; i < assignments.length; i++) {
-      const a = assignments[i];
-      const task = tasksById[a.tacheId];
-      if (!task) continue;
-
-      const mySubTasks = [];
-      for (let j = 0; j < subTasks.length; j++) {
-        if (subTasks[j].tacheId === a.tacheId) {
-          mySubTasks.push({
-            id: subTasks[j].id,
-            titre: subTasks[j].titre,
-            description: subTasks[j].description,
-            isCompleted: progress[a.id + "-" + subTasks[j].id] === true,
-          });
-        }
-      }
-
-      data.push({
-        ...task.toJSON(),
-        tacheAFaireId: a.id,
-        isCompleted: a.isCompleted,
-        commentaire: a.commentaire,
-        journee: a.occurrence_de_tache ? a.occurrence_de_tache.journee : null,
-        heureDebut: a.occurrence_de_tache
-          ? a.occurrence_de_tache.heureDebut
-          : null,
-        heureFin: a.occurrence_de_tache ? a.occurrence_de_tache.heureFin : null,
-        sousTaches: mySubTasks,
-      });
-    }
+    data.sort((a, b) => (a.heureDebut ?? "").localeCompare(b.heureDebut ?? ""));
 
     res.status(200).json({
       status: 200,
@@ -386,6 +377,11 @@ export async function getMyTasks(req, res, next) {
   }
 }
 
+/**
+ * Enregistre la progression (statut, commentaire, sous-tâches) des tâches
+ * de la journée de travail du compte connecté.
+ * `tacheAFaireId` correspond maintenant à l'id d'un work_day_task.
+ */
 export async function saveProgress(req, res, next) {
   try {
     const items = req.body.tasks;
@@ -399,39 +395,43 @@ export async function saveProgress(req, res, next) {
     await bd.transaction(async function (t) {
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
+        if (!item || !item.tacheAFaireId) continue;
 
-        const assignment = await tachesAFaire.findOne({
-          where: { id: item.tacheAFaireId, compteId: req.user.id },
+        const workTask = await work_day_task.findOne({
+          where: { id: item.tacheAFaireId },
+          include: [
+            {
+              model: work_day,
+              as: "workDay",
+              where: { accountId: req.user.id },
+              attributes: [],
+            },
+          ],
           transaction: t,
         });
-        if (!assignment) continue;
+        if (!workTask) continue;
 
         const comment = item.commentaire
           ? String(item.commentaire).trim().slice(0, 1000)
           : null;
 
-        await assignment.update(
+        await workTask.update(
           {
             isCompleted: item.isCompleted === true,
-            commentaire: comment || null,
+            comment: comment || null,
           },
           { transaction: t },
         );
 
         const subs = Array.isArray(item.sousTaches) ? item.sousTaches : [];
         for (let j = 0; j < subs.length; j++) {
-          const sub = await sous_tache.findOne({
-            where: { id: subs[j].id, tacheId: assignment.tacheId },
+          const sub = await work_day_sub_task.findOne({
+            where: { workDayTaskId: workTask.id, subTaskId: subs[j].id },
             transaction: t,
           });
           if (!sub) continue;
 
-          const result = await sous_taches_AFaire.findOrCreate({
-            where: { tachesAFaireId: assignment.id, sousTacheId: sub.id },
-            defaults: { isCompleted: false },
-            transaction: t,
-          });
-          await result[0].update(
+          await sub.update(
             { isCompleted: subs[j].isCompleted === true },
             { transaction: t },
           );
@@ -509,8 +509,8 @@ export async function replaceTask(req, res, next) {
         (occ) => !retainedIds.includes(occ.id),
       );
       for (const occ of removedOccurrences) {
-        const referenceCount = await tachesAFaire.count({
-          where: { occurrence_de_tacheId: occ.id },
+        const referenceCount = await work_day_task.count({
+          where: { occurrenceId: occ.id },
         });
         if (referenceCount === 0) {
           await occ.destroy();
@@ -522,8 +522,42 @@ export async function replaceTask(req, res, next) {
         typeof req.body.subTasks === "string"
           ? JSON.parse(req.body.subTasks)
           : req.body.subTasks;
-      await sous_tache.destroy({ where: { tacheId: task.id } });
-      await createSubTasks(task.id, subTasks);
+
+      const existingSubTasks = await sous_tache.findAll({
+        where: { tacheId: task.id },
+      });
+      const existingSubTasksById = new Map(
+        existingSubTasks.map((st) => [Number(st.id), st]),
+      );
+      const retainedSubTaskIds = [];
+      for (const st of subTasks) {
+        const existing = existingSubTasksById.get(Number(st.id));
+        if (existing) {
+          await existing.update({
+            titre: st.titre,
+            description: st.description || null,
+          });
+          retainedSubTaskIds.push(existing.id);
+        } else {
+          const created = await sous_tache.create({
+            tacheId: task.id,
+            titre: st.titre,
+            description: st.description || null,
+          });
+          retainedSubTaskIds.push(created.id);
+        }
+      }
+      const removedSubTasks = existingSubTasks.filter(
+        (st) => !retainedSubTaskIds.includes(st.id),
+      );
+      for (const st of removedSubTasks) {
+        const referenceCount = await work_day_sub_task.count({
+          where: { subTaskId: st.id },
+        });
+        if (referenceCount === 0) {
+          await st.destroy();
+        }
+      }
     }
     await syncExistingImages(req, task.id);
     await addTaskImages(req, task);
