@@ -474,7 +474,7 @@ const seedDatabase = async (req, res) => {
       description: "Vider et remplacer les sacs.",
     });
 
-    const creerAffectation = (
+    const creerAffectation = async (
       compte,
       tache,
       occurrenceId,
