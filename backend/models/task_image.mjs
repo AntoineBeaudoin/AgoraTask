@@ -30,5 +30,4 @@ const TaskImage = bd.define("TaskImage", {
   }
 });
 
-export default TaskImage;
 export { TaskImage };
