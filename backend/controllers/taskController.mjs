@@ -23,21 +23,9 @@ import {
   resolveTaskPriorityId,
   validateOccurrencesForPriority,
 } from "../utils/taskHelpers.mjs";
+import { todayString, validerDate } from "../utils/dateHelpers.mjs";
 
 dotenv.config();
-
-const FORMAT_DATE = /^\d{4}-\d{2}-\d{2}$/;
-
-/**
- * Retourne la date d'aujourd'hui au format YYYY-MM-DD (heure du serveur).
- * @returns {string}
- */
-function todayString() {
-  const date = new Date();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const dayOfMonth = String(date.getDate()).padStart(2, "0");
-  return date.getFullYear() + "-" + month + "-" + dayOfMonth;
-}
 
 const TASK_RELATIONS_INCLUDE = [
   { model: TaskImage, as: "images" },
@@ -521,12 +509,7 @@ function buildEmployeeTaskItem(assignment, task, subTasks, progressMap) {
 export async function getMyTasks(req, res, next) {
   try {
     const date = req.query.date ?? todayString();
-    if (!FORMAT_DATE.test(date)) {
-      return res.status(400).json({
-        status: 400,
-        message: "La date est invalide (format attendu : YYYY-MM-DD).",
-      });
-    }
+    if (!validerDate(date, next)) return;
 
     const workTasks = await work_day_task.findAll({
       include: [

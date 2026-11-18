@@ -7,26 +7,7 @@ import {
   work_day_task,
   work_day_sub_task,
 } from "../models/bd_index.mjs";
-
-const FORMAT_DATE = /^\d{4}-\d{2}-\d{2}$/;
-
-function validerDate(date, next) {
-  if (!date) {
-    const error = new Error("La date est requise.");
-    error.statusCode = 400;
-    next(error);
-    return false;
-  }
-  if (!FORMAT_DATE.test(date)) {
-    const error = new Error(
-      "La date est invalide (format attendu : YYYY-MM-DD).",
-    );
-    error.statusCode = 400;
-    next(error);
-    return false;
-  }
-  return true;
-}
+import { validerDate } from "../utils/dateHelpers.mjs";
 
 export async function getEmployeEnService(req, res, next) {
   try {
