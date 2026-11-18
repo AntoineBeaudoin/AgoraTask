@@ -11,18 +11,23 @@
           <h3 class="fs-5 mb-3 text-primary">Informations de la tâche</h3>
           <h4>{{ task.title }}</h4>
           <p>Local: {{ task.room }}</p>
+          <p v-if="task.priority?.task_priority">
+            <strong>Priorité globale:</strong> {{ task.priority.task_priority }}
+          </p>
           <h4>Description:</h4>
           <p>{{ task.description }}</p>
-          <div v-if="task.images.length !== 0">
+          <div v-if="(task.images ?? []).length !== 0" class="mb-3">
             <h3 class="fs-5 mb-2 text-primary">Images</h3>
             <div class="d-flex">
               <div v-for="(file) in task.images" :key="file.id" class="position-relative">
                 <img class="imgIconDisplay rounded border me-1" style="width: 100px; height: 100px; object-fit: cover;"
-                  :src="file.preview ?? file.path" :alt="file.name" />
+                  :src="file.preview ?? file.path" :alt="file.name ?? file.filename" />
               </div>
             </div>
           </div>
-          <div v-if="task.occurrences.length > 0">
+          <TaskPdfPreview :documents="task.documents ?? []" />
+          <TaskExternalLinks :links="task.externalLinks ?? []" />
+          <div v-if="(task.occurrences ?? []).length > 0">
             <h3 class="fs-5 text-primary m-0">Horaires</h3>
             <p class="text-muted small mb-3">Fréquence et occurrences de la tâche.</p>
             <div class="d-flex gap-2 mb-3">
@@ -39,7 +44,7 @@
                     <p><strong>Journée: </strong>{{ occ.journee ? occ.journee.charAt(0).toUpperCase() +
                       occ.journee.slice(1) : 'Non définie' }}</p>
                     <div class="d-flex justify-content-between">
-                      <p><strong>Priorité:</strong> {{ occ.priorite ?? 'Non définie' }}</p>
+                      <p><strong>Priorité:</strong> {{ occ.priority?.task_priority ?? 'Non définie' }}</p>
                       <i class="ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
                         title="Indique le niveau de priorité : 1 = très élevée, 2 = élevé, 3 = moyenne, 4 = basse, 5 = très basse."
                         style="cursor: help;">
@@ -63,7 +68,7 @@
             </div>
           </div>
           <div v-else class="alert alert-secondary py-2 small text-center mb-3">Aucun horaire défini.</div>
-          <div v-if="task.sous_taches.length > 0" class="mb-2 mt-4">
+          <div v-if="(task.sous_taches ?? []).length > 0" class="mb-2 mt-4">
             <h3 class="fs-5 text-primary m-0">Sous-tâches</h3>
             <p class="text-muted small mb-3">Étapes ou sous-tâches associées.</p>
             <div v-for="(st, index) in task.sous_taches" :key="index"
@@ -84,9 +89,11 @@
 <script setup>
 import { watch, ref } from 'vue';
 import { useModalStore } from '@/stores/modalStore';
+import TaskPdfPreview from '@/components/tasks/TaskPdfPreview.vue';
+import TaskExternalLinks from '@/components/tasks/TaskExternalLinks.vue';
 
 const modalStore = useModalStore();
-const task = ref('');
+const task = ref({});
 const sortedOccurrences = ref([]);
 const days = [
   'lundi',
@@ -106,7 +113,7 @@ watch(
     }
   },
   { immediate: true }
-)
+);
 
 watch(
   () => task.value?.occurrences,
@@ -128,7 +135,7 @@ function sortOccurrences(type) {
   sortedOccurrences.value = [...sortedOccurrences.value].sort((a, b) => {
     switch (type) {
       case 'priorities':
-        return (a.priorite ?? Infinity) - (b.priorite ?? Infinity);
+        return (a.priority?.weigth ?? Infinity) - (b.priority?.weigth ?? Infinity);
       case 'days':
         return days.indexOf(a.journee?.toLowerCase()) - days.indexOf(b.journee?.toLowerCase());
       default:
@@ -140,5 +147,4 @@ function sortOccurrences(type) {
 function close() {
   modalStore.closeTaskModal();
 }
-
 </script>

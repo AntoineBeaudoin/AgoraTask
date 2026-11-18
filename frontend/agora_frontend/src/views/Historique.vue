@@ -58,6 +58,12 @@
                 {{ employe.role?.replaceAll('_', ' ') }}
               </span>
             </div>
+            <span
+              class="badge-statut ms-auto me-2"
+              :class="{ complete: !aDesTachesNonTerminees(employe) }"
+            >
+              {{ aDesTachesNonTerminees(employe) ? 'Non terminée' : 'Terminée' }}
+            </span>
 
             <span class="fleche"> › </span>
           </button>
@@ -289,6 +295,9 @@ async function rafraichirHistorique() {
   EmployeTaches.value = []
   indexTache.value = 0
   await getEmployeEnService()
+}
+function aDesTachesNonTerminees(employe) {
+  return employe.aDesTachesNonTerminees === true
 }
 </script>
 <style scoped>

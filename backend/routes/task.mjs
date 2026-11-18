@@ -8,15 +8,17 @@ const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    files: 5,
-    fileSize: 5242880,
+    files: 10,
+    fileSize: 10485760,
   },
 });
+
 router.get("/list", taskController.getAllTasks);
 router.get("/mine", isConnected, taskController.getMyTasks);
+router.get("/occurrences/:id", isConnected, taskController.getTaskOccurrences);
 router.patch("/progress", isConnected, taskController.saveProgress);
-router.post("/add", upload.array("images", 5), taskController.createTask);
-router.put("/:id", upload.array("images", 5), taskController.replaceTask);
+router.post("/add", upload.any(), taskController.createTask);
+router.put("/:id", upload.any(), taskController.replaceTask);
 router.post("/:id/duplicate", taskController.duplicateTask);
 router.delete("/:id", taskController.deleteTask);
 

@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 import bd from "./bd.mjs";
 
-const occurrence_de_tache = bd.define("occurence_de_tache", {
+const occurrence_de_tache = bd.define("occurrence_de_tache", {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -36,13 +36,15 @@ const occurrence_de_tache = bd.define("occurence_de_tache", {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  priorite: {
+  taskPriorityId: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    validate: {
-      min: 1,
-      max: 5,
+    references: {
+      model: "task_priorities",
+      key: "id",
     },
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
   },
 });
 

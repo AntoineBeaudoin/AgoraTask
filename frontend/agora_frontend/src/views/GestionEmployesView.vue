@@ -26,13 +26,8 @@
           <div class="form-field">
             <label for="prenom"> Prénom </label>
 
-            <input
-              id="prenom"
-              v-model.trim="newUser.prenom"
-              type="text"
-              placeholder="Prénom"
-              :class="{ 'input-error': createErrors.prenom }"
-            />
+            <input id="prenom" v-model.trim="newUser.prenom" type="text" placeholder="Prénom"
+              :class="{ 'input-error': createErrors.prenom }" />
 
             <span v-if="createErrors.prenom" class="field-error">
               {{ createErrors.prenom }}
@@ -42,13 +37,8 @@
           <div class="form-field">
             <label for="nom"> Nom </label>
 
-            <input
-              id="nom"
-              v-model.trim="newUser.nom"
-              type="text"
-              placeholder="Nom"
-              :class="{ 'input-error': createErrors.nom }"
-            />
+            <input id="nom" v-model.trim="newUser.nom" type="text" placeholder="Nom"
+              :class="{ 'input-error': createErrors.nom }" />
 
             <span v-if="createErrors.nom" class="field-error">
               {{ createErrors.nom }}
@@ -58,13 +48,8 @@
           <div class="form-field">
             <label for="courriel"> Courriel </label>
 
-            <input
-              id="courriel"
-              v-model.trim="newUser.courriel"
-              type="email"
-              placeholder="utilisateur@exemple.com"
-              :class="{ 'input-error': createErrors.courriel }"
-            />
+            <input id="courriel" v-model.trim="newUser.courriel" type="email" placeholder="utilisateur@exemple.com"
+              :class="{ 'input-error': createErrors.courriel }" />
 
             <span v-if="createErrors.courriel" class="field-error">
               {{ createErrors.courriel }}
@@ -90,13 +75,8 @@
           <div class="form-field full-width">
             <label for="mdp"> Mot de passe </label>
 
-            <input
-              id="mdp"
-              v-model="newUser.mdp"
-              type="password"
-              placeholder="Mot de passe initial"
-              :class="{ 'input-error': createErrors.mdp }"
-            />
+            <input id="mdp" v-model="newUser.mdp" type="password" placeholder="Mot de passe initial"
+              :class="{ 'input-error': createErrors.mdp }" />
 
             <span v-if="createErrors.mdp" class="field-error">
               {{ createErrors.mdp }}
@@ -121,27 +101,16 @@
     </div>
 
     <div class="status-filters">
-      <button
-        class="status-filter-btn"
-        :class="{ active: displayTitle === 'Employés actifs' }"
-        @click="LoadUsers"
-      >
+      <button class="status-filter-btn" :class="{ active: displayTitle === 'Employés actifs' }" @click="LoadUsers">
         Employés actifs
       </button>
 
-      <button
-        class="status-filter-btn"
-        :class="{ active: displayTitle === 'Employés archivés' }"
-        @click="ArchivedUsers"
-      >
+      <button class="status-filter-btn" :class="{ active: displayTitle === 'Employés archivés' }"
+        @click="ArchivedUsers">
         Employés archivés
       </button>
 
-      <button
-        class="status-filter-btn"
-        :class="{ active: displayTitle === 'Tous les employés' }"
-        @click="allUsers"
-      >
+      <button class="status-filter-btn" :class="{ active: displayTitle === 'Tous les employés' }" @click="allUsers">
         Tous les employés
       </button>
     </div>
@@ -162,35 +131,22 @@
       <div class="role-filters">
         <span class="role-label"> Filtrer par rôle : </span>
 
-        <button
-          class="role-filter-btn"
-          :class="{ active: displayedRole === 'all' }"
-          @click="filterUsersByRole('all')"
-        >
+        <button class="role-filter-btn" :class="{ active: displayedRole === 'all' }" @click="filterUsersByRole('all')">
           Tous
         </button>
 
-        <button
-          class="role-filter-btn"
-          :class="{ active: displayedRole === 'administrateur' }"
-          @click="filterUsersByRole('administrateur')"
-        >
+        <button class="role-filter-btn" :class="{ active: displayedRole === 'administrateur' }"
+          @click="filterUsersByRole('administrateur')">
           Administrateurs
         </button>
 
-        <button
-          class="role-filter-btn"
-          :class="{ active: displayedRole === 'coordonnateur' }"
-          @click="filterUsersByRole('coordonnateur')"
-        >
+        <button class="role-filter-btn" :class="{ active: displayedRole === 'coordonnateur' }"
+          @click="filterUsersByRole('coordonnateur')">
           Coordonnateurs
         </button>
 
-        <button
-          class="role-filter-btn"
-          :class="{ active: displayedRole === 'personnel_de_terrain' }"
-          @click="filterUsersByRole('personnel_de_terrain')"
-        >
+        <button class="role-filter-btn" :class="{ active: displayedRole === 'personnel_de_terrain' }"
+          @click="filterUsersByRole('personnel_de_terrain')">
           Personnel de terrain
         </button>
       </div>
@@ -206,7 +162,9 @@
               <th>Nom</th>
               <th>Prénom</th>
               <th>Courriel</th>
+              <th>Mot de passe</th>
               <th>Rôle</th>
+              <th>Poste</th>
               <th>Statut</th>
               <th>Action</th>
             </tr>
@@ -229,32 +187,47 @@
 
               <td>
                 <div class="role-editor">
-                  <select
-                    v-model="pendingRoles[user.id]"
-                    class="role-select"
-                    :disabled="user.IsArchived || authStore.isConnectedUser(user.courriel)"
-                  >
-                    <option value="administrateur">Administrateur</option>
-
-                    <option value="coordonnateur">Coordonnateur</option>
-
-                    <option value="personnel_de_terrain">Personnel de terrain</option>
-                  </select>
-
-                  <button
-                    class="btn btn-success rounded-5 confirm-role-btn"
-                    @click="editPasswordUser(user.id)"
-                  >
+                   <button class="btn btn-success rounded-5 confirm-role-btn" @click="editPasswordUser(user.id)">
                     Modifier le mot de passe
                   </button>
+                </div>
+              </td>
 
-                  <button
-                    class="confirm-role-btn"
-                    :disabled="user.IsArchived || pendingRoles[user.id] === user.role"
-                    @click="editUser(user.id, pendingRoles[user.id])"
-                  >
-                    Confirmer
+              <td>
+                <div class="role-editor">
+                  <select v-model="pendingRoles[user.id]" class="role-select"
+                    :disabled="user.IsArchived || authStore.isConnectedUser(user.courriel) || savingUsers[user.id]">
+                    <option value="administrateur">Administrateur</option>
+                    <option value="coordonnateur">Coordonnateur</option>
+                    <option value="personnel_de_terrain">Personnel de terrain</option>
+                  </select>
+                </div>
+              </td>
+
+              <td>
+                <div class="role-editor">
+                  <select
+                    v-if="user.role === 'personnel_de_terrain' || pendingRoles[user.id] === 'personnel_de_terrain'"
+                    v-model="pendingPostes[user.id]" class="role-select"
+                    :disabled="user.IsArchived || savingUsers[user.id]">
+                    <option value="">Aucun Poste</option>
+
+                    <option v-for="poste in displayedPostes" :key="poste.id" :value="String(poste.id)">
+                      {{ poste.nom }}
+                    </option>
+                  </select>
+
+                  <p v-else>Non-disponible</p>
+
+                  <button class="confirm-role-btn"
+                    :disabled="user.IsArchived || savingUsers[user.id] || !hasPendingChanges(user)"
+                    @click="editUser(user)">
+                    {{ savingUsers[user.id] ? 'Enregistrement...' : 'Continuer' }}
                   </button>
+
+                  <p v-if="saveErrors[user.id]" class="field-error">
+                    {{ saveErrors[user.id] }}
+                  </p>
                 </div>
               </td>
 
@@ -265,11 +238,7 @@
               </td>
 
               <td>
-                <button
-                  v-if="!user.IsArchived"
-                  class="action-btn archive-btn"
-                  @click="archiveUser(user.id, true)"
-                >
+                <button v-if="!user.IsArchived" class="action-btn archive-btn" @click="archiveUser(user.id, true)">
                   Archiver
                 </button>
 
@@ -291,71 +260,191 @@ import { apiFetch } from '../utils/api.js'
 import { useModalStore } from '@/stores/modalStore.js'
 import EditPasswordModal from '@/components/users/EditPasswordModal.vue'
 import { useAuthStore } from '@/stores/auth.js'
+import { usePosteStore } from '@/stores/posteStore.js'
 
 const modalStore = useModalStore()
 const authStore = useAuthStore()
+const posteStore = usePosteStore()
 
 let displayTitle = ref('Employés actifs')
 let displayedRole = ref('personnel_de_terrain')
 let pendingRoles = ref({})
+const pendingPostes = ref({})
+const savingUsers = ref({})
+const saveErrors = ref({})
 const displayedUsers = ref([])
 const loadedUsers = ref([])
+const displayedPostes = ref([])
 
 onMounted(() => {
   LoadUsers()
+  LoadPostes()
 })
+
+async function LoadPostes() {
+  try {
+    await posteStore.loadPostes('/poste/list', true, false);
+
+    const postes = posteStore.postes;
+    displayedPostes.value = Array.isArray(postes) ? postes : [];
+  } catch (error) {
+    console.error(
+      'Erreur lors du chargement des postes de travail :',
+      error
+    );
+    displayedPostes.value = [];
+  }
+}
+
+async function LoadEmployeePostes(users) {
+  await Promise.all(
+    users.map(async (user) => {
+      if (user.role === 'personnel_de_terrain') {
+        user.posteId = await posteStore.getEmployeePosteId(user.id)
+      } else {
+        user.posteId = null
+      }
+
+      pendingPostes.value[user.id] =
+        user.posteId == null ? '' : String(user.posteId)
+    })
+  )
+}
 
 async function LoadUsers() {
   displayTitle.value = 'Employés actifs'
-  apiFetch('/users?archived=false', { method: 'GET' })
-    .then((data) => {
-      loadedUsers.value = data.data.users
-      ApplyRoleFilter()
+
+  try {
+    const data = await apiFetch('/users?archived=false', {
+      method: 'GET'
     })
-    .catch((error) => {
-      console.error('Erreur lors du chargement des utilisateurs :', error)
-    })
+
+    loadedUsers.value = data.data.users
+
+    await LoadEmployeePostes(loadedUsers.value)
+
+    ApplyRoleFilter()
+  } catch (error) {
+    console.error('Erreur lors du chargement des utilisateurs :', error)
+  }
 }
 
 async function ArchivedUsers() {
   displayTitle.value = 'Employés archivés'
-  apiFetch('/users?archived=true', { method: 'GET' })
-    .then((data) => {
-      loadedUsers.value = data.data.users
-      ApplyRoleFilter()
+
+  try {
+    const data = await apiFetch('/users?archived=true', {
+      method: 'GET'
     })
-    .catch((error) => {
-      console.error('Erreur lors du chargement des utilisateurs :', error)
-    })
+
+    loadedUsers.value = data.data.users
+
+    await LoadEmployeePostes(loadedUsers.value)
+
+    ApplyRoleFilter()
+  } catch (error) {
+    console.error('Erreur lors du chargement des utilisateurs :', error)
+  }
 }
 
 async function allUsers() {
   displayTitle.value = 'Tous les employés'
-  apiFetch('/users', { method: 'GET' })
-    .then((data) => {
-      loadedUsers.value = data.data.users
-      ApplyRoleFilter()
+
+  try {
+    const data = await apiFetch('/users', {
+      method: 'GET'
     })
-    .catch((error) => {
-      console.error('Erreur lors du chargement des utilisateurs :', error)
-    })
+
+    loadedUsers.value = data.data.users
+
+    await LoadEmployeePostes(loadedUsers.value)
+
+    ApplyRoleFilter()
+  } catch (error) {
+    console.error('Erreur lors du chargement des utilisateurs :', error)
+  }
 }
 
-async function editUser(userId, newRole) {
-  apiFetch('/users/Edit_Role/', {
-    method: 'PATCH',
-    body: JSON.stringify({
-      userId: userId,
-      newRole: newRole,
-    }),
-  })
-    .then((data) => {
-      console.log("Rôle de l'utilisateur modifié avec succès :", data)
-      LoadUsers() // Recharger la liste des utilisateurs après la modification
-    })
-    .catch((error) => {
-      console.error("Erreur lors de la modification du rôle de l'utilisateur :", error)
-    })
+
+function hasPendingChanges(user) {
+  const roleChanged = pendingRoles.value[user.id] !== user.role
+
+  const currentPosteId =
+    user.posteId == null ? '' : String(user.posteId)
+
+  const posteChanged =
+    pendingPostes.value[user.id] !== currentPosteId
+
+  return roleChanged || posteChanged
+}
+
+async function editUser(user) {
+  const userId = user.id
+
+  const newRole = pendingRoles.value[userId]
+  const newPosteId =
+    pendingPostes.value[userId] === ''
+      ? null
+      : Number(pendingPostes.value[userId])
+
+  const roleChanged = newRole !== user.role
+
+  const currentPosteId =
+    user.posteId == null ? '' : String(user.posteId)
+
+  const posteChanged =
+    pendingPostes.value[userId] !== currentPosteId
+
+  if (!roleChanged && !posteChanged) return
+
+  savingUsers.value[userId] = true
+  saveErrors.value[userId] = ''
+
+  try {
+    if (roleChanged) {
+      const response = await apiFetch('/users/Edit_Role/', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId,
+          newRole
+        })
+      })
+
+      if (response.status !== 200) {
+        throw new Error(response.message || `Erreur lors de la modification du rôle (${response.status}).`)
+      }
+      user.role = newRole
+    }
+
+    if (posteChanged) {
+      const success = await posteStore.assignPosteToEmployee(userId, newPosteId)
+
+      if (!success) {
+        throw new Error(
+          posteStore.lastErrorStatus
+            ? `Impossible de modifier le poste (HTTP ${posteStore.lastErrorStatus}).`
+            : "Impossible de modifier le poste de l'employé."
+        )
+      }
+
+      user.posteId = newPosteId
+    }
+
+    pendingRoles.value[userId] = user.role
+    pendingPostes.value[userId] = user.posteId == null ? '' : String(user.posteId)
+
+  } catch (error) {
+    console.error(
+      "Erreur lors de la modification de l'employé :", error
+    )
+
+    saveErrors.value[userId] = error.message || "Une erreur est survenue lors de l'enregistrement."
+  } finally {
+    savingUsers.value[userId] = false
+  }
 }
 
 async function editPasswordUser(userId) {
@@ -372,17 +461,20 @@ async function archiveUser(userId, IsArchived) {
   })
     .then((data) => {
       console.log('Utilisateur archivé avec succès :', data)
-      LoadUsers() // Recharger la liste des utilisateurs après l'archivage
+      LoadUsers()
     })
     .catch((error) => {
       console.error("Erreur lors de l'archivage de l'utilisateur :", error)
     })
 }
+
 function ApplyRoleFilter() {
   if (displayedRole.value === 'all') {
     displayedUsers.value = loadedUsers.value
   } else {
-    displayedUsers.value = loadedUsers.value.filter((user) => user.role === displayedRole.value)
+    displayedUsers.value = loadedUsers.value.filter(
+      (user) => user.role === displayedRole.value
+    )
   }
 
   loadedUsers.value.forEach((user) => {
@@ -391,6 +483,7 @@ function ApplyRoleFilter() {
     }
   })
 }
+
 function filterUsersByRole(role) {
   displayedRole.value = role
   ApplyRoleFilter()
@@ -544,795 +637,4 @@ function createAccount() {
     })
 }
 </script>
-<style scoped>
-.gestion-container {
-  width: 100%;
-  max-width: 1200px;
-
-  margin: 0 auto;
-
-  padding: 70px 32px 100px;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-
-  gap: 40px;
-
-  margin-bottom: 48px;
-}
-
-.page-heading {
-  flex: 1;
-}
-
-.page-heading h1 {
-  margin: 0 0 10px;
-
-  color: #212529;
-
-  font-size: 36px;
-  font-weight: 750;
-
-  letter-spacing: -0.5px;
-}
-
-.page-heading p {
-  margin: 0;
-
-  color: #6c757d;
-
-  font-size: 15px;
-  line-height: 1.5;
-}
-
-.create-user-btn {
-  flex-shrink: 0;
-
-  padding: 11px 20px;
-
-  border: 1px solid #212529;
-  border-radius: 8px;
-
-  background-color: #212529;
-
-  color: white;
-
-  font-size: 14px;
-  font-weight: 650;
-
-  cursor: pointer;
-
-  transition:
-    background-color 0.2s,
-    border-color 0.2s,
-    transform 0.15s,
-    box-shadow 0.2s;
-}
-
-.create-user-btn:hover {
-  background-color: #343a40;
-
-  border-color: #343a40;
-
-  transform: translateY(-1px);
-
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-}
-
-/* =========================================================
-   FORMULAIRE DE CRÉATION
-========================================================= */
-
-.create-user-card {
-  margin-top: -15px;
-  margin-bottom: 42px;
-
-  padding: 28px;
-
-  background-color: white;
-
-  border: 1px solid #e1e5e8;
-  border-radius: 14px;
-
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.055);
-}
-
-.create-form-header {
-  margin-bottom: 26px;
-}
-
-.create-form-header h2 {
-  margin: 0 0 7px;
-
-  color: #212529;
-
-  font-size: 23px;
-  font-weight: 700;
-}
-
-.create-form-header p {
-  margin: 0;
-
-  color: #6c757d;
-
-  font-size: 14px;
-}
-
-/* =========================================================
-   CHAMPS DU FORMULAIRE
-========================================================= */
-
-.create-user-form {
-  width: 100%;
-}
-
-.form-grid {
-  display: grid;
-
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-
-  gap: 22px;
-}
-
-.form-field {
-  display: flex;
-  flex-direction: column;
-
-  gap: 8px;
-}
-
-.form-field.full-width {
-  grid-column: 1 / -1;
-}
-
-.form-field label {
-  color: #343a40;
-
-  font-size: 13px;
-  font-weight: 650;
-}
-
-.form-field input,
-.form-field select {
-  width: 100%;
-
-  min-height: 43px;
-
-  padding: 10px 12px;
-
-  border: 1px solid #ced4da;
-  border-radius: 7px;
-
-  background-color: white;
-
-  color: #343a40;
-
-  font-size: 14px;
-
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-}
-
-.form-field input:focus,
-.form-field select:focus {
-  outline: none;
-
-  border-color: #198754;
-
-  box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.12);
-}
-
-.password-help {
-  color: #868e96;
-
-  font-size: 12px;
-}
-
-/* =========================================================
-   BOUTONS DU FORMULAIRE
-========================================================= */
-
-.create-actions {
-  display: flex;
-  justify-content: flex-end;
-
-  gap: 10px;
-
-  margin-top: 28px;
-}
-
-.cancel-create-btn,
-.submit-create-btn {
-  padding: 10px 17px;
-
-  border-radius: 7px;
-
-  font-size: 14px;
-  font-weight: 650;
-
-  cursor: pointer;
-
-  transition: 0.2s;
-}
-
-.cancel-create-btn {
-  border: 1px solid #ced4da;
-
-  background-color: white;
-
-  color: #495057;
-}
-
-.cancel-create-btn:hover {
-  background-color: #f1f3f5;
-}
-
-.submit-create-btn {
-  border: 1px solid #212529;
-
-  background-color: #212529;
-
-  color: white;
-}
-
-.submit-create-btn:hover {
-  background-color: #343a40;
-
-  border-color: #343a40;
-}
-
-.create-error,
-.create-success {
-  margin-top: 20px;
-
-  padding: 11px 14px;
-
-  border-radius: 7px;
-
-  font-size: 13px;
-}
-
-.create-error {
-  background-color: #f8d7da;
-
-  color: #842029;
-}
-
-.create-success {
-  background-color: #d1e7dd;
-
-  color: #0f5132;
-}
-
-.status-filters {
-  display: flex;
-  flex-wrap: wrap;
-
-  gap: 11px;
-
-  margin-bottom: 32px;
-}
-
-.status-filter-btn {
-  padding: 10px 19px;
-
-  border: 1px solid #d4d9de;
-  border-radius: 8px;
-
-  background-color: white;
-
-  color: #495057;
-
-  font-size: 14px;
-  font-weight: 600;
-
-  cursor: pointer;
-
-  transition:
-    background-color 0.2s,
-    border-color 0.2s,
-    color 0.2s,
-    transform 0.15s;
-}
-
-.status-filter-btn:hover {
-  background-color: #f4f5f6;
-}
-
-.status-filter-btn:active {
-  transform: scale(0.98);
-}
-
-.status-filter-btn.active {
-  background-color: #198754;
-
-  border-color: #198754;
-
-  color: white;
-}
-
-.status-filter-btn.active:hover {
-  background-color: #157347;
-
-  border-color: #157347;
-}
-
-.employees-card {
-  margin-top: 8px;
-
-  overflow: hidden;
-
-  background-color: white;
-
-  border: 1px solid #e1e5e8;
-  border-radius: 14px;
-
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.055);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  gap: 30px;
-
-  padding: 27px 26px 24px;
-
-  border-bottom: 1px solid #f0f1f2;
-}
-
-.card-header h2 {
-  margin: 0 0 7px;
-
-  color: #212529;
-
-  font-size: 22px;
-  font-weight: 700;
-}
-
-.card-subtitle {
-  margin: 0;
-
-  color: #8a9096;
-
-  font-size: 13px;
-}
-
-.employee-count {
-  flex-shrink: 0;
-
-  padding: 8px 14px;
-
-  border-radius: 999px;
-
-  background-color: #f1f3f5;
-
-  color: #495057;
-
-  font-size: 13px;
-  font-weight: 650;
-}
-
-.role-filters {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-
-  gap: 9px;
-
-  padding: 20px 26px;
-
-  background-color: #fafbfc;
-
-  border-bottom: 1px solid #e9ecef;
-}
-
-.role-label {
-  margin-right: 5px;
-
-  color: #6c757d;
-
-  font-size: 13px;
-  font-weight: 650;
-}
-
-.role-filter-btn {
-  padding: 7px 14px;
-
-  border: 1px solid #d5dbe0;
-  border-radius: 999px;
-
-  background-color: white;
-
-  color: #495057;
-
-  font-size: 13px;
-  font-weight: 500;
-
-  cursor: pointer;
-
-  transition:
-    background-color 0.2s,
-    color 0.2s,
-    border-color 0.2s;
-}
-
-.role-filter-btn:hover {
-  background-color: #f0f2f4;
-}
-
-.role-filter-btn.active {
-  background-color: #198754;
-
-  border-color: #198754;
-
-  color: white;
-
-  font-weight: 600;
-}
-
-.role-filter-btn.active:hover {
-  background-color: #157347;
-
-  border-color: #157347;
-}
-
-.table-wrapper {
-  width: 100%;
-
-  overflow-x: auto;
-}
-
-.employees-table {
-  width: 100%;
-
-  border-collapse: collapse;
-
-  background-color: white;
-}
-
-.employees-table thead {
-  background-color: #f8f9fa;
-}
-
-.employees-table th {
-  padding: 15px 20px;
-
-  border-bottom: 1px solid #dee2e6;
-
-  color: #6c757d;
-
-  font-size: 12px;
-  font-weight: 700;
-
-  text-align: left;
-
-  text-transform: uppercase;
-
-  letter-spacing: 0.04em;
-
-  white-space: nowrap;
-}
-
-.employees-table td {
-  padding: 17px 20px;
-
-  border-bottom: 1px solid #eeeeee;
-
-  color: #343a40;
-
-  font-size: 14px;
-
-  vertical-align: middle;
-}
-
-.employees-table tbody tr {
-  transition: background-color 0.15s;
-}
-
-.employees-table tbody tr:hover {
-  background-color: #fafafa;
-}
-
-.employees-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.user-name {
-  font-weight: 700;
-}
-
-.user-email {
-  color: #6c757d;
-
-  word-break: break-word;
-}
-
-.role-editor {
-  display: flex;
-  align-items: center;
-
-  gap: 9px;
-}
-
-.role-select {
-  min-width: 175px;
-
-  padding: 8px 10px;
-
-  border: 1px solid #ced4da;
-  border-radius: 7px;
-
-  background-color: white;
-
-  color: #343a40;
-
-  font-size: 14px;
-
-  cursor: pointer;
-}
-
-.role-select:focus {
-  outline: none;
-
-  border-color: #198754;
-
-  box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.12);
-}
-
-.role-select:disabled {
-  background-color: #f1f3f5;
-
-  color: #868e96;
-
-  cursor: not-allowed;
-}
-
-.confirm-role-btn {
-  padding: 8px 12px;
-
-  border: 1px solid #198754;
-  border-radius: 7px;
-
-  background-color: #198754;
-
-  color: white;
-
-  font-size: 12px;
-  font-weight: 650;
-
-  cursor: pointer;
-
-  transition: 0.2s;
-
-  white-space: nowrap;
-}
-
-.confirm-role-btn:hover:not(:disabled) {
-  background-color: #157347;
-
-  border-color: #157347;
-}
-
-.confirm-role-btn:disabled {
-  background-color: #e9ecef;
-
-  border-color: #dee2e6;
-
-  color: #adb5bd;
-
-  cursor: not-allowed;
-}
-
-.status-badge {
-  display: inline-block;
-
-  padding: 6px 11px;
-
-  border-radius: 999px;
-
-  font-size: 12px;
-  font-weight: 650;
-
-  white-space: nowrap;
-}
-
-.active-status {
-  background-color: #d1e7dd;
-
-  color: #0f5132;
-}
-
-.archived-status {
-  background-color: #e9ecef;
-
-  color: #6c757d;
-}
-
-.action-btn {
-  padding: 8px 13px;
-
-  border-radius: 7px;
-
-  background-color: white;
-
-  font-size: 13px;
-  font-weight: 600;
-
-  cursor: pointer;
-
-  transition:
-    background-color 0.2s,
-    color 0.2s,
-    border-color 0.2s;
-
-  white-space: nowrap;
-}
-
-.archive-btn {
-  border: 1px solid #dc3545;
-
-  color: #dc3545;
-}
-
-.archive-btn:hover {
-  background-color: #dc3545;
-
-  color: white;
-}
-
-.restore-btn {
-  border: 1px solid #198754;
-
-  color: #198754;
-}
-
-.restore-btn:hover {
-  background-color: #198754;
-
-  color: white;
-}
-
-.empty-state {
-  padding: 70px 20px;
-
-  text-align: center;
-
-  color: #868e96;
-
-  font-size: 14px;
-}
-
-@media (max-width: 900px) {
-  .gestion-container {
-    padding: 45px 20px 80px;
-  }
-
-  .page-header {
-    gap: 25px;
-
-    margin-bottom: 38px;
-  }
-
-  .page-heading h1 {
-    font-size: 31px;
-  }
-
-  .employees-table {
-    min-width: 1050px;
-  }
-
-  .role-editor {
-    min-width: 285px;
-  }
-}
-
-@media (max-width: 700px) {
-  .gestion-container {
-    padding: 35px 16px 65px;
-  }
-
-  .page-header {
-    flex-direction: column;
-
-    align-items: stretch;
-
-    gap: 22px;
-
-    margin-bottom: 32px;
-  }
-
-  .page-heading h1 {
-    font-size: 28px;
-  }
-
-  .create-user-btn {
-    width: 100%;
-  }
-
-  .status-filters {
-    flex-direction: column;
-  }
-
-  .status-filter-btn {
-    width: 100%;
-  }
-
-  .card-header {
-    flex-direction: column;
-
-    align-items: flex-start;
-
-    gap: 16px;
-  }
-
-  .role-filters {
-    align-items: flex-start;
-  }
-
-  .role-label {
-    width: 100%;
-
-    margin-bottom: 4px;
-  }
-
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .form-field.full-width {
-    grid-column: auto;
-  }
-
-  .create-actions {
-    flex-direction: column-reverse;
-  }
-
-  .cancel-create-btn,
-  .submit-create-btn {
-    width: 100%;
-  }
-}
-.field-error {
-  margin-top: 2px;
-
-  color: #dc3545;
-
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.form-field input.input-error,
-.form-field select.input-error {
-  border-color: #dc3545;
-
-  background-color: #fffafa;
-}
-
-.form-field input.input-error:focus,
-.form-field select.input-error:focus {
-  border-color: #dc3545;
-
-  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.12);
-}
-
-.general-error {
-  margin-top: 20px;
-
-  padding: 11px 14px;
-
-  border: 1px solid #f1aeb5;
-  border-radius: 7px;
-
-  background-color: #f8d7da;
-
-  color: #842029;
-
-  font-size: 13px;
-}
-</style>
+<style scoped src="src/assets/employes.css"></style>
