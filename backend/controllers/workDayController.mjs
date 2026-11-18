@@ -7,6 +7,7 @@ import {
   work_day_task,
   work_day_sub_task,
 } from "../models/bd_index.mjs";
+import { validerDate } from "../utils/dateHelpers.mjs";
 
 function cleanComment(value) {
   if (typeof value !== "string") return null;
@@ -17,12 +18,7 @@ function cleanComment(value) {
 export async function getMyDay(req, res, next) {
   try {
     const date = req.query.date;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "")) {
-      return res.status(400).json({
-        status: 400,
-        message: "La date est requise (AAAA-MM-JJ).",
-      });
-    }
+    if (!validerDate(date, next)) return;
 
     const day = await work_day.findOne({
       where: { accountId: req.user.id, date: date },
