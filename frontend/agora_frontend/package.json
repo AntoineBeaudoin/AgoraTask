@@ -1,6 +1,6 @@
 {
   "name": "agora_frontend",
-  "version": "3.4.0",
+  "version": "3.5.0",
   "private": true,
   "description": "This template should help get you started developing with Vue 3 in Vite.",
   "license": "ISC",
@@ -20,6 +20,7 @@
   "dependencies": {
     "@vercel/blob": "^2.8.0",
     "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.13.2",
     "jwt-decode": "^4.0.0",
     "pinia": "^4.0.2",
     "supertest": "^7.3.1",

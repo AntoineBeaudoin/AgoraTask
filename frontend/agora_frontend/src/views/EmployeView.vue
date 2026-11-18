@@ -2,6 +2,10 @@
   <section class="container py-5">
     <h1 class="mb-4 text-center">Vos tâches</h1>
     <TaskDescriptionModal />
+    <button class="btn btn-primary mb-3" @click="printPage()" v-if="taskStore.myTasksLoaded && taskStore.myTasks.length > 0">
+      <i class="bi bi-printer" aria-hidden="true"></i> Imprimer l'horaire</button>
+    <link rel="stylesheet" href="">
+
     <p v-if="taskStore.myTasksLoaded && taskStore.myTasks.length === 0" class="text-center text-muted">
       Aucune tâche ne vous est assignée.
     </p>
@@ -39,7 +43,7 @@
           </div>
         </div>
 
-        <div v-if="detailledTasks.has(task.tacheAFaireId)" class="card-footer bg-light">
+        <div v-if="printing || detailledTasks.has(task.tacheAFaireId)" class="card-footer bg-light task-details">
           <p class="mb-1"><strong>Local :</strong> {{ task.room }}</p>
           <p class="mb-2"><strong>Description :</strong> {{ task.description }}</p>
           <TaskPdfPreview :documents="task.documents ?? []" />
@@ -63,12 +67,14 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useTaskStore } from '@/stores/taskStore.js'
 import { useModalStore } from '@/stores/modalStore.js'
 import TaskDescriptionModal from '@/components/tasks/TaskDescriptionModal.vue'
 import TaskPdfPreview from '@/components/tasks/TaskPdfPreview.vue'
 import TaskExternalLinks from '@/components/tasks/TaskExternalLinks.vue'
+import { nextTick } from 'vue'
+import 'bootstrap-icons/font/bootstrap-icons.css'
 
 const taskStore = useTaskStore()
 const modalStore = useModalStore()
@@ -76,6 +82,19 @@ const detailledTasks = reactive(new Set())
 const checkedIds = ref([])
 const saving = ref(false)
 const message = ref('')
+const printing = ref(false)
+
+async function printPage() {
+  printing.value = true
+
+  await nextTick()
+
+  await new Promise(resolve => requestAnimationFrame(() => {
+    requestAnimationFrame(resolve)
+  }))
+
+  window.print()
+}
 
 function toggleDetails(id) {
   if (detailledTasks.has(id)) {
@@ -98,6 +117,11 @@ async function openTaskDetails(task) {
   })
 }
 
+async function afterPrint() {
+  printing.value = false
+  await nextTick();
+}
+
 async function save() {
   saving.value = true
   message.value = ''
@@ -109,8 +133,53 @@ async function save() {
   }
 }
 
+function handleKeydown(event) {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p') {
+    event.preventDefault()
+    printPage()
+  }
+}
+
 onMounted(() => {
   taskStore.loadTasks()
   taskStore.loadMyTasks()
+
+  window.addEventListener('keydown', handleKeydown)
+  window.addEventListener('afterprint', afterPrint)
+})
+
+onUnmounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+  window.removeEventListener('afterprint', afterPrint)
 })
 </script>
+
+<style scoped>
+@media print {
+  .btn {
+    display: none !important;
+  }
+
+  .card-footer {
+    display: block !important;
+    break-inside: avoid;
+  }
+
+  textarea {
+    border: none;
+    resize: none;
+  }
+
+  .task-details {
+    display: block !important;
+    break-inside: avoid;
+  }
+
+  textarea {
+    border: none !important;
+    resize: none;
+    background: transparent !important;
+    color: black !important;
+  }
+}
+</style>
