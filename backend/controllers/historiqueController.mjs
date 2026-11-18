@@ -14,7 +14,7 @@ export async function getEmployeEnService(req, res, next) {
     const { date } = req.query;
     if (!validerDate(date, next)) return;
 
-    const EmployeEnService = await Compte.findAll({
+    const comptes = await Compte.findAll({
       attributes: { exclude: ["motDePasse"] },
       include: [
         {
@@ -22,15 +22,31 @@ export async function getEmployeEnService(req, res, next) {
           as: "workDays",
           required: true,
           where: { date },
-          attributes: [],
+          include: [
+            {
+              model: work_day_task,
+              as: "tasks",
+              attributes: ["id", "isCompleted"],
+            },
+          ],
         },
       ],
+    });
+
+    const data = comptes.map((compte) => {
+      const { workDays, ...employe } = compte.toJSON();
+      return {
+        ...employe,
+        aDesTachesNonTerminees: workDays.some((jour) =>
+          jour.tasks.some((tache) => tache.isCompleted === false),
+        ),
+      };
     });
 
     res.status(200).json({
       status: 200,
       message: "Liste des employés en service récupérée avec succès",
-      data: EmployeEnService,
+      data,
       error: null,
     });
   } catch (error) {

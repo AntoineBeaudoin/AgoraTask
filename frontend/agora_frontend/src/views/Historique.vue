@@ -297,7 +297,7 @@ async function rafraichirHistorique() {
   await getEmployeEnService()
 }
 function aDesTachesNonTerminees(employe) {
-  return employe.taches?.some((tache) => tache.TachesAFaire?.isCompleted === false) ?? false
+  return employe.aDesTachesNonTerminees === true
 }
 </script>
 <style scoped>
