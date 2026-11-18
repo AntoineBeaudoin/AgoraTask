@@ -34,15 +34,11 @@
                 placeholder="Nom du poste *"
                 required
               />
-              <span id="posteNomError" class="invalid-feedback">
-                Le nom du poste est requis.
-              </span>
+              <span id="posteNomError" class="invalid-feedback"> Le nom du poste est requis. </span>
             </div>
 
             <div class="form-group mb-3">
-              <label for="posteDescription" class="form-label">
-                Description
-              </label>
+              <label for="posteDescription" class="form-label"> Description </label>
               <textarea
                 id="posteDescription"
                 v-model="description"
@@ -57,47 +53,74 @@
               <div v-if="group.loading" class="text-muted">Chargement...</div>
               <div v-else-if="group.error" class="text-danger">
                 {{ group.error }}
-                <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
-                  @click="loadTasks()">Réessayer</button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary ms-2"
+                  @click="loadTasks()"
+                >
+                  Réessayer
+                </button>
               </div>
               <div v-else class="row g-3">
                 <div class="col-6">
                   <label class="form-label small">Disponibles ({{ group.available.length }})</label>
-                  <div class="drop-zone" @dragover.prevent @drop.prevent="dropItem(group.type, false, $event)">
-                    <div v-for="item in group.available" :key="item.id" class="drag-item"
-                      draggable="true" @dragstart="startDrag(group.type, item.id, $event)"
-                      @dragend="draggedItem = null" @dblclick="moveItem(group.type, item.id, true)"
-                      :title="'Double-cliquer pour assigner'">
-                      <span class="item-text">{{ group.format(item) }}</span><span aria-hidden="true">⠿</span>
+                  <div
+                    class="drop-zone"
+                    @dragover.prevent
+                    @drop.prevent="dropItem(group.type, false, $event)"
+                  >
+                    <div
+                      v-for="item in group.available"
+                      :key="item.id"
+                      class="drag-item"
+                      draggable="true"
+                      @dragstart="startDrag(group.type, item.id, $event)"
+                      @dragend="draggedItem = null"
+                      @dblclick="moveItem(group.type, item.id, true)"
+                      :title="'Double-cliquer pour assigner'"
+                    >
+                      <span class="item-text">{{ group.format(item) }}</span
+                      ><span aria-hidden="true">⠿</span>
                     </div>
-                    <div v-if="!group.available.length" class="text-muted small p-2">Aucun élément disponible</div>
+                    <div v-if="!group.available.length" class="text-muted small p-2">
+                      Aucun élément disponible
+                    </div>
                   </div>
                 </div>
                 <div class="col-6">
                   <label class="form-label small">Assignés ({{ group.selected.length }})</label>
-                  <div class="drop-zone" @dragover.prevent @drop.prevent="dropItem(group.type, true, $event)">
-                    <div v-for="item in group.selected" :key="item.id" class="drag-item"
-                      draggable="true" @dragstart="startDrag(group.type, item.id, $event)"
-                      @dragend="draggedItem = null" @dblclick="moveItem(group.type, item.id, false)"
-                      :title="'Double-cliquer pour retirer'">
-                      <span class="item-text">{{ group.format(item) }}</span><span aria-hidden="true">⠿</span>
+                  <div
+                    class="drop-zone"
+                    @dragover.prevent
+                    @drop.prevent="dropItem(group.type, true, $event)"
+                  >
+                    <div
+                      v-for="item in group.selected"
+                      :key="item.id"
+                      class="drag-item"
+                      draggable="true"
+                      @dragstart="startDrag(group.type, item.id, $event)"
+                      @dragend="draggedItem = null"
+                      @dblclick="moveItem(group.type, item.id, false)"
+                      :title="'Double-cliquer pour retirer'"
+                    >
+                      <span class="item-text">{{ group.format(item) }}</span
+                      ><span aria-hidden="true">⠿</span>
                     </div>
-                    <div v-if="!group.selected.length" class="text-muted small p-2">Glissez des éléments ici</div>
+                    <div v-if="!group.selected.length" class="text-muted small p-2">
+                      Glissez des éléments ici
+                    </div>
                   </div>
                 </div>
               </div>
-              <small class="text-muted">Glissez les éléments entre les colonnes ou double-cliquez dessus.</small>
+              <small class="text-muted"
+                >Glissez les éléments entre les colonnes ou double-cliquez dessus.</small
+              >
             </div>
             <p class="text-danger">{{ posteError }}</p>
 
             <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-danger"
-                @click="close"
-              >
-                Annuler
-              </button>
+              <button type="button" class="btn btn-danger" @click="close">Annuler</button>
 
               <button
                 id="posteSubmitBtn"
@@ -105,13 +128,7 @@
                 class="btn btn-success"
                 :disabled="saving || loadingTasks || loadingComptes"
               >
-                {{
-                  saving
-                    ? 'Enregistrement...'
-                    : isEditing
-                      ? 'Modifier'
-                      : 'Ajouter'
-                }}
+                {{ saving ? 'Enregistrement...' : isEditing ? 'Modifier' : 'Ajouter' }}
               </button>
             </div>
           </form>
@@ -122,205 +139,209 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
-import { usePosteStore } from '@/stores/posteStore';
-import { useModalStore } from '@/stores/modalStore';
-import { useTaskStore } from '@/stores/taskStore';
+import { computed, ref, watch } from 'vue'
+import { usePosteStore } from '@/stores/posteStore'
+import { useModalStore } from '@/stores/modalStore'
+import { useTaskStore } from '@/stores/taskStore'
 
-const posteStore = usePosteStore();
-const modalStore = useModalStore();
-const taskStore = useTaskStore();
+const posteStore = usePosteStore()
+const modalStore = useModalStore()
+const taskStore = useTaskStore()
 
-const emit = defineEmits(['saved']);
+const emit = defineEmits(['saved'])
 
-const nom = ref('');
-const description = ref('');
-const tasksSelectionnees = ref([]);
-const loadingTasks = ref(false);
-const tasksError = ref('');
-const posteError = ref('');
-const saving = ref(false);
+const nom = ref('')
+const description = ref('')
+const tasksSelectionnees = ref([])
+const loadingTasks = ref(false)
+const tasksError = ref('')
+const posteError = ref('')
+const saving = ref(false)
 
-const loadingComptes = ref(false);
+const loadingComptes = ref(false)
 
-const isEditing = computed(() => !!modalStore.editingPoste);
+const isEditing = computed(() => !!modalStore.editingPoste)
 
-const tasksDisponibles = ref([]);
+const tasksDisponibles = ref([])
 
 async function updateTasksDisponibles() {
-  tasksDisponibles.value = (await Promise.all(
-    taskStore.tasks.map(async task => ({
-      task,
-      disponible: task.recurring &&
-        await taskStore.getNumberOfTaskOccurences(task.id) > 0
-    }))
-  ))
-    .filter(result => result.disponible)
-    .map(result => result.task);
+  tasksDisponibles.value = (
+    await Promise.all(
+      taskStore.tasks.map(async (task) => ({
+        task,
+        disponible: task.recurring && (await taskStore.getNumberOfTaskOccurrences(task.id)) > 0,
+      })),
+    )
+  )
+    .filter((result) => result.disponible)
+    .map((result) => result.task)
 }
 
 const assignmentGroups = computed(() => [
   {
-    type: 'task', title: 'Tâches associées', loading: loadingTasks.value,
+    type: 'task',
+    title: 'Tâches associées',
+    loading: loadingTasks.value,
     error: tasksError.value,
-    available: tasksDisponibles.value.filter(t => !tasksSelectionnees.value.some(id => String(id) === String(t.id))),
-    selected: tasksDisponibles.value.filter(t => tasksSelectionnees.value.some(id => String(id) === String(t.id))),
-    format: t => `${t.title} (${t.room})`
+    available: tasksDisponibles.value.filter(
+      (t) => !tasksSelectionnees.value.some((id) => String(id) === String(t.id)),
+    ),
+    selected: tasksDisponibles.value.filter((t) =>
+      tasksSelectionnees.value.some((id) => String(id) === String(t.id)),
+    ),
+    format: (t) => `${t.title} (${t.room})`,
   },
-]);
+])
 
-const draggedItem = ref(null);
+const draggedItem = ref(null)
 
 function startDrag(type, id, event) {
-  draggedItem.value = { type, id };
-  event.dataTransfer.effectAllowed = 'move';
-  event.dataTransfer.setData('text/plain', `${type}:${id}`);
+  draggedItem.value = { type, id }
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('text/plain', `${type}:${id}`)
 }
 
 function moveItem(type, id, assign) {
-  const selection = tasksSelectionnees;
-  const exists = selection.value.some(value => String(value) === String(id));
-  if (assign && !exists) selection.value = [...selection.value, id];
-  else if (!assign && exists) selection.value = selection.value.filter(value => String(value) !== String(id));
+  const selection = tasksSelectionnees
+  const exists = selection.value.some((value) => String(value) === String(id))
+  if (assign && !exists) selection.value = [...selection.value, id]
+  else if (!assign && exists)
+    selection.value = selection.value.filter((value) => String(value) !== String(id))
 }
 
 function dropItem(type, assign) {
-  const item = draggedItem.value;
-  if (item && item.type === type) moveItem(type, item.id, assign);
-  draggedItem.value = null;
+  const item = draggedItem.value
+  if (item && item.type === type) moveItem(type, item.id, assign)
+  draggedItem.value = null
 }
 
 async function loadTasks() {
-  loadingTasks.value = true;
-  tasksError.value = '';
+  loadingTasks.value = true
+  tasksError.value = ''
 
   try {
-    await taskStore.loadTasks();
-    await updateTasksDisponibles();
+    await taskStore.loadTasks()
+    await updateTasksDisponibles()
   } catch {
-    tasksError.value =
-      'Une erreur est survenue lors du chargement des tâches.';
+    tasksError.value = 'Une erreur est survenue lors du chargement des tâches.'
   } finally {
-    loadingTasks.value = false;
+    loadingTasks.value = false
   }
 }
 
 watch(
   () => modalStore.posteModalOpen,
   async (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) return
 
-    resetForm();
+    resetForm()
 
-    await loadTasks();
+    await loadTasks()
 
-    const poste = modalStore.editingPoste;
+    const poste = modalStore.editingPoste
 
     if (poste) {
-      nom.value = poste.nom ?? '';
-      description.value = poste.description ?? '';
+      nom.value = poste.nom ?? ''
+      description.value = poste.description ?? ''
 
-      tasksSelectionnees.value = (poste.tasks ?? []).map(
-        task => typeof task === 'object' ? task.id : task
-      );
+      tasksSelectionnees.value = (poste.tasks ?? []).map((task) =>
+        typeof task === 'object' ? task.id : task,
+      )
     }
-  }
-);
+  },
+)
 
 function resetForm() {
-  nom.value = '';
-  description.value = '';
-  tasksSelectionnees.value = [];
-  tasksError.value = '';
-  posteError.value = '';
+  nom.value = ''
+  description.value = ''
+  tasksSelectionnees.value = []
+  tasksError.value = ''
+  posteError.value = ''
 
-  document.querySelectorAll('#posteModal .is-invalid').forEach(input => {
-    input.classList.remove('is-invalid');
-  });
+  document.querySelectorAll('#posteModal .is-invalid').forEach((input) => {
+    input.classList.remove('is-invalid')
+  })
 
-  document.querySelectorAll('#posteModal .invalid-feedback').forEach(span => {
-    span.classList.remove('d-block');
-  });
+  document.querySelectorAll('#posteModal .invalid-feedback').forEach((span) => {
+    span.classList.remove('d-block')
+  })
 }
 
 function close() {
-  resetForm();
-  modalStore.closePosteModal();
+  resetForm()
+  modalStore.closePosteModal()
 }
 
 function formIsValid() {
-  return nom.value.trim() !== '';
+  return nom.value.trim() !== ''
 }
 
 function markInvalidInputs() {
-  const input = document.querySelector('#posteNom');
-  const error = document.querySelector('#posteNomError');
+  const input = document.querySelector('#posteNom')
+  const error = document.querySelector('#posteNomError')
 
-  input.classList.toggle('is-invalid', !nom.value.trim());
-  error.classList.toggle('d-block', !nom.value.trim());
+  input.classList.toggle('is-invalid', !nom.value.trim())
+  error.classList.toggle('d-block', !nom.value.trim())
 }
 
 async function submit() {
-  if (saving.value) return;
+  if (saving.value) return
 
-  posteError.value = '';
+  posteError.value = ''
 
   if (!formIsValid()) {
-    markInvalidInputs();
-    return;
+    markInvalidInputs()
+    return
   }
 
-  saving.value = true;
+  saving.value = true
 
   const poste = {
     nom: nom.value.trim(),
     description: description.value.trim(),
-    tasks: tasksSelectionnees.value
-  };
+    tasks: tasksSelectionnees.value,
+  }
 
   try {
-    let result;
-    let posteId;
+    let result
+    let posteId
 
     if (isEditing.value) {
-      posteId = modalStore.editingPoste.id;
+      posteId = modalStore.editingPoste.id
 
       result = await posteStore.updatePoste({
         ...modalStore.editingPoste,
-        ...poste
-      });
+        ...poste,
+      })
     } else {
-      result = await posteStore.addPoste(poste);
+      result = await posteStore.addPoste(poste)
 
       if (result) {
-        posteId = typeof result === 'number' ? result : null;
+        posteId = typeof result === 'number' ? result : null
       }
     }
 
     if (result === false) {
       if (posteStore.lastErrorStatus === 409) {
-        posteError.value =
-          'Un poste avec le même nom et la même description existe déjà.';
+        posteError.value = 'Un poste avec le même nom et la même description existe déjà.'
       } else {
-        posteError.value =
-          'Une erreur est survenue lors de l’enregistrement du poste.';
+        posteError.value = 'Une erreur est survenue lors de l’enregistrement du poste.'
       }
-      return;
+      return
     }
 
     if (posteId == null) {
       posteError.value =
-        'Le poste a été enregistré, mais son identifiant est introuvable. Les employés n’ont pas été assignés.';
-      return;
+        'Le poste a été enregistré, mais son identifiant est introuvable. Les employés n’ont pas été assignés.'
+      return
     }
 
-    emit('saved');
-    close();
+    emit('saved')
+    close()
   } catch {
-    posteError.value =
-      'Une erreur est survenue lors de l’enregistrement du poste.';
+    posteError.value = 'Une erreur est survenue lors de l’enregistrement du poste.'
   } finally {
-    saving.value = false;
+    saving.value = false
   }
 }
 </script>

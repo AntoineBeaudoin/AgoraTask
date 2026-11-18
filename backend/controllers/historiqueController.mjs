@@ -1,46 +1,52 @@
-import bcrypt from "bcrypt";
 import {
   Compte,
   Task,
-  TaskImage,
-  Poste,
   occurrence_de_tache,
   sous_tache,
-  TaskPoste,
-  tachesAFaire,
-  sous_taches_AFaire,
+  work_day,
+  work_day_task,
+  work_day_sub_task,
 } from "../models/bd_index.mjs";
-import { Op } from "sequelize";
+import { validerDate } from "../utils/dateHelpers.mjs";
 
 export async function getEmployeEnService(req, res, next) {
   try {
     const { date } = req.query;
-    if (!date) {
-      const error = new Error("La date est requise.");
-      error.statusCode = 400;
-      return next(error);
-    }
-    const EmployeEnService = await Compte.findAll({
+    if (!validerDate(date, next)) return;
+
+    const comptes = await Compte.findAll({
+      attributes: { exclude: ["motDePasse"] },
       include: [
         {
-          model: Task,
-          as: "taches",
+          model: work_day,
+          as: "workDays",
           required: true,
-          through: {
-            where: {
-              createdAt: {
-                [Op.gte]: new Date(date + "T00:00:00"),
-                [Op.lte]: new Date(date + "T23:59:59.999"),
-              },
+          where: { date },
+          include: [
+            {
+              model: work_day_task,
+              as: "tasks",
+              attributes: ["id", "isCompleted"],
             },
-          },
+          ],
         },
       ],
     });
+
+    const data = comptes.map((compte) => {
+      const { workDays, ...employe } = compte.toJSON();
+      return {
+        ...employe,
+        aDesTachesNonTerminees: workDays.some((jour) =>
+          jour.tasks.some((tache) => tache.isCompleted === false),
+        ),
+      };
+    });
+
     res.status(200).json({
       status: 200,
       message: "Liste des employés en service récupérée avec succès",
-      data: EmployeEnService,
+      data,
       error: null,
     });
   } catch (error) {
@@ -52,42 +58,53 @@ export async function getEmployeTaches(req, res, next) {
   try {
     const { compteId } = req.params;
     const { date } = req.query;
-    if (!date) {
-      const error = new Error("La date est requise.");
-      error.statusCode = 400;
-      return next(error);
-    }
-    const EmployeTaches = await tachesAFaire.findAll({
-      where: {
-        compteId: compteId,
-        createdAt: {
-          [Op.gte]: new Date(date + "T00:00:00"),
-          [Op.lte]: new Date(date + "T23:59:59.999"),
-        },
-      },
+    if (!validerDate(date, next)) return;
 
+    const workTasks = await work_day_task.findAll({
       include: [
         {
-          model: occurrence_de_tache,
-          as: "occurrence_de_tache",
-          include: [
-            {
-              model: Task,
-              as: "task",
-            },
-          ],
+          model: work_day,
+          as: "workDay",
+          where: { accountId: compteId, date },
+          attributes: [],
         },
+        { model: Task, as: "task" },
+        { model: occurrence_de_tache, as: "occurrence" },
         {
-          model: sous_tache,
-          as: "sous_taches",
+          model: work_day_sub_task,
+          as: "subTasks",
+          include: [{ model: sous_tache, as: "subTask" }],
         },
       ],
+      order: [["id", "ASC"]],
     });
-    if (EmployeTaches.length > 0) {
+
+    if (workTasks.length > 0) {
+      const data = workTasks.map((wt) => ({
+        id: wt.id,
+        isCompleted: wt.isCompleted,
+        commentaire: wt.comment,
+        occurrence_de_tache: {
+          ...(wt.occurrence ? wt.occurrence.toJSON() : {}),
+          task: wt.task,
+        },
+        sous_taches: [...wt.subTasks]
+          .sort((a, b) => a.id - b.id)
+          .map((s) => ({
+            id: s.subTaskId,
+            titre: s.subTask ? s.subTask.titre : null,
+            description: s.subTask ? s.subTask.description : null,
+            SousTachesAFaire: {
+              isCompleted: s.isCompleted,
+              commentaire: s.comment,
+            },
+          })),
+      }));
+
       res.status(200).json({
         status: 200,
         message: "Liste des tâches de l'employé récupérée avec succès",
-        data: EmployeTaches,
+        data: data,
         error: null,
       });
     } else {

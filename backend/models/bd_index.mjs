@@ -9,9 +9,10 @@ import { occurrence_de_tache } from "./occurrence_de_tache.mjs";
 import { sous_tache } from "./sous_taches.mjs";
 import Poste from "./poste.mjs";
 import Compte from "./compte.mjs";
-import { sous_taches_AFaire } from "./sousTachesAFaire.mjs";
-import { tachesAFaire } from "./tachesAFaire.mjs";
 import { task_priority } from "./task_priority.mjs";
+import { work_day } from "./work_day.mjs";
+import { work_day_task } from "./work_day_task.mjs";
+import { work_day_sub_task } from "./work_day_sub_task.mjs";
 
 Task.hasMany(TaskImage, {
   foreignKey: "taskId",
@@ -100,44 +101,6 @@ Task.belongsToMany(Poste, {
   otherKey: "posteId",
   as: "postes",
 });
-// Relation between employe and tache
-
-Compte.belongsToMany(Task, {
-  through: { model: tachesAFaire, unique: false },
-  foreignKey: "compteId",
-  otherKey: "tacheId",
-  as: "taches",
-});
-Task.belongsToMany(Compte, {
-  through: { model: tachesAFaire, unique: false },
-  foreignKey: "tacheId",
-  otherKey: "compteId",
-  as: "comptes",
-});
-// relation between tacheafaire and sous_tache
-
-tachesAFaire.belongsToMany(sous_tache, {
-  through: sous_taches_AFaire,
-  foreignKey: "tachesAFaireId",
-  otherKey: "sousTacheId",
-  as: "sous_taches",
-});
-sous_tache.belongsToMany(tachesAFaire, {
-  through: sous_taches_AFaire,
-  foreignKey: "sousTacheId",
-  otherKey: "tachesAFaireId",
-  as: "tachesAFaires",
-});
-
-//Relation entre tacheAFaire et occurrence_de_tache
-tachesAFaire.belongsTo(occurrence_de_tache, {
-  foreignKey: "occurrence_de_tacheId",
-  as: "occurrence_de_tache",
-});
-occurrence_de_tache.hasMany(tachesAFaire, {
-  foreignKey: "occurrence_de_tacheId",
-  as: "tachesAFaire",
-});
 
 task_priority.hasMany(occurrence_de_tache, {
   foreignKey: "taskPriorityId",
@@ -153,12 +116,73 @@ occurrence_de_tache.belongsTo(task_priority, {
   onUpdate: "CASCADE",
 });
 
+//Relation between compte and workday
+Compte.hasMany(work_day, {
+  foreignKey: "accountId",
+  as: "workDays",
+  onDelete: "CASCADE",
+});
+work_day.belongsTo(Compte, {
+  foreignKey: "accountId",
+  as: "account",
+});
+
+//Relation between workday and task/subtask
+work_day.hasMany(work_day_task, {
+  foreignKey: "workDayId",
+  as: "tasks",
+  onDelete: "CASCADE",
+});
+work_day_task.belongsTo(work_day, {
+  foreignKey: "workDayId",
+  as: "workDay",
+});
+
+work_day_task.belongsTo(Task, {
+  foreignKey: "taskId",
+  as: "task",
+});
+Task.hasMany(work_day_task, {
+  foreignKey: "taskId",
+  as: "workDayTasks",
+});
+
+work_day_task.belongsTo(occurrence_de_tache, {
+  foreignKey: "occurrenceId",
+  as: "occurrence",
+});
+occurrence_de_tache.hasMany(work_day_task, {
+  foreignKey: "occurrenceId",
+  as: "workDayTasks",
+});
+
+work_day_task.hasMany(work_day_sub_task, {
+  foreignKey: "workDayTaskId",
+  as: "subTasks",
+  onDelete: "CASCADE",
+});
+work_day_sub_task.belongsTo(work_day_task, {
+  foreignKey: "workDayTaskId",
+  as: "workDayTask",
+});
+
+work_day_sub_task.belongsTo(sous_tache, {
+  foreignKey: "subTaskId",
+  as: "subTask",
+  onDelete: "RESTRICT",
+});
+sous_tache.hasMany(work_day_sub_task, {
+  foreignKey: "subTaskId",
+  as: "workDaySubTasks",
+  onDelete: "RESTRICT",
+});
+
 let schemaEnsuredPromise = null;
 const originalAuthenticate = bd.authenticate.bind(bd);
 
 async function ensureTaskSchema() {
   await bd.query(
-    'ALTER TABLE IF EXISTS "Tasks" ADD COLUMN IF NOT EXISTS "taskPriorityId" INTEGER REFERENCES "task_priorities" ("id") ON UPDATE CASCADE ON DELETE SET NULL;'
+    'ALTER TABLE IF EXISTS "Tasks" ADD COLUMN IF NOT EXISTS "taskPriorityId" INTEGER REFERENCES "task_priorities" ("id") ON UPDATE CASCADE ON DELETE SET NULL;',
   );
   await TaskDocument.sync();
   await TaskLink.sync();
@@ -185,7 +209,8 @@ export {
   TaskPoste,
   occurrence_de_tache,
   sous_tache,
-  sous_taches_AFaire,
-  tachesAFaire,
   task_priority,
+  work_day,
+  work_day_task,
+  work_day_sub_task,
 };
