@@ -15,6 +15,7 @@ import {
   Task,
   occurrence_de_tache,
   sous_tache,
+  task_priority,
   work_day,
   work_day_task,
   work_day_sub_task,
@@ -23,8 +24,12 @@ import app from "../app.mjs";
 
 describe("Tests en lien avec les journées de travail", function () {
   const DATE = "2026-11-12";
-  let employe, autreEmploye, token, tache, occurrence, sousTache;
-  let day, autreDay, work_day_task, work_day_sub_task;
+  const EMAIL_EMPLOYE = "employe.work_day.vitest@example.com";
+  const EMAIL_AUTRE = "autre.work_day.vitest@example.com";
+  const TITRE_TACHE = "Vitest tâche journée";
+
+  let employe, autreEmploye, token, tache, priorite, occurrence, sousTache;
+  let day, autreDay, dayTask, daySubTask;
 
   function mine(date) {
     return request(app)
@@ -44,16 +49,19 @@ describe("Tests en lien avec les journées de travail", function () {
   });
 
   beforeEach(async function () {
+    await Compte.destroy({ where: { courriel: [EMAIL_EMPLOYE, EMAIL_AUTRE] } });
+    await Task.destroy({ where: { title: TITRE_TACHE } });
+
     employe = await Compte.create({
       prenom: "Jean",
       nom: "Test",
-      courriel: "employe.work_day.vitest@example.com",
+      courriel: EMAIL_EMPLOYE,
       motDePasse: "password123",
     });
     autreEmploye = await Compte.create({
       prenom: "Marie",
       nom: "Test",
-      courriel: "autre.work_day.vitest@example.com",
+      courriel: EMAIL_AUTRE,
       motDePasse: "password123",
     });
     token = jwt.sign(
@@ -62,13 +70,17 @@ describe("Tests en lien avec les journées de travail", function () {
       { expiresIn: "1h" },
     );
 
-    tache = await Task.create({ title: "Vitest tâche journée", room: "A-101" });
+    tache = await Task.create({ title: TITRE_TACHE, room: "A-101" });
+    priorite = await task_priority.create({
+      task_priority: "Normale",
+      weigth: 2,
+    });
     occurrence = await occurrence_de_tache.create({
       tacheId: tache.id,
       journee: "lundi",
       heureDebut: "08:00",
       heureFin: "09:00",
-      priorite: 3,
+      taskPriorityId: priorite.id,
     });
     sousTache = await sous_tache.create({
       tacheId: tache.id,
@@ -80,33 +92,43 @@ describe("Tests en lien avec les journées de travail", function () {
       accountId: autreEmploye.id,
       date: DATE,
     });
-    work_day_task = await work_day_task.create({
-      work_dayId: day.id,
+    dayTask = await work_day_task.create({
+      workDayId: day.id,
       taskId: tache.id,
       occurrenceId: occurrence.id,
     });
-    work_day_sub_task = await work_day_sub_task.create({
-      work_day_taskId: work_day_task.id,
+    daySubTask = await work_day_sub_task.create({
+      workDayTaskId: dayTask.id,
       subTaskId: sousTache.id,
     });
   });
 
   afterEach(async function () {
-    if (!day || !autreDay) return;
-    const dayIds = [day.id, autreDay.id];
-    const tasks = await work_day_task.findAll({
-      where: { work_dayId: dayIds },
-    });
-    const taskIds = tasks.map(function (t) {
-      return t.id;
-    });
-    await work_day_sub_task.destroy({ where: { work_day_taskId: taskIds } });
-    await work_day_task.destroy({ where: { work_dayId: dayIds } });
-    await work_day.destroy({ where: { id: dayIds } });
-    await sous_tache.destroy({ where: { id: sousTache.id } });
-    await occurrence_de_tache.destroy({ where: { id: occurrence.id } });
-    await Task.destroy({ where: { id: tache.id } });
-    await Compte.destroy({ where: { id: [employe.id, autreEmploye.id] } });
+    const dayIds = [day, autreDay].filter(Boolean).map((d) => d.id);
+    if (dayIds.length > 0) {
+      const tasks = await work_day_task.findAll({
+        where: { workDayId: dayIds },
+      });
+      const taskIds = tasks.map((t) => t.id);
+      if (taskIds.length > 0) {
+        await work_day_sub_task.destroy({ where: { workDayTaskId: taskIds } });
+      }
+      await work_day_task.destroy({ where: { workDayId: dayIds } });
+      await work_day.destroy({ where: { id: dayIds } });
+    }
+    if (sousTache) await sous_tache.destroy({ where: { id: sousTache.id } });
+    if (occurrence) {
+      await occurrence_de_tache.destroy({ where: { id: occurrence.id } });
+    }
+    if (priorite) await task_priority.destroy({ where: { id: priorite.id } });
+    if (tache) await Task.destroy({ where: { id: tache.id } });
+    const compteIds = [employe, autreEmploye].filter(Boolean).map((c) => c.id);
+    if (compteIds.length > 0) {
+      await Compte.destroy({ where: { id: compteIds } });
+    }
+
+    employe = autreEmploye = tache = priorite = occurrence = sousTache = undefined;
+    day = autreDay = dayTask = daySubTask = undefined;
   });
 
   afterAll(async function () {
@@ -130,8 +152,8 @@ describe("Tests en lien avec les journées de travail", function () {
 
   it("retourne la journée avec les trois niveaux de commentaires", async function () {
     await day.update({ comment: "Note du jour" });
-    await work_day_task.update({ comment: "Note de tâche" });
-    await work_day_sub_task.update({ comment: "Note de sous-tâche" });
+    await dayTask.update({ comment: "Note de tâche" });
+    await daySubTask.update({ comment: "Note de sous-tâche" });
 
     const response = await mine(DATE);
     expect(response.status).toBe(200);
@@ -148,12 +170,12 @@ describe("Tests en lien avec les journées de travail", function () {
       comment: "  Journée calme  ",
       tasks: [
         {
-          id: work_day_task.id,
+          id: dayTask.id,
           isCompleted: true,
           comment: "Fait",
           subTasks: [
             {
-              id: work_day_sub_task.id,
+              id: daySubTask.id,
               isCompleted: true,
               comment: "Filtre changé",
             },
@@ -164,24 +186,24 @@ describe("Tests en lien avec les journées de travail", function () {
     expect(response.status).toBe(200);
 
     await day.reload();
-    await work_day_task.reload();
-    await work_day_sub_task.reload();
+    await dayTask.reload();
+    await daySubTask.reload();
     expect(day.comment).toBe("Journée calme");
-    expect(work_day_task.isCompleted).toBe(true);
-    expect(work_day_task.comment).toBe("Fait");
-    expect(work_day_sub_task.isCompleted).toBe(true);
-    expect(work_day_sub_task.comment).toBe("Filtre changé");
+    expect(dayTask.isCompleted).toBe(true);
+    expect(dayTask.comment).toBe("Fait");
+    expect(daySubTask.isCompleted).toBe(true);
+    expect(daySubTask.comment).toBe("Filtre changé");
   });
 
   it("ne supprime pas un commentaire absent de la requête", async function () {
-    await work_day_task.update({ comment: "À garder" });
+    await dayTask.update({ comment: "À garder" });
     await save(day.id, {
-      tasks: [{ id: work_day_task.id, isCompleted: true }],
+      tasks: [{ id: dayTask.id, isCompleted: true }],
     });
 
-    await work_day_task.reload();
-    expect(work_day_task.isCompleted).toBe(true);
-    expect(work_day_task.comment).toBe("À garder");
+    await dayTask.reload();
+    expect(dayTask.isCompleted).toBe(true);
+    expect(dayTask.comment).toBe("À garder");
   });
 
   it("refuse les modifications après la soumission", async function () {

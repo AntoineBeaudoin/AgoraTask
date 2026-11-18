@@ -9,11 +9,13 @@ import {
   TaskLink,
   Compte,
   occurrence_de_tache,
-  tachesAFaire,
   sous_tache,
-  sous_taches_AFaire,
   task_priority,
+  work_day,
+  work_day_task,
+  work_day_sub_task,
 } from "../models/bd_index.mjs";
+import { todayString } from "../utils/dateHelpers.mjs";
 import app from "../app.mjs";
 
 describe("Tests des améliorations des tâches (PDF, liens externes et priorités dynamiques)", () => {
@@ -21,8 +23,9 @@ describe("Tests des améliorations des tâches (PDF, liens externes et priorité
   let employe, token;
 
   async function cleanDatabase() {
-    await sous_taches_AFaire.destroy({ where: {} });
-    await tachesAFaire.destroy({ where: {} });
+    await work_day_sub_task.destroy({ where: {} });
+    await work_day_task.destroy({ where: {} });
+    await work_day.destroy({ where: {} });
     await occurrence_de_tache.destroy({ where: {} });
     await sous_tache.destroy({ where: {} });
     await TaskImage.destroy({ where: {} });
@@ -194,10 +197,14 @@ describe("Tests des améliorations des tâches (PDF, liens externes et priorité
       expect(task2.documents).toHaveLength(1);
       expect(task2.documents[0].filename).toBe("doc2.pdf");
 
-      await tachesAFaire.create({
-        tacheId: task1.id,
-        compteId: employe.id,
-        occurrence_de_tacheId: task1.occurrences[0].id,
+      const journee = await work_day.create({
+        accountId: employe.id,
+        date: todayString(),
+      });
+      await work_day_task.create({
+        workDayId: journee.id,
+        taskId: task1.id,
+        occurrenceId: task1.occurrences[0].id,
       });
 
       const mineResponse = await request(app)

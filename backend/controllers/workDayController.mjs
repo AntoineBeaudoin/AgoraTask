@@ -104,7 +104,7 @@ export async function saveDay(req, res, next) {
       const items = Array.isArray(req.body.tasks) ? req.body.tasks : [];
       for (let i = 0; i < items.length; i++) {
         const task = await work_day_task.findOne({
-          where: { id: items[i].id, work_dayId: day.id },
+          where: { id: items[i].id, workDayId: day.id },
           transaction: t,
         });
         if (!task) continue;
@@ -121,7 +121,7 @@ export async function saveDay(req, res, next) {
         const subs = Array.isArray(items[i].subTasks) ? items[i].subTasks : [];
         for (let j = 0; j < subs.length; j++) {
           const sub = await work_day_sub_task.findOne({
-            where: { id: subs[j].id, work_day_taskId: task.id },
+            where: { id: subs[j].id, workDayTaskId: task.id },
             transaction: t,
           });
           if (!sub) continue;
