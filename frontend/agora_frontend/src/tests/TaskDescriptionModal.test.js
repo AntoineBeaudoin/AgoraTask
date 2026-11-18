@@ -33,6 +33,23 @@ describe('TaskDescriptionModal.vue', () => {
             }
         ],
 
+        documents: [
+            {
+                id: 1,
+                filename: 'protocole.pdf',
+                path: 'https://example.com/protocole.pdf',
+                mimeType: 'application/pdf'
+            }
+        ],
+
+        externalLinks: [
+            {
+                id: 1,
+                title: 'Guide externe',
+                url: 'https://example.com/guide'
+            }
+        ],
+
         occurrences: [
             {
                 journee: 'vendredi',
@@ -266,7 +283,9 @@ describe('TaskDescriptionModal.vue', () => {
             ...mockTask,
             occurrences: [],
             sous_taches: [],
-            images: []
+            images: [],
+            documents: [],
+            externalLinks: []
         }
 
         createWrapper()
@@ -281,6 +300,8 @@ describe('TaskDescriptionModal.vue', () => {
         expect(
             modal.querySelector('.imgIconDisplay')
         ).toBeNull()
+        expect(modal.querySelector('.pdf-preview-frame')).toBeNull()
+        expect(modal.querySelector('.external-doc-link')).toBeNull()
     })
 
     test('devrait afficher les valeurs par défaut lorsque les informations d’une occurrence sont manquantes', async () => {
@@ -328,5 +349,32 @@ describe('TaskDescriptionModal.vue', () => {
         expect(modal.textContent).toContain(
             'Aucune description'
         )
+    })
+
+    test('devrait afficher l’aperçu PDF intégré et permettre de zoomer', async () => {
+        createWrapper()
+        await nextTick()
+
+        const iframe = document.body.querySelector('#taskModal .pdf-preview-frame')
+        expect(iframe).not.toBeNull()
+        expect(iframe.getAttribute('src')).toContain('https://example.com/protocole.pdf#zoom=100')
+
+        const zoomInBtn = document.body.querySelector('#taskModal .pdf-zoom-in')
+        zoomInBtn.click()
+        await nextTick()
+
+        expect(iframe.getAttribute('src')).toContain('#zoom=125')
+    })
+
+    test('devrait afficher les liens externes s’ouvrant dans un nouvel onglet', async () => {
+        createWrapper()
+        await nextTick()
+
+        const link = document.body.querySelector('#taskModal .external-doc-link')
+        expect(link).not.toBeNull()
+        expect(link.textContent).toContain('Guide externe')
+        expect(link.getAttribute('href')).toBe('https://example.com/guide')
+        expect(link.getAttribute('target')).toBe('_blank')
+        expect(link.getAttribute('rel')).toContain('noopener')
     })
 })

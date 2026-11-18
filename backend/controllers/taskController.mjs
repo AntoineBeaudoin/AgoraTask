@@ -492,6 +492,28 @@ export async function getAllTasks(req, res, next) {
   }
 }
 
+function buildEmployeeTaskItem(assignment, task, subTasks, progressMap) {
+  const mySubTasks = subTasks
+    .filter((st) => st.tacheId === assignment.tacheId)
+    .map((st) => ({
+      id: st.id,
+      titre: st.titre,
+      description: st.description,
+      isCompleted: progressMap[`${assignment.id}-${st.id}`] === true,
+    }));
+  const occ = assignment.occurrence_de_tache;
+  return {
+    ...task.toJSON(),
+    tacheAFaireId: assignment.id,
+    isCompleted: assignment.isCompleted,
+    commentaire: assignment.commentaire,
+    journee: occ ? occ.journee : null,
+    heureDebut: occ ? occ.heureDebut : null,
+    heureFin: occ ? occ.heureFin : null,
+    sousTaches: mySubTasks,
+  };
+}
+
 /**
  * Retourne les tâches de la journée de travail du compte connecté.
  * La date peut être précisée avec ?date=YYYY-MM-DD (aujourd'hui par défaut).

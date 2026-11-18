@@ -327,7 +327,7 @@ describe("Tests des tâches de l'employé", function () {
           journee: "lundi",
           heureDebut: "08:00:00",
           heureFin: "09:00:00",
-          priorite: 3,
+          taskPriorityId: priorite.id,
         });
 
         expect(

@@ -3,6 +3,8 @@ import {
   Compte,
   Task,
   TaskImage,
+  TaskDocument,
+  TaskLink,
   Poste,
   occurrence_de_tache,
   sous_tache,
@@ -26,6 +28,8 @@ async function deleteTables() {
   await occurrence_de_tache.destroy({ where: {} });
   await sous_tache.destroy({ where: {} });
   await TaskImage.destroy({ where: {} });
+  await TaskDocument.destroy({ where: {} });
+  await TaskLink.destroy({ where: {} });
   await Compte.destroy({ where: {} });
   await Task.destroy({ where: {} });
   await Poste.destroy({ where: {} });
@@ -308,6 +312,7 @@ const seedDatabase = async (req, res) => {
       recurring: true,
       automaticAssignment: false,
       archived: false,
+      taskPriorityId: taskPrioritiesId[1],
     });
 
     const tacheBoxe = await Task.create({
@@ -317,6 +322,7 @@ const seedDatabase = async (req, res) => {
       recurring: true,
       automaticAssignment: false,
       archived: false,
+      taskPriorityId: taskPrioritiesId[1],
     });
 
     const tacheAppariteur = await Task.create({
@@ -327,6 +333,7 @@ const seedDatabase = async (req, res) => {
       recurring: true,
       automaticAssignment: false,
       archived: false,
+      taskPriorityId: taskPrioritiesId[1],
     });
 
     const tacheEntretienGeneral = await Task.create({
@@ -337,6 +344,7 @@ const seedDatabase = async (req, res) => {
       recurring: true,
       automaticAssignment: false,
       archived: false,
+      taskPriorityId: taskPrioritiesId[1],
     });
 
     const tacheESJM = await Task.create({
@@ -346,6 +354,7 @@ const seedDatabase = async (req, res) => {
       recurring: true,
       automaticAssignment: false,
       archived: false,
+      taskPriorityId: taskPrioritiesId[1],
     });
 
     await TaskPoste.create({
