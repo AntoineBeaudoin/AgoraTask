@@ -30,6 +30,11 @@ const work_day_task = bd.define(
       allowNull: false,
       defaultValue: false,
     },
+    isAutomatic: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
   },
   {
     indexes: [
