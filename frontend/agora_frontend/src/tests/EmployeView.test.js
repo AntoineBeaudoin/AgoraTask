@@ -78,6 +78,7 @@ describe('EmployeView.vue', () => {
 
     useTaskStore.mockReturnValue(taskStore)
     useModalStore.mockReturnValue(modalStore)
+    window.print = vi.fn()
   })
 
   function createWrapper() {
@@ -90,6 +91,7 @@ describe('EmployeView.vue', () => {
     wrappers.forEach((w) => w.unmount())
     wrappers = []
     document.body.innerHTML = ''
+    vi.restoreAllMocks()
     vi.clearAllMocks()
   })
 
@@ -159,4 +161,79 @@ describe('EmployeView.vue', () => {
   expect(taskStore.saveProgress).toHaveBeenCalledTimes(1)
   expect(taskStore.dailyComment).toBe(commentaire)
 })
+
+  test('sauvegarde automatiquement lorsqu’une case de tâche ou de sous-tâche est cochée ou décochée', async () => {
+    const savedStates = []
+    taskStore.saveProgress.mockImplementation(async () => {
+      savedStates.push({
+        taskCompleted: taskStore.myTasks[0].isCompleted,
+        subTaskCompleted: taskStore.myTasks[0].sousTaches[0].isCompleted,
+      })
+      return true
+    })
+
+    const wrapper = createWrapper()
+    await nextTick()
+
+    const taskCheckbox = wrapper.find('#task-101')
+    const subCheckbox = wrapper.find('#sub-101-1')
+
+    await taskCheckbox.setValue(true)
+    await taskCheckbox.setValue(false)
+    await subCheckbox.setValue(true)
+    await subCheckbox.setValue(false)
+
+    expect(taskStore.saveProgress).toHaveBeenCalledTimes(4)
+    expect(savedStates).toEqual([
+      { taskCompleted: true, subTaskCompleted: false },
+      { taskCompleted: false, subTaskCompleted: false },
+      { taskCompleted: false, subTaskCompleted: true },
+      { taskCompleted: false, subTaskCompleted: false },
+    ])
+  })
+
+  test('déclenche l’impression de la page lorsqu’on clique sur le bouton Imprimer', async () => {
+    const wrapper = createWrapper()
+    await nextTick()
+
+    const printBtn = wrapper.find('button.btn-primary.mb-3')
+
+    expect(printBtn.exists()).toBe(true)
+
+    await printBtn.trigger('click')
+
+    await new Promise(resolve => setTimeout(resolve, 50))
+    await nextTick()
+
+    expect(window.print).toHaveBeenCalledTimes(1)
+  })
+
+  test('affiche tous les détails des tâches et masque les boutons pendant l’impression', async () => {
+    const wrapper = createWrapper()
+    await nextTick()
+
+    expect(wrapper.find('.task-details').exists()).toBe(false)
+
+    const printBtn = wrapper.find('button.btn-primary.mb-3')
+    await printBtn.trigger('click')
+
+    await nextTick()
+
+    expect(wrapper.find('.task-details').exists()).toBe(true)
+
+    const taskDetails = wrapper.find('.task-details')
+
+    expect(taskDetails.text()).toContain('Piscine')
+    expect(taskDetails.text()).toContain('Vérifier les installations selon le PDF.')
+
+    const buttons = wrapper.findAll('button')
+
+    expect(buttons.length).toBeGreaterThan(0)
+
+    buttons.forEach(button => {
+      expect(button.classes()).toContain('btn')
+    })
+
+    expect(wrapper.find('.task-details').exists()).toBe(true)
+  })
 })

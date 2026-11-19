@@ -5,9 +5,10 @@ import {
   TaskLink,
   occurrence_de_tache,
   sous_tache,
-  tachesAFaire,
-  sous_taches_AFaire,
   task_priority,
+  work_day,
+  work_day_task,
+  work_day_sub_task,
 } from "../models/bd_index.mjs";
 import { put, del } from "@vercel/blob";
 import { Op } from "sequelize";
@@ -22,6 +23,7 @@ import {
   resolveTaskPriorityId,
   validateOccurrencesForPriority,
 } from "../utils/taskHelpers.mjs";
+import { todayString, validerDate } from "../utils/dateHelpers.mjs";
 
 dotenv.config();
 
@@ -65,7 +67,7 @@ function getImageFiles(req) {
 
 function getDocumentFiles(req) {
   return (req.files ?? []).filter(
-    (file) => file.fieldname === "documents" || file.fieldname === "pdf"
+    (file) => file.fieldname === "documents" || file.fieldname === "pdf",
   );
 }
 
@@ -87,16 +89,19 @@ async function safeDeleteFromStorage(url) {
     await del(url);
   } catch (err) {
     if (process.env.NODE_ENV !== "test") {
-      console.error(`Erreur lors de la suppression sur Vercel Blob (${url}):`, err);
+      console.error(
+        `Erreur lors de la suppression sur Vercel Blob (${url}):`,
+        err,
+      );
     }
   }
 }
 
 /**
  * Crée les occurrences d'une tâche
- * @param {*} taskId Id de la tâche 
- * @param {*} occurrences JSON des occurences de la tâche
- * @returns 
+ * @param {*} taskId Id de la tâche
+ * @param {*} occurrences JSON des occurrences de la tâche
+ * @returns
  */
 async function createOccurrences(taskId, occurrences) {
   if (!occurrences || occurrences.length < 1) return;
@@ -109,8 +114,8 @@ async function createOccurrences(taskId, occurrences) {
         heureFin: occ.heureFin || null,
         taskPriorityId: occ.taskPriorityId ?? occ.priority?.id,
         isRequired: occ.isRequired ?? true,
-      })
-    )
+      }),
+    ),
   );
 }
 
@@ -118,7 +123,7 @@ async function createOccurrences(taskId, occurrences) {
  * Crée les sous tâches
  * @param {*} taskId Id de la tâche
  * @param {*} subTasks JSON des sous tâches de la tâche
- * @returns 
+ * @returns
  */
 async function createSubTasks(taskId, subTasks) {
   if (!subTasks || subTasks.length < 1) return;
@@ -128,8 +133,8 @@ async function createSubTasks(taskId, subTasks) {
         tacheId: taskId,
         titre: st.titre,
         description: st.description || null,
-      })
-    )
+      }),
+    ),
   );
 }
 
@@ -141,8 +146,8 @@ async function createExternalLinks(taskId, links) {
         taskId,
         title: link.title || link.url,
         url: link.url,
-      })
-    )
+      }),
+    ),
   );
 }
 
@@ -157,7 +162,7 @@ async function addTaskImages(req, task) {
     const blobUrl = await uploadToStorage(
       `task/${task.id}/${file.originalname}`,
       file.buffer,
-      file.mimetype
+      file.mimetype,
     );
     await TaskImage.create({
       taskId: task.id,
@@ -174,7 +179,7 @@ async function addTaskDocuments(req, task) {
     const blobUrl = await uploadToStorage(
       `task/${task.id}/documents/${file.originalname}`,
       file.buffer,
-      file.mimetype || "application/pdf"
+      file.mimetype || "application/pdf",
     );
     await TaskDocument.create({
       taskId: task.id,
@@ -199,7 +204,7 @@ async function copyExistingImages(originalTask, newTask) {
     const blobUrl = await uploadToStorage(
       `task/${newTask.id}/${image.filename}`,
       imageBuffer,
-      image.mimeType
+      image.mimeType,
     );
     await TaskImage.create({
       taskId: newTask.id,
@@ -242,10 +247,15 @@ async function syncExistingImages(req, taskId) {
 }
 
 async function syncExistingDocuments(req, taskId) {
-  if (req.body.existingDocumentIds === undefined && req.body.documents === undefined) {
+  if (
+    req.body.existingDocumentIds === undefined &&
+    req.body.documents === undefined
+  ) {
     return;
   }
-  const explicitIds = parseJsonField(req.body.existingDocumentIds, []).map(Number);
+  const explicitIds = parseJsonField(req.body.existingDocumentIds, []).map(
+    Number,
+  );
   const docIds = parseJsonField(req.body.documents, [])
     .filter((d) => d?.id)
     .map((d) => Number(d.id));
@@ -260,8 +270,12 @@ async function syncExistingDocuments(req, taskId) {
 }
 
 async function syncTaskOccurrences(taskId, occurrences) {
-  const existingOccurrences = await occurrence_de_tache.findAll({ where: { tacheId: taskId } });
-  const existingById = new Map(existingOccurrences.map((occ) => [Number(occ.id), occ]));
+  const existingOccurrences = await occurrence_de_tache.findAll({
+    where: { tacheId: taskId },
+  });
+  const existingById = new Map(
+    existingOccurrences.map((occ) => [Number(occ.id), occ]),
+  );
   const retainedIds = [];
   for (const occ of occurrences) {
     const existing = existingById.get(Number(occ.id));
@@ -276,14 +290,62 @@ async function syncTaskOccurrences(taskId, occurrences) {
       await existing.update(payload);
       retainedIds.push(existing.id);
     } else {
-      const created = await occurrence_de_tache.create({ tacheId: taskId, ...payload });
+      const created = await occurrence_de_tache.create({
+        tacheId: taskId,
+        ...payload,
+      });
       retainedIds.push(created.id);
     }
   }
-  const removed = existingOccurrences.filter((occ) => !retainedIds.includes(occ.id));
+  const removed = existingOccurrences.filter(
+    (occ) => !retainedIds.includes(occ.id),
+  );
   for (const occ of removed) {
-    const refCount = await tachesAFaire.count({ where: { occurrence_de_tacheId: occ.id } });
+    // Une occurrence déjà utilisée dans une journée de travail est conservée
+    const refCount = await work_day_task.count({
+      where: { occurrenceId: occ.id },
+    });
     if (refCount === 0) await occ.destroy();
+  }
+}
+
+/**
+ * Synchronise les sous-tâches d'une tâche en les mettant à jour sur place
+ * (comme pour les occurrences) afin de ne pas perdre l'historique des
+ * journées de travail.
+ */
+async function syncTaskSubTasks(taskId, subTasks) {
+  const existingSubTasks = await sous_tache.findAll({
+    where: { tacheId: taskId },
+  });
+  const existingById = new Map(
+    existingSubTasks.map((st) => [Number(st.id), st]),
+  );
+  const retainedIds = [];
+  for (const st of subTasks) {
+    const existing = existingById.get(Number(st.id));
+    if (existing) {
+      await existing.update({
+        titre: st.titre,
+        description: st.description || null,
+      });
+      retainedIds.push(existing.id);
+    } else {
+      const created = await sous_tache.create({
+        tacheId: taskId,
+        titre: st.titre,
+        description: st.description || null,
+      });
+      retainedIds.push(created.id);
+    }
+  }
+  const removed = existingSubTasks.filter((st) => !retainedIds.includes(st.id));
+  for (const st of removed) {
+    // Une sous-tâche déjà utilisée dans une journée de travail est conservée
+    const refCount = await work_day_sub_task.count({
+      where: { subTaskId: st.id },
+    });
+    if (refCount === 0) await st.destroy();
   }
 }
 
@@ -293,12 +355,17 @@ async function prepareValidatedTaskInput(req) {
   const rawOccurrences = parseJsonField(req.body.occurrences, []);
   const subTasks = parseJsonField(req.body.subTasks, []);
   const externalLinks = normalizeExternalLinks(
-    parseJsonField(req.body.externalLinks ?? req.body.links, [])
+    parseJsonField(req.body.externalLinks ?? req.body.links, []),
   );
   const priorities = await task_priority.findAll();
-  const priorityId = resolveTaskPriorityId(req.body.taskPriorityId, rawOccurrences);
+  const priorityId = resolveTaskPriorityId(
+    req.body.taskPriorityId,
+    rawOccurrences,
+  );
   const occurrences =
-    priorities.length > 0 || req.body.taskPriorityId !== undefined || rawOccurrences.length > 0
+    priorities.length > 0 ||
+    req.body.taskPriorityId !== undefined ||
+    rawOccurrences.length > 0
       ? validateOccurrencesForPriority(priorityId, rawOccurrences, priorities)
       : [];
   return { priorityId, occurrences, subTasks, externalLinks };
@@ -350,7 +417,7 @@ export async function createTask(req, res, next) {
 }
 
 /**
- * Retourne les occurences liés à une tâche.
+ * Retourne les occurrences liés à une tâche.
  *
  * @async
  * @param {*} req La requête envoyée par le frontend.
@@ -358,7 +425,7 @@ export async function createTask(req, res, next) {
  * @param {*} next Le prochain middleware à appeler, en cas d'erreur.
  * @returns {unknown} Retourne le statut de la requête au client.
  */
-export async function getTaskOccurences(req, res, next) {
+export async function getTaskOccurrences(req, res, next) {
   const id = req.params.id;
   try {
     const task = await Task.findByPk(id);
@@ -366,16 +433,18 @@ export async function getTaskOccurences(req, res, next) {
       return res.status(404).json({
         status: 404,
         message: "Tâche introuvable",
-        path: `/api/task/occurences$/{id}`,
+        path: `/api/task/occurrences$/{id}`,
         timestamp: new Date().toISOString(),
       });
     }
-    const occurences = await occurrence_de_tache.findAll({ where: { tacheId: id } });
+    const occurrences = await occurrence_de_tache.findAll({
+      where: { tacheId: id },
+    });
     return res.status(200).json({
       status: 200,
-      message: "Occurences de la tâche récupérés avec succès.",
-      data: occurences,
-      path: `/api/task/occurences$/{id}`,
+      message: "Occurrences de la tâche récupérés avec succès.",
+      data: occurrences,
+      path: `/api/task/occurrences$/{id}`,
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
@@ -433,41 +502,65 @@ function buildEmployeeTaskItem(assignment, task, subTasks, progressMap) {
   };
 }
 
+/**
+ * Retourne les tâches de la journée de travail du compte connecté.
+ * La date peut être précisée avec ?date=YYYY-MM-DD (aujourd'hui par défaut).
+ */
 export async function getMyTasks(req, res, next) {
   try {
-    const assignments = await tachesAFaire.findAll({
-      where: { compteId: req.user.id },
-      include: { model: occurrence_de_tache, as: "occurrence_de_tache" },
-      order: [
-        [{ model: occurrence_de_tache, as: "occurrence_de_tache" }, "heureDebut", "ASC"],
-        ["id", "ASC"],
-      ],
-    });
-    const taskIds = assignments.map((a) => a.tacheId);
-    const assignmentIds = assignments.map((a) => a.id);
-    const tasks = await Task.findAll({
-      where: { id: taskIds, archived: false },
+    const date = req.query.date ?? todayString();
+    if (!validerDate(date, next)) return;
+
+    const workTasks = await work_day_task.findAll({
       include: [
-        { model: TaskImage, as: "images" },
-        { model: TaskDocument, as: "documents" },
-        { model: TaskLink, as: "externalLinks" },
-        { model: task_priority, as: "priority" },
+        {
+          model: work_day,
+          as: "workDay",
+          where: { accountId: req.user.id, date },
+          attributes: [],
+        },
+        {
+          model: Task,
+          as: "task",
+          where: { archived: false },
+          include: [
+            { model: TaskImage, as: "images" },
+            { model: TaskDocument, as: "documents" },
+            { model: TaskLink, as: "externalLinks" },
+            { model: task_priority, as: "priority" },
+          ],
+        },
+        { model: occurrence_de_tache, as: "occurrence" },
+        {
+          model: work_day_sub_task,
+          as: "subTasks",
+          include: [{ model: sous_tache, as: "subTask" }],
+        },
       ],
     });
-    const tasksById = Object.fromEntries(tasks.map((t) => [t.id, t]));
-    const subTasks = await sous_tache.findAll({
-      where: { tacheId: taskIds },
-      order: [["id", "ASC"]],
+
+    const data = workTasks.map((wt) => {
+      const subTasks = [...wt.subTasks].sort((a, b) => a.id - b.id);
+      return {
+        ...wt.task.toJSON(),
+        // Le nom tacheAFaireId est conservé pour ne pas casser le frontend
+        tacheAFaireId: wt.id,
+        isCompleted: wt.isCompleted,
+        commentaire: wt.comment,
+        journee: wt.occurrence ? wt.occurrence.journee : null,
+        heureDebut: wt.occurrence ? wt.occurrence.heureDebut : null,
+        heureFin: wt.occurrence ? wt.occurrence.heureFin : null,
+        sousTaches: subTasks.map((s) => ({
+          id: s.subTaskId,
+          titre: s.subTask ? s.subTask.titre : null,
+          description: s.subTask ? s.subTask.description : null,
+          isCompleted: s.isCompleted,
+        })),
+      };
     });
-    const progressRows = await sous_taches_AFaire.findAll({
-      where: { tachesAFaireId: assignmentIds },
-    });
-    const progressMap = Object.fromEntries(
-      progressRows.map((r) => [`${r.tachesAFaireId}-${r.sousTacheId}`, r.isCompleted])
-    );
-    const data = assignments
-      .filter((a) => Boolean(tasksById[a.tacheId]))
-      .map((a) => buildEmployeeTaskItem(a, tasksById[a.tacheId], subTasks, progressMap));
+
+    data.sort((a, b) => (a.heureDebut ?? "").localeCompare(b.heureDebut ?? ""));
+
     return res.status(200).json({
       status: 200,
       message: "Tâches récupérées avec succès.",
@@ -480,44 +573,68 @@ export async function getMyTasks(req, res, next) {
   }
 }
 
-async function saveSubTaskProgress(assignment, subs, transaction) {
-  for (const subItem of subs) {
-    const sub = await sous_tache.findOne({
-      where: { id: subItem.id, tacheId: assignment.tacheId },
-      transaction,
-    });
-    if (!sub) continue;
-    const [record] = await sous_taches_AFaire.findOrCreate({
-      where: { tachesAFaireId: assignment.id, sousTacheId: sub.id },
-      defaults: { isCompleted: false },
-      transaction,
-    });
-    await record.update({ isCompleted: subItem.isCompleted === true }, { transaction });
-  }
-}
-
+/**
+ * Enregistre la progression (statut, commentaire, sous-tâches) des tâches
+ * de la journée de travail du compte connecté.
+ * `tacheAFaireId` correspond maintenant à l'id d'un work_day_task.
+ */
 export async function saveProgress(req, res, next) {
   try {
     const items = req.body.tasks;
     if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ status: 400, message: "Aucune tâche à enregistrer." });
+      return res
+        .status(400)
+        .json({ status: 400, message: "Aucune tâche à enregistrer." });
     }
-    await bd.transaction(async (t) => {
-      for (const item of items) {
-        const assignment = await tachesAFaire.findOne({
-          where: { id: item.tacheAFaireId, compteId: req.user.id },
+
+    await bd.transaction(async function (t) {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (!item || !item.tacheAFaireId) continue;
+
+        // Le include sur workDay garantit que la tâche appartient au compte connecté
+        const workTask = await work_day_task.findOne({
+          where: { id: item.tacheAFaireId },
+          include: [
+            {
+              model: work_day,
+              as: "workDay",
+              where: { accountId: req.user.id },
+              attributes: [],
+            },
+          ],
           transaction: t,
         });
-        if (!assignment) continue;
-        const comment = item.commentaire ? String(item.commentaire).trim().slice(0, 1000) : null;
-        await assignment.update(
-          { isCompleted: item.isCompleted === true, commentaire: comment || null },
-          { transaction: t }
+        if (!workTask) continue;
+
+        const comment = item.commentaire
+          ? String(item.commentaire).trim().slice(0, 1000)
+          : null;
+
+        await workTask.update(
+          {
+            isCompleted: item.isCompleted === true,
+            comment: comment || null,
+          },
+          { transaction: t },
         );
+
         const subs = Array.isArray(item.sousTaches) ? item.sousTaches : [];
-        await saveSubTaskProgress(assignment, subs, t);
+        for (let j = 0; j < subs.length; j++) {
+          const sub = await work_day_sub_task.findOne({
+            where: { workDayTaskId: workTask.id, subTaskId: subs[j].id },
+            transaction: t,
+          });
+          if (!sub) continue;
+
+          await sub.update(
+            { isCompleted: subs[j].isCompleted === true },
+            { transaction: t },
+          );
+        }
       }
     });
+
     return res.status(200).json({
       status: 200,
       message: "Progression enregistrée.",
@@ -540,7 +657,7 @@ async function applyTaskUpdates(req, task) {
   const rawOccurrences = parseJsonField(req.body.occurrences, []);
   const priorityId = resolveTaskPriorityId(
     req.body.taskPriorityId ?? task.taskPriorityId,
-    rawOccurrences
+    rawOccurrences,
   );
   await task.update({
     title,
@@ -551,7 +668,11 @@ async function applyTaskUpdates(req, task) {
     taskPriorityId: priorityId,
   });
   if (hasOccOrPrio) {
-    const occurrences = validateOccurrencesForPriority(priorityId, rawOccurrences, priorities);
+    const occurrences = validateOccurrencesForPriority(
+      priorityId,
+      rawOccurrences,
+      priorities,
+    );
     await syncTaskOccurrences(task.id, occurrences);
   }
 }
@@ -559,12 +680,11 @@ async function applyTaskUpdates(req, task) {
 async function applyTaskCollectionsUpdate(req, task) {
   if (req.body.subTasks !== undefined) {
     const subTasks = parseJsonField(req.body.subTasks, []);
-    await sous_tache.destroy({ where: { tacheId: task.id } });
-    await createSubTasks(task.id, subTasks);
+    await syncTaskSubTasks(task.id, subTasks);
   }
   if (req.body.externalLinks !== undefined || req.body.links !== undefined) {
     const links = normalizeExternalLinks(
-      parseJsonField(req.body.externalLinks ?? req.body.links, [])
+      parseJsonField(req.body.externalLinks ?? req.body.links, []),
     );
     await TaskLink.destroy({ where: { taskId: task.id } });
     await createExternalLinks(task.id, links);
@@ -580,7 +700,9 @@ export async function replaceTask(req, res, next) {
   try {
     const task = await Task.findOne({ where: { id, archived: false } });
     if (!task) {
-      return res.status(404).json({ status: 404, message: "Tâche introuvable." });
+      return res
+        .status(404)
+        .json({ status: 404, message: "Tâche introuvable." });
     }
     await applyTaskUpdates(req, task);
     await applyTaskCollectionsUpdate(req, task);
@@ -642,7 +764,9 @@ export async function duplicateTask(req, res, next) {
       include: TASK_RELATIONS_INCLUDE,
     });
     if (!originalTask) {
-      return res.status(404).json({ status: 404, message: "Tâche introuvable." });
+      return res
+        .status(404)
+        .json({ status: 404, message: "Tâche introuvable." });
     }
     const newTitle = await computeNextCopyTitle(originalTask.title);
     await validateTaskDoesNotAlreadyExist(newTitle, originalTask.room);

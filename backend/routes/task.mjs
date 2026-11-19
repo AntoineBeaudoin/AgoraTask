@@ -15,7 +15,7 @@ const upload = multer({
 
 router.get("/list", taskController.getAllTasks);
 router.get("/mine", isConnected, taskController.getMyTasks);
-router.get("/occurences/:id", isConnected, taskController.getTaskOccurences);
+router.get("/occurrences/:id", isConnected, taskController.getTaskOccurrences);
 router.patch("/progress", isConnected, taskController.saveProgress);
 router.post("/add", upload.any(), taskController.createTask);
 router.put("/:id", upload.any(), taskController.replaceTask);
