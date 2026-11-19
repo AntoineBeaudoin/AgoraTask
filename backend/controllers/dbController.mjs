@@ -3,13 +3,16 @@ import {
   Compte,
   Task,
   TaskImage,
+  TaskDocument,
+  TaskLink,
   Poste,
   occurrence_de_tache,
   sous_tache,
   TaskPoste,
-  tachesAFaire,
-  sous_taches_AFaire,
-  task_priority
+  task_priority,
+  work_day,
+  work_day_task,
+  work_day_sub_task,
 } from "../models/bd_index.mjs";
 
 let taskPrioritiesId = [];
@@ -18,27 +21,77 @@ let taskPrioritiesId = [];
  * Retire l'entierté des tables de la base de donnée
  */
 async function deleteTables() {
-  await sous_taches_AFaire.destroy({ where: {} });
-  await tachesAFaire.destroy({ where: {} });
+  await work_day_sub_task.destroy({ where: {} });
+  await work_day_task.destroy({ where: {} });
+  await work_day.destroy({ where: {} });
   await TaskPoste.destroy({ where: {} });
   await occurrence_de_tache.destroy({ where: {} });
   await sous_tache.destroy({ where: {} });
   await TaskImage.destroy({ where: {} });
+  await TaskDocument.destroy({ where: {} });
+  await TaskLink.destroy({ where: {} });
   await Compte.destroy({ where: {} });
   await Task.destroy({ where: {} });
   await Poste.destroy({ where: {} });
   await task_priority.destroy({ where: {} });
 }
 
-async function seedTaskPriorities(){
+async function seedTaskPriorities() {
+  taskPrioritiesId = [];
   let taskPriorities = [
-    await task_priority.create({task_priority: "Important", weigth: 1}),
-    await task_priority.create({task_priority: "Normale", weigth: 2}),
-    await task_priority.create({task_priority: "Libre", weigth: 3})
+    await task_priority.create({ task_priority: "Important", weigth: 1 }),
+    await task_priority.create({ task_priority: "Normale", weigth: 2 }),
+    await task_priority.create({ task_priority: "Libre", weigth: 3 }),
   ];
   taskPriorities.map((task) => {
     taskPrioritiesId.push(task.id);
   });
+}
+
+function dateString(daysAgo) {
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const dayOfMonth = String(date.getDate()).padStart(2, "0");
+  return date.getFullYear() + "-" + month + "-" + dayOfMonth;
+}
+
+let workDaysByAccount = {};
+
+/**
+ * Ajoute une tâche (et ses sous-tâches) à la journée de travail d'un compte.
+ * La journée de travail est créée au besoin.
+ */
+async function addToWorkDay(
+  compte,
+  tache,
+  occurrenceId,
+  commentaire,
+  sousTaches,
+) {
+  let day = workDaysByAccount[compte.id];
+  if (!day) {
+    day = await work_day.create({ accountId: compte.id, date: dateString(0) });
+    workDaysByAccount[compte.id] = day;
+  }
+
+  const dayTask = await work_day_task.create({
+    workDayId: day.id,
+    taskId: tache.id,
+    occurrenceId: occurrenceId,
+    comment: commentaire ?? null,
+    isCompleted: false,
+  });
+
+  for (let i = 0; i < sousTaches.length; i++) {
+    await work_day_sub_task.create({
+      workDayTaskId: dayTask.id,
+      subTaskId: sousTaches[i].id,
+      isCompleted: false,
+    });
+  }
+
+  return dayTask;
 }
 
 /**
@@ -54,6 +107,7 @@ async function seedTaskPriorities(){
 const seedDatabase = async (req, res) => {
   try {
     await deleteTables();
+    workDaysByAccount = {};
     await seedTaskPriorities();
     const hashedPassword = await bcrypt.hash("Test1234!", 15);
 
@@ -72,8 +126,6 @@ const seedDatabase = async (req, res) => {
       description:
         "Responsable de la préparation, du rangement et de l'entretien des installations.",
     });
-
- 
 
     await Compte.create({
       prenom: "Antoine",
@@ -260,6 +312,7 @@ const seedDatabase = async (req, res) => {
       recurring: true,
       automaticAssignment: false,
       archived: false,
+      taskPriorityId: taskPrioritiesId[1],
     });
 
     const tacheBoxe = await Task.create({
@@ -269,24 +322,29 @@ const seedDatabase = async (req, res) => {
       recurring: true,
       automaticAssignment: false,
       archived: false,
+      taskPriorityId: taskPrioritiesId[1],
     });
 
     const tacheAppariteur = await Task.create({
       title: "Tâches d'appariteur",
       room: "Centre",
-      description: "Ouverture, fermeture, surveillance et préparation des salles selon l'horaire.",
+      description:
+        "Ouverture, fermeture, surveillance et préparation des salles selon l'horaire.",
       recurring: true,
       automaticAssignment: false,
       archived: false,
+      taskPriorityId: taskPrioritiesId[1],
     });
 
     const tacheEntretienGeneral = await Task.create({
       title: "Entretien ménager général",
       room: "Centre",
-      description: "Balayer, laver, vider les poubelles selon les grilles d'entretien.",
+      description:
+        "Balayer, laver, vider les poubelles selon les grilles d'entretien.",
       recurring: true,
       automaticAssignment: false,
       archived: false,
+      taskPriorityId: taskPrioritiesId[1],
     });
 
     const tacheESJM = await Task.create({
@@ -296,15 +354,39 @@ const seedDatabase = async (req, res) => {
       recurring: true,
       automaticAssignment: false,
       archived: false,
+      taskPriorityId: taskPrioritiesId[1],
     });
 
-    await TaskPoste.create({ posteId: posteEntretien.id, tacheId: tachePiscine.id });
-    await TaskPoste.create({ posteId: posteEntretien.id, tacheId: tacheBoxe.id });
-    await TaskPoste.create({ posteId: posteEntretien.id, tacheId: tacheEntretienGeneral.id });
-    await TaskPoste.create({ posteId: posteEntretien.id, tacheId: tacheESJM.id });
-    await TaskPoste.create({ posteId: posteAppariteur.id, tacheId: tacheAppariteur.id });
+    await TaskPoste.create({
+      posteId: posteEntretien.id,
+      tacheId: tachePiscine.id,
+    });
+    await TaskPoste.create({
+      posteId: posteEntretien.id,
+      tacheId: tacheBoxe.id,
+    });
+    await TaskPoste.create({
+      posteId: posteEntretien.id,
+      tacheId: tacheEntretienGeneral.id,
+    });
+    await TaskPoste.create({
+      posteId: posteEntretien.id,
+      tacheId: tacheESJM.id,
+    });
+    await TaskPoste.create({
+      posteId: posteAppariteur.id,
+      tacheId: tacheAppariteur.id,
+    });
 
-    const jours = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
+    const jours = [
+      "lundi",
+      "mardi",
+      "mercredi",
+      "jeudi",
+      "vendredi",
+      "samedi",
+      "dimanche",
+    ];
     let idOccurrence = {};
 
     for (const journee of jours) {
@@ -326,7 +408,8 @@ const seedDatabase = async (req, res) => {
         tacheId: tacheEntretienGeneral.id,
         taskPriorityId: taskPrioritiesId[1],
       });
-      if (!idOccurrence.tacheEntretienGeneral_id) idOccurrence.tacheEntretienGeneral_id = occ.id;
+      if (!idOccurrence.tacheEntretienGeneral_id)
+        idOccurrence.tacheEntretienGeneral_id = occ.id;
 
       occ = await occurrence_de_tache.create({
         heureDebut: "06:15:00",
@@ -336,7 +419,8 @@ const seedDatabase = async (req, res) => {
         tacheId: tacheAppariteur.id,
         taskPriorityId: taskPrioritiesId[1],
       });
-      if (!idOccurrence.tacheAppariteur_id) idOccurrence.tacheAppariteur_id = occ.id;
+      if (!idOccurrence.tacheAppariteur_id)
+        idOccurrence.tacheAppariteur_id = occ.id;
 
       occ = await occurrence_de_tache.create({
         heureDebut: "16:00:00",
@@ -395,27 +479,8 @@ const seedDatabase = async (req, res) => {
       tache,
       occurrenceId,
       commentaire,
-      sousTaches = []
-    ) => {
-      const affectation = await tachesAFaire.create({
-        tacheId: tache.id,
-        compteId: compte.id,
-        occurrence_de_tacheId: occurrenceId,
-        commentaire,
-        isCompleted: false,
-      });
-
-      for (const sousTache of sousTaches) {
-        await sous_taches_AFaire.create({
-          sousTacheId: sousTache.id,
-          tachesAFaireId: affectation.id,
-          commentaire: null,
-          isCompleted: false,
-        });
-      }
-
-      return affectation;
-    };
+      sousTaches = [],
+    ) => addToWorkDay(compte, tache, occurrenceId, commentaire, sousTaches);
 
     if (comptes["Romain"]) {
       await creerAffectation(
@@ -423,7 +488,7 @@ const seedDatabase = async (req, res) => {
         tachePiscine,
         idOccurrence.tachePiscine_id,
         null,
-        [st1, st2]
+        [st1, st2],
       );
 
       await creerAffectation(
@@ -431,14 +496,14 @@ const seedDatabase = async (req, res) => {
         tacheEntretienGeneral,
         idOccurrence.tacheEntretienGeneral_id,
         null,
-        [st4, st5, st6]
+        [st4, st5, st6],
       );
 
       await creerAffectation(
         comptes["Romain"],
         tacheAppariteur,
         idOccurrence.tacheAppariteur_id,
-        null
+        null,
       );
     }
 
@@ -448,7 +513,7 @@ const seedDatabase = async (req, res) => {
         tacheBoxe,
         idOccurrence.tacheBoxe_id,
         null,
-        [st3]
+        [st3],
       );
 
       await creerAffectation(
@@ -456,7 +521,7 @@ const seedDatabase = async (req, res) => {
         tachePiscine,
         idOccurrence.tachePiscine_id,
         null,
-        [st1, st2]
+        [st1, st2],
       );
 
       await creerAffectation(
@@ -464,14 +529,14 @@ const seedDatabase = async (req, res) => {
         tacheEntretienGeneral,
         idOccurrence.tacheEntretienGeneral_id,
         null,
-        [st4, st5, st6]
+        [st4, st5, st6],
       );
 
       await creerAffectation(
         comptes["Clara"],
         tacheESJM,
         idOccurrence.tacheESJM_id,
-        null
+        null,
       );
     }
 
@@ -481,14 +546,14 @@ const seedDatabase = async (req, res) => {
         tacheEntretienGeneral,
         idOccurrence.tacheEntretienGeneral_id,
         null,
-        [st4, st5]
+        [st4, st5],
       );
 
       await creerAffectation(
         comptes["Zoé"],
         tacheESJM,
         idOccurrence.tacheESJM_id,
-        null
+        null,
       );
     }
 
@@ -497,7 +562,7 @@ const seedDatabase = async (req, res) => {
         comptes["Mathieu"],
         tacheAppariteur,
         idOccurrence.tacheAppariteur_id,
-        null
+        null,
       );
     }
 
@@ -506,7 +571,7 @@ const seedDatabase = async (req, res) => {
         comptes["Naomi"],
         tacheAppariteur,
         idOccurrence.tacheAppariteur_id,
-        null
+        null,
       );
     }
 
@@ -515,7 +580,7 @@ const seedDatabase = async (req, res) => {
         comptes["Brahim"],
         tacheAppariteur,
         idOccurrence.tacheAppariteur_id,
-        null
+        null,
       );
     }
 
@@ -524,7 +589,7 @@ const seedDatabase = async (req, res) => {
         comptes["Sheng Ming"],
         tacheAppariteur,
         idOccurrence.tacheAppariteur_id,
-        null
+        null,
       );
     }
 
@@ -534,7 +599,7 @@ const seedDatabase = async (req, res) => {
         tachePiscine,
         idOccurrence.tachePiscine_id,
         null,
-        [st1, st2]
+        [st1, st2],
       );
 
       await creerAffectation(
@@ -542,7 +607,7 @@ const seedDatabase = async (req, res) => {
         tacheBoxe,
         idOccurrence.tacheBoxe_id,
         null,
-        [st3]
+        [st3],
       );
 
       await creerAffectation(
@@ -550,14 +615,14 @@ const seedDatabase = async (req, res) => {
         tacheEntretienGeneral,
         idOccurrence.tacheEntretienGeneral_id,
         null,
-        [st4, st5, st6]
+        [st4, st5, st6],
       );
 
       await creerAffectation(
         comptes["Philipe"],
         tacheESJM,
         idOccurrence.tacheESJM_id,
-        null
+        null,
       );
     }
 
@@ -567,7 +632,7 @@ const seedDatabase = async (req, res) => {
         tachePiscine,
         idOccurrence.tachePiscine_id,
         null,
-        [st1, st2]
+        [st1, st2],
       );
 
       await creerAffectation(
@@ -575,7 +640,7 @@ const seedDatabase = async (req, res) => {
         tacheBoxe,
         idOccurrence.tacheBoxe_id,
         null,
-        [st3]
+        [st3],
       );
 
       await creerAffectation(
@@ -583,14 +648,14 @@ const seedDatabase = async (req, res) => {
         tacheEntretienGeneral,
         idOccurrence.tacheEntretienGeneral_id,
         null,
-        [st4, st5, st6]
+        [st4, st5, st6],
       );
 
       await creerAffectation(
         comptes["Shelby"],
         tacheESJM,
         idOccurrence.tacheESJM_id,
-        null
+        null,
       );
     }
 
@@ -600,7 +665,7 @@ const seedDatabase = async (req, res) => {
         tachePiscine,
         idOccurrence.tachePiscine_id,
         null,
-        [st1, st2]
+        [st1, st2],
       );
 
       await creerAffectation(
@@ -608,7 +673,7 @@ const seedDatabase = async (req, res) => {
         tacheBoxe,
         idOccurrence.tacheBoxe_id,
         null,
-        [st3]
+        [st3],
       );
 
       await creerAffectation(
@@ -616,14 +681,14 @@ const seedDatabase = async (req, res) => {
         tacheEntretienGeneral,
         idOccurrence.tacheEntretienGeneral_id,
         null,
-        [st4, st5, st6]
+        [st4, st5, st6],
       );
 
       await creerAffectation(
         comptes["Audrée"],
         tacheESJM,
         idOccurrence.tacheESJM_id,
-        null
+        null,
       );
     }
 
@@ -632,7 +697,7 @@ const seedDatabase = async (req, res) => {
         comptes["Léon"],
         tacheESJM,
         idOccurrence.tacheESJM_id,
-        null
+        null,
       );
     }
 
@@ -642,7 +707,7 @@ const seedDatabase = async (req, res) => {
         tachePiscine,
         idOccurrence.tachePiscine_id,
         null,
-        [st1, st2]
+        [st1, st2],
       );
 
       await creerAffectation(
@@ -650,7 +715,7 @@ const seedDatabase = async (req, res) => {
         tacheBoxe,
         idOccurrence.tacheBoxe_id,
         null,
-        [st3]
+        [st3],
       );
 
       await creerAffectation(
@@ -658,14 +723,14 @@ const seedDatabase = async (req, res) => {
         tacheEntretienGeneral,
         idOccurrence.tacheEntretienGeneral_id,
         null,
-        [st4, st5, st6]
+        [st4, st5, st6],
       );
 
       await creerAffectation(
         comptes["Mónica"],
         tacheESJM,
         idOccurrence.tacheESJM_id,
-        null
+        null,
       );
     }
 

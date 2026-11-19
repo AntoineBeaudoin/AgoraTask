@@ -13,6 +13,7 @@ import { get404, getErrors } from "./controllers/errorController.mjs";
 import adminRoutes from "./routes/admin.mjs";
 import "./models/bd_index.mjs";
 import histRoutes from "./routes/hist.mjs";
+import workDayRoutes from "./routes/work_day.mjs";
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use("/api/task_priority", taskPriorityRoutes);
 app.use("/api/task", taskRoutes);
 app.use("/api/poste", posteRoutes);
 app.use("/api/historique", histRoutes);
+app.use("/api/work_day", workDayRoutes);
 app.get("/", (req, res) => {
   res.status(200).json({
     message: "Agora API disponible",
@@ -51,16 +53,16 @@ bd.authenticate()
   .then(() => {
     console.log("Connected to PostgreSQL");
 
-        // mettre force à true pour réinitialiser la structure de la BD.
-        return bd.sync({ force: false });
-    })
-    .then(async () => {
-        app.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
-        });
-    })
-    .catch(error => {
-        console.error("Database connection failed:", error);
+    // mettre force à true pour réinitialiser la structure de la BD.
+    return bd.sync({ force: false });
+  })
+  .then(async () => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
     });
+  })
+  .catch((error) => {
+    console.error("Database connection failed:", error);
+  });
 
 export default app;

@@ -1,27 +1,25 @@
 import { DataTypes } from "sequelize";
 import bd from "./bd.mjs";
-const sous_taches_AFaire = bd.define("SousTachesAFaire", {
+
+const TaskLink = bd.define("TaskLink", {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
+    allowNull: false,
   },
-  sousTacheId: {
+  taskId: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  tachesAFaireId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
-  commentaire: {
-    type: DataTypes.TEXT,
+  title: {
+    type: DataTypes.STRING(255),
     allowNull: true,
   },
-  isCompleted: {
-    type: DataTypes.BOOLEAN,
+  url: {
+    type: DataTypes.STRING(1000),
     allowNull: false,
-    defaultValue: false,
   },
 });
-export { sous_taches_AFaire };
+
+export { TaskLink };
