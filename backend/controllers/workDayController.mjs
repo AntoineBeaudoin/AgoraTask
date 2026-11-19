@@ -84,7 +84,7 @@ export async function submitDay(req, res, next){
       where: { id: req.params.id, accountId: req.user.id }
     });
     if (!day){
-      return res.ststus(404).json({
+      return res.status(404).json({
         status: 404,
         message: "Journée introuvable"
       })
