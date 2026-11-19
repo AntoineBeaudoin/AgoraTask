@@ -3,7 +3,7 @@ import { Op } from "sequelize";
 import bd from "../models/bd.mjs";
 import * as models from "../models/bd_index.mjs";
 import { isConnected } from "../Middleware/IsConnected.mjs";
-import { creerAssignService } from "../Middleware/assignUtils.mjs";
+import { creerAssignService } from "../Utils/assignUtils.mjs";
 import { creerAssignController } from "../controllers/assignController.mjs";
 
 const router = express.Router();
