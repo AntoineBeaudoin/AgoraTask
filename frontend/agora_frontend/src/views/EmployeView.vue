@@ -151,7 +151,7 @@ onMounted(async () => {
   await taskStore.loadTasks()
   await taskStore.loadEmployeeInterface()
 
-  window.addEventListener('keydown', handleKeydown)
+  window.removeEventListener('keydown', handleKeydown)
   window.addEventListener('afterprint', afterPrint)
 })
 
