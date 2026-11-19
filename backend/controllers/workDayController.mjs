@@ -78,6 +78,55 @@ export async function getMyDay(req, res, next) {
   }
 }
 
+export async function submitDay(req, res, next){
+  try{
+    const day = await work_day.findOne({
+      where: { id: req.params.id, accountId: req.user.id }
+    });
+    if (!day){
+      return res.ststus(404).json({
+        status: 404,
+        message: "Journée introuvable"
+      })
+    }
+
+    if (day.isSubmitted){
+      return res.status(409).json({
+        status: 409,
+        message: "La journée est déjà soumise."
+      });
+    }
+
+    await bd.transaction(async function(t) {
+      const dayUpdates = { isSumbitted: req.body.submit === true};
+      if (req.body.comment !== undefined){
+        dayUpdates.comment = cleanComment(req.body.comment);
+      }
+      else
+      {
+        return res.status(422).json({
+          status: 422,
+          message: "La journée ne peut pas être soumise si aucun commentaire global existe."
+        });
+      }
+
+      dayUpdates.isSumbitted = true;
+
+      await day.update(dayUpdates, { transaction: t });
+    })
+
+  res.status(200).json({
+      status: 200,
+      message: "Journée enregistrée.",
+      path: "/api/work_day/submit" + day.id,
+      timestamp: new Date().toISOString(),
+    });    
+  }
+  catch(err){
+    next(err);
+  }
+}
+
 export async function saveDay(req, res, next) {
   try {
     const day = await work_day.findOne({
