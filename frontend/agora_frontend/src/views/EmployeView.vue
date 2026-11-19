@@ -147,9 +147,9 @@ function handleKeydown(event) {
   }
 }
 
-onMounted(() => {
-  taskStore.loadTasks()
-  taskStore.loadMyTasks()
+onMounted(async () => {
+  await taskStore.loadTasks()
+  await taskStore.loadEmployeeInterface()
 
   window.addEventListener('keydown', handleKeydown)
   window.addEventListener('afterprint', afterPrint)
@@ -164,6 +164,10 @@ onUnmounted(() => {
 <style scoped>
 @media print {
   .btn {
+    display: none !important;
+  }
+
+  #msg-error{
     display: none !important;
   }
 
