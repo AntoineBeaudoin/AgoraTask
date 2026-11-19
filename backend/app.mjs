@@ -54,7 +54,7 @@ bd.authenticate()
     console.log("Connected to PostgreSQL");
 
     // mettre force à true pour réinitialiser la structure de la BD.
-    return bd.sync({ force: true });
+    return bd.sync({ force: false });
   })
   .then(async () => {
     app.listen(PORT, () => {
