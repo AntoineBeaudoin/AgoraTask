@@ -8,6 +8,9 @@ export const useModalStore = defineStore('modal', {
     taskDescriptionModalOpen: false,
     observableTask: null,
 
+    taskPriorityModalOpen: false,
+    editingTaskPriority: null,
+
     passwordModalOpen: false,
     editingUser: null,
 
@@ -38,27 +41,47 @@ export const useModalStore = defineStore('modal', {
       this.observableTask = null;
     },
 
+    openTaskPriorityModal() {
+      this.editingTaskPriority = null
+      this.taskPriorityModalOpen = true
+    },
+
+    openAddTaskPriority() {
+      this.editingTaskPriority = null
+      this.taskPriorityModalOpen = true
+    },
+
+    openEditTaskPriority(taskPriority) {
+      this.editingTaskPriority = taskPriority
+      this.taskPriorityModalOpen = true
+    },
+
+    closeTaskPriorityModal() {
+      this.taskPriorityModalOpen = false
+      this.editingTaskPriority = null
+    },
+
     openEditPassword(userId) {
-       this.editingUser = userId
-       this.passwordModalOpen = true
+      this.editingUser = userId
+      this.passwordModalOpen = true
     },
 
     closePasswordModal() {
-       this.passwordModalOpen = false
-       this.editingUser = null
+      this.passwordModalOpen = false
+      this.editingUser = null
     },
 
-    openAddPoste(){
+    openAddPoste() {
       this.editingPoste = null;
       this.posteModalOpen = true;
     },
 
-    openEditPoste(poste){
+    openEditPoste(poste) {
       this.editingPoste = poste;
       this.posteModalOpen = true;
     },
 
-    closePosteModal(){
+    closePosteModal() {
       this.editingPoste = null;
       this.posteModalOpen = false;
     }

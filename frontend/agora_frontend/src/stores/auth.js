@@ -166,7 +166,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const loginUser = async (email, mdp) => {
-    console.log('loginUser called with email:', email.value, 'and password:', mdp.value)
     errorMessage.value = ''
     try {
       const response = await apiFetch('/account/login', {
