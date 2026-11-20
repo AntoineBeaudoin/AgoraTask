@@ -78,54 +78,131 @@ export async function getMyDay(req, res, next) {
   }
 }
 
-export async function submitDay(req, res, next){
-  try{
+export async function submitDay(req, res, next) {
+  try {
     const day = await work_day.findOne({
-      where: { id: req.params.id, accountId: req.user.id }
+      where: {
+        id: req.params.id,
+        accountId: req.user.id,
+      },
     });
-    if (!day){
+
+    if (!day) {
       return res.status(404).json({
         status: 404,
-        message: "Journée introuvable"
-      })
-    }
-
-    if (day.isSubmitted){
-      return res.status(409).json({
-        status: 409,
-        message: "La journée est déjà soumise."
+        message: "Journée introuvable.",
       });
     }
 
-    await bd.transaction(async function(t) {
-      const dayUpdates = { isSumbitted: req.body.submit === true};
-      if (req.body.comment !== undefined){
-        dayUpdates.comment = cleanComment(req.body.comment);
+    if (day.isSubmitted) {
+      return res.status(409).json({
+        status: 409,
+        message: "La journée est déjà soumise.",
+      });
+    }
+
+    await bd.transaction(async function (t) {
+      const dailyComment = cleanComment(req.body.comment || "");
+
+      await day.update({
+        comment: dailyComment,
+      }, { transaction: t });
+
+      const tasks = await work_day_task.findAll({
+        where: { workDayId: day.id },
+        include: [{
+          model: work_day_sub_task,
+        }],
+        transaction: t,
+      });
+
+      const submittedTasks = Array.isArray(req.body.tasks)
+        ? req.body.tasks
+        : [];
+
+      let hasIncompleteItems = false;
+
+      for (let i = 0; i < tasks.length; i++) {
+        const task = tasks[i];
+
+        const submittedTask = submittedTasks.find(
+          item => item.id === task.id
+        );
+
+        if (submittedTask) {
+          await task.update({
+            comment: cleanComment(submittedTask.comment || ""),
+          }, { transaction: t });
+        }
+
+        if (!task.isCompleted) {
+          hasIncompleteItems = true;
+
+          if (!cleanComment(task.comment || "")) {
+            const err = new Error(
+              `La tâche "${task.title}" doit avoir un commentaire puisqu'elle n'est pas terminée.`
+            );
+            err.status = 422;
+            throw err;
+          }
+        }
+
+        const subs = task.work_day_sub_tasks || [];
+        const submittedSubs = submittedTask?.subTasks || [];
+
+        for (let j = 0; j < subs.length; j++) {
+          const sub = subs[j];
+
+          const submittedSub = submittedSubs.find(
+            item => item.id === sub.id
+          );
+
+          if (submittedSub) {
+            await sub.update({
+              comment: cleanComment(submittedSub.comment || ""),
+            }, { transaction: t });
+          }
+
+          if (!sub.isCompleted) {
+            hasIncompleteItems = true;
+
+            if (!cleanComment(sub.comment || "")) {
+              const err = new Error(
+                "Chaque sous-tâche non terminée doit avoir un commentaire."
+              );
+              err.status = 422;
+              throw err;
+            }
+          }
+        }
       }
-      else
-      {
-        return res.status(422).json({
-          status: 422,
-          message: "La journée ne peut pas être soumise si aucun commentaire global existe."
-        });
+
+      if (hasIncompleteItems && !dailyComment) {
+        const err = new Error(
+          "Un commentaire global est obligatoire lorsqu'il reste des tâches ou sous-tâches non terminées."
+        );
+        err.status = 422;
+        throw err;
       }
 
-      dayUpdates.isSumbitted = true;
+      await day.update({
+        isSubmitted: true,
+      }, { transaction: t });
 
-      await day.update(dayUpdates, { transaction: t });
-    })
+    });
 
-  res.status(200).json({
+    return res.status(200).json({
       status: 200,
-      message: "Journée enregistrée.",
-      path: "/api/work_day/submit" + day.id,
+      message: "Journée soumise avec succès.",
+      path: "/api/work_day/submit/" + day.id,
       timestamp: new Date().toISOString(),
-    });    
-  }
-  catch(err){
+    });
+
+  } catch (err) {
     next(err);
   }
 }
+
 
 export async function saveDay(req, res, next) {
   try {
