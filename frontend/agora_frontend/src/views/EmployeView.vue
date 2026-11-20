@@ -9,8 +9,7 @@
     <p v-if="taskStore.myTasksLoaded && taskStore.myTasks.length === 0" class="text-center text-muted">
       Aucune tâche ne vous est assignée.
     </p>
-
-    <form v-else class="mx-auto" @submit.prevent="save" @reset.prevent="taskStore.loadEmployeeInterface()">
+    <form v-else class="mx-auto" @submit.prevent="submit" @reset.prevent="taskStore.loadEmployeeInterface()">
       <div v-for="task in taskStore.myTasks" :key="task.tacheAFaireId" class="card mb-3">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center">
@@ -126,12 +125,38 @@ async function afterPrint() {
   await nextTick();
 }
 
+
 async function save() {
+  if (saving.value) return
+
   saving.value = true
   message.value = ''
+
   try {
-    const ok = await taskStore.saveProgress(checkedIds.value)
-    message.value = ok ? 'Progression enregistrée.' : "Échec de l'enregeistrement."
+    const ok = await taskStore.saveProgress()
+
+    message.value = ok
+      ? 'Progression enregistrée.'
+      : "Échec de l'enregistrement de la progression."
+  } finally {
+    saving.value = false
+  }
+}
+
+async function submit() {
+  if (saving.value) return
+
+  saving.value = true
+  message.value = ''
+
+  try {
+    const result = await taskStore.submitDay()
+
+    message.value = result.message
+
+    if (result.success) {
+      await taskStore.loadEmployeeInterface()
+    }
   } finally {
     saving.value = false
   }
