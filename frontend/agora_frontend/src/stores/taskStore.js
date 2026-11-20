@@ -86,43 +86,125 @@ export const useTaskStore = defineStore('tasks', {
     },
 
     async saveProgress() {
-      const tasks = []
-      for (let i = 0; i < this.myTasks.length; i++) {
-        const task = this.myTasks[i]
-        const sousTaches = []
-        const subs = task.sousTaches || []
-        for (let j = 0; j < subs.length; j++) {
-          sousTaches.push({ id: subs[j].id, isCompleted: subs[j].isCompleted })
-        }
-        tasks.push({
-          tacheAFaireId: task.tacheAFaireId,
-          isCompleted: task.isCompleted,
-          commentaire: task.commentaire,
-          sousTaches: sousTaches,
-        })
-      }
-
-      let numberOfCompletedTasks = 0
-      for (let i = 0; i < tasks.length; i++){
-          numberOfCompletedTasks += tasks[i].isCompleted ? 1 : 0
-      }
-  
-      if (numberOfCompletedTasks !== tasks.length && stringVide(this.dailyComment)){
-          return false
-      }
+      const tasks = this.myTasks.map(task => ({
+        id: task.id,
+        isCompleted: task.isCompleted === true,
+        subTasks: (task.sousTaches || []).map(sub => ({
+          id: sub.id,
+          isCompleted: sub.isCompleted === true,
+        })),
+      }))
 
       try {
         const response = await apiFetch('/task/progress', {
           method: 'PATCH',
-          body: JSON.stringify({ tasks: tasks }),
+          body: JSON.stringify({ tasks }),
         })
+
         if (!response || response.status !== 200) {
           throw new Error(`HTTP ${response ? response.status : 'erreur'}`)
         }
+
         return true
       } catch (err) {
-        console.log(`HTTP ${err}`)
+        console.log(err)
         return false
+      }
+    },
+
+    validateSubmission() {
+      let hasIncompleteItems = false
+
+      for (const task of this.myTasks) {
+
+        if (!task.isCompleted) {
+          hasIncompleteItems = true
+
+          if (stringVide(task.commentaire)) {
+            return {
+              valid: false,
+              message: `La tâche "${task.title}" doit avoir un commentaire puisqu'elle n'est pas terminée.`,
+            }
+          }
+        }
+
+        for (const sub of task.sousTaches || []) {
+          if (!sub.isCompleted) {
+            hasIncompleteItems = true
+
+            if (stringVide(sub.commentaire)) {
+              return {
+                valid: false,
+                message: `La sous-tâche "${sub.titre}" doit avoir un commentaire puisqu'elle n'est pas terminée.`,
+              }
+            }
+          }
+        }
+      }
+
+      if (hasIncompleteItems && stringVide(this.dailyComment)) {
+        return {
+          valid: false,
+          message: "Un commentaire global est obligatoire lorsqu'il reste des tâches ou sous-tâches non terminées.",
+        }
+      }
+
+      return {
+        valid: true,
+        message: '',
+      }
+    },
+
+    async submitDay() {
+      const validation = this.validateSubmission()
+
+      if (!validation.valid) {
+        return {
+          success: false,
+          message: validation.message,
+        }
+      }
+
+      const tasks = this.myTasks.map(task => ({
+        id: task.id,
+        comment: task.commentaire ?? '',
+        subTasks: (task.sousTaches || []).map(sub => ({
+          id: sub.id,
+          comment: sub.commentaire ?? '',
+        })),
+      }))
+
+      try {
+        const workDayId = this.myTasks[0]?.workDayId
+
+        if (!workDayId) {
+          throw new Error("Impossible de déterminer la journée à soumettre.")
+        }
+
+        const response = await apiFetch(`/work_day/submit/${workDayId}`, {
+          method: 'POST',
+          body: JSON.stringify({
+            comment: this.dailyComment,
+            tasks,
+          }),
+        })
+
+        if (!response || response.status !== 200) {
+          throw new Error(`HTTP ${response ? response.status : 'erreur'}`)
+        }
+
+        return {
+          success: true,
+          message: 'Journée soumise avec succès.',
+        }
+
+      } catch (err) {
+        console.log(err)
+
+        return {
+          success: false,
+          message: "Une erreur est survenue lors de la soumission de la journée.",
+        }
       }
     },
 
