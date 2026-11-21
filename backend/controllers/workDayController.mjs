@@ -8,6 +8,7 @@ import {
   work_day_sub_task,
 } from "../models/bd_index.mjs";
 import { validerDate } from "../utils/dateHelpers.mjs";
+import { createHttpError } from "../utils/taskHelpers.mjs";
 
 function cleanComment(value) {
   if (typeof value !== "string") return null;
@@ -78,6 +79,11 @@ export async function getMyDay(req, res, next) {
   }
 }
 
+/**
+ * Soumet la journée de travail du compte connecté.
+ * Règles : une tâche ou une sous-tâche non terminée doit avoir un commentaire.
+ * Le commentaire global de la journée est optionnel.
+ */
 export async function submitDay(req, res, next) {
   try {
     const day = await work_day.findOne({
@@ -104,15 +110,19 @@ export async function submitDay(req, res, next) {
     await bd.transaction(async function (t) {
       const dailyComment = cleanComment(req.body.comment || "");
 
-      await day.update({
-        comment: dailyComment,
-      }, { transaction: t });
+      await day.update(
+        {
+          comment: dailyComment,
+        },
+        { transaction: t },
+      );
 
       const tasks = await work_day_task.findAll({
         where: { workDayId: day.id },
-        include: [{
-          model: work_day_sub_task,
-        }],
+        include: [
+          { model: Task, as: "task" },
+          { model: work_day_sub_task, as: "subTasks" },
+        ],
         transaction: t,
       });
 
@@ -120,75 +130,59 @@ export async function submitDay(req, res, next) {
         ? req.body.tasks
         : [];
 
-      let hasIncompleteItems = false;
-
-      for (let i = 0; i < tasks.length; i++) {
-        const task = tasks[i];
+      for (const task of tasks) {
+        // Une tâche archivée n'est plus visible par l'employé
+        if (task.task && task.task.archived) continue;
 
         const submittedTask = submittedTasks.find(
-          item => item.id === task.id
+          (item) => item.id === task.id,
         );
-
         if (submittedTask) {
-          await task.update({
+          const taskUpdates = {
             comment: cleanComment(submittedTask.comment || ""),
-          }, { transaction: t });
-        }
-
-        if (!task.isCompleted) {
-          hasIncompleteItems = true;
-
-          if (!cleanComment(task.comment || "")) {
-            const err = new Error(
-              `La tâche "${task.title}" doit avoir un commentaire puisqu'elle n'est pas terminée.`
-            );
-            err.status = 422;
-            throw err;
+          };
+          // Permet d'envoyer l'état des cases avec la soumission
+          if (submittedTask.isCompleted !== undefined) {
+            taskUpdates.isCompleted = submittedTask.isCompleted === true;
           }
+          await task.update(taskUpdates, { transaction: t });
         }
 
-        const subs = task.work_day_sub_tasks || [];
-        const submittedSubs = submittedTask?.subTasks || [];
-
-        for (let j = 0; j < subs.length; j++) {
-          const sub = subs[j];
-
-          const submittedSub = submittedSubs.find(
-            item => item.id === sub.id
+        if (!task.isCompleted && !cleanComment(task.comment || "")) {
+          throw createHttpError(
+            `La tâche "${task.task?.title ?? ""}" doit avoir un commentaire puisqu'elle n'est pas terminée.`,
+            422,
           );
+        }
 
+        const submittedSubs = submittedTask?.subTasks || [];
+        for (const sub of task.subTasks) {
+          const submittedSub = submittedSubs.find((item) => item.id === sub.id);
           if (submittedSub) {
-            await sub.update({
+            const subUpdates = {
               comment: cleanComment(submittedSub.comment || ""),
-            }, { transaction: t });
+            };
+            if (submittedSub.isCompleted !== undefined) {
+              subUpdates.isCompleted = submittedSub.isCompleted === true;
+            }
+            await sub.update(subUpdates, { transaction: t });
           }
 
-          if (!sub.isCompleted) {
-            hasIncompleteItems = true;
-
-            if (!cleanComment(sub.comment || "")) {
-              const err = new Error(
-                "Chaque sous-tâche non terminée doit avoir un commentaire."
-              );
-              err.status = 422;
-              throw err;
-            }
+          if (!sub.isCompleted && !cleanComment(sub.comment || "")) {
+            throw createHttpError(
+              "Chaque sous-tâche non terminée doit avoir un commentaire.",
+              422,
+            );
           }
         }
       }
 
-      if (hasIncompleteItems && !dailyComment) {
-        const err = new Error(
-          "Un commentaire global est obligatoire lorsqu'il reste des tâches ou sous-tâches non terminées."
-        );
-        err.status = 422;
-        throw err;
-      }
-
-      await day.update({
-        isSubmitted: true,
-      }, { transaction: t });
-
+      await day.update(
+        {
+          isSubmitted: true,
+        },
+        { transaction: t },
+      );
     });
 
     return res.status(200).json({
@@ -197,12 +191,10 @@ export async function submitDay(req, res, next) {
       path: "/api/work_day/submit/" + day.id,
       timestamp: new Date().toISOString(),
     });
-
   } catch (err) {
     next(err);
   }
 }
-
 
 export async function saveDay(req, res, next) {
   try {
@@ -221,7 +213,7 @@ export async function saveDay(req, res, next) {
     }
 
     await bd.transaction(async function (t) {
-      const dayUpdates = { isSubmitted: req.body.submit === true };
+      const dayUpdates = {};
       if (req.body.comment !== undefined) {
         dayUpdates.comment = cleanComment(req.body.comment);
       }

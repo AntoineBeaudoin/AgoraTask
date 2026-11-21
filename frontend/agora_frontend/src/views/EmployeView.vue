@@ -9,6 +9,7 @@
     <p v-if="taskStore.myTasksLoaded && taskStore.myTasks.length === 0" class="text-center text-muted">
       Aucune tâche ne vous est assignée.
     </p>
+
     <form v-else class="mx-auto" @submit.prevent="submit" @reset.prevent="taskStore.loadEmployeeInterface()">
       <div v-for="task in taskStore.myTasks" :key="task.tacheAFaireId" class="card mb-3">
         <div class="card-body">
@@ -32,13 +33,32 @@
               </button>
             </div>
           </div>
+          <!-- Le visuel sera changé dans la branche de css -->
+          <div v-for="sub in task.sousTaches" :key="sub.id" class="ms-4 mt-2">
+            <div class="d-flex align-items-center gap-2">
+              <div class="form-check mb-0">
+                <input class="form-check-input" type="checkbox" :id="'sub-' + subKey(task, sub)"
+                  v-model="sub.isCompleted" @change="save" />
+                <label class="form-check-label" :for="'sub-' + subKey(task, sub)">
+                  {{ sub.titre }}
+                </label>
+              </div>
+              
+              <button type="button" class="btn btn-link btn-sm p-0"
+                :aria-expanded="isSubCommentOpen(task, sub)" @click="toggleSubComment(task, sub)">
+                <i class="bi" aria-hidden="true"></i>
+                {{ isSubCommentOpen(task, sub) ? 'Masquer' : 'Commenter' }}
+              </button>
+            </div>
 
-          <div v-for="sub in task.sousTaches" :key="sub.id" class="form-check ms-4 mt-2">
-            <input class="form-check-input" type="checkbox" :id="'sub-' + task.tacheAFaireId + '-' + sub.id"
-              v-model="sub.isCompleted" @change="save" />
-            <label class="form-check-label" :for="'sub-' + task.tacheAFaireId + '-' + sub.id">
-              {{ sub.titre }}
-            </label>
+            <div v-if="isSubCommentOpen(task, sub)" class="mt-1">
+              <label class="visually-hidden" :for="'sub-comment-' + subKey(task, sub)">
+                Commentaire pour {{ sub.titre }}
+              </label>
+              <textarea class="form-control form-control-sm" rows="2" maxlength="1000"
+                placeholder="Commentaire sur cette sous-tâche" :id="'sub-comment-' + subKey(task, sub)"
+                v-model="sub.commentaire"></textarea>
+            </div>
           </div>
         </div>
 
@@ -63,29 +83,37 @@
       <p v-if="message" id="msg-erreur" class="text-center">{{ message }}</p>
 
       <div class="d-flex justify-content-center gap-2 mt-4">
-        <button type="submit" class="btn btn-primary" id="btn-soumettre" :disabled="saving">Soumettre</button>
+        <button type="submit" class="btn btn-primary" id="btn-soumettre" :disabled="saving || !validation.valid">Soumettre</button>
       </div>
+      <p v-if="!validation.valid && validation.message" class="text-center text-muted small mt-2">
+        {{ validation.message }}
+      </p>
     </form>
   </section>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useTaskStore } from '@/stores/taskStore.js'
 import { useModalStore } from '@/stores/modalStore.js'
 import TaskDescriptionModal from '@/components/tasks/TaskDescriptionModal.vue'
 import TaskPdfPreview from '@/components/tasks/TaskPdfPreview.vue'
 import TaskExternalLinks from '@/components/tasks/TaskExternalLinks.vue'
-import { nextTick } from 'vue'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 
 const taskStore = useTaskStore()
 const modalStore = useModalStore()
 const detailledTasks = reactive(new Set())
-const checkedIds = ref([])
+const openSubComments = reactive(new Set())
 const saving = ref(false)
 const message = ref('')
 const printing = ref(false)
+
+const validation = computed(() =>
+  taskStore.myTasks.length > 0
+    ? taskStore.validateSubmission()
+    : { valid: false, message: '' },
+)
 
 async function printPage() {
   printing.value = true
@@ -107,6 +135,36 @@ function toggleDetails(id) {
   }
 }
 
+function subKey(task, sub) {
+  return task.tacheAFaireId + '-' + sub.id
+}
+
+function isSubCommentOpen(task, sub) {
+  if (printing.value) return Boolean(sub.commentaire)
+  return openSubComments.has(subKey(task, sub))
+}
+
+function toggleSubComment(task, sub) {
+  const key = subKey(task, sub)
+  if (openSubComments.has(key)) {
+    openSubComments.delete(key)
+  } else {
+    openSubComments.add(key)
+  }
+}
+
+watch(
+  () => taskStore.myTasks,
+  (tasks) => {
+    for (const task of tasks ?? []) {
+      for (const sub of task.sousTaches ?? []) {
+        if (sub.commentaire) openSubComments.add(subKey(task, sub))
+      }
+    }
+  },
+  { immediate: true },
+)
+
 async function openTaskDetails(task) {
   const fullTask = (await taskStore.getTaskById(task.id)) || {}
   modalStore.openTaskDescription({
@@ -125,38 +183,27 @@ async function afterPrint() {
   await nextTick();
 }
 
-
 async function save() {
-  if (saving.value) return
-
   saving.value = true
   message.value = ''
-
   try {
     const ok = await taskStore.saveProgress()
-
-    message.value = ok
-      ? 'Progression enregistrée.'
-      : "Échec de l'enregistrement de la progression."
+    message.value = ok ? 'Progression enregistrée.' : "Échec de l'enregistrement."
   } finally {
     saving.value = false
   }
 }
 
 async function submit() {
-  if (saving.value) return
-
+  if (!validation.value.valid) {
+    message.value = validation.value.message
+    return
+  }
   saving.value = true
   message.value = ''
-
   try {
     const result = await taskStore.submitDay()
-
     message.value = result.message
-
-    if (result.success) {
-      await taskStore.loadEmployeeInterface()
-    }
   } finally {
     saving.value = false
   }
@@ -173,12 +220,12 @@ onMounted(async () => {
   await taskStore.loadTasks()
   await taskStore.loadEmployeeInterface()
 
-  window.removeEventListener('keydown', handleKeydown)
+  window.addEventListener('keydown', handleKeydown)
   window.addEventListener('afterprint', afterPrint)
 })
 
 onUnmounted(() => {
-  window.addEventListener('keydown', handleKeydown)
+  window.removeEventListener('keydown', handleKeydown)
   window.removeEventListener('afterprint', afterPrint)
 })
 </script>

@@ -86,25 +86,26 @@ export const useTaskStore = defineStore('tasks', {
     },
 
     async saveProgress() {
-      const tasks = this.myTasks.map(task => ({
-        id: task.id,
+      const workDayId = this.myTasks[0]?.workDayId
+      if (!workDayId) return false
+
+      const tasks = this.myTasks.map((task) => ({
+        id: task.tacheAFaireId,
         isCompleted: task.isCompleted === true,
-        subTasks: (task.sousTaches || []).map(sub => ({
-          id: sub.id,
+        subTasks: (task.sousTaches || []).map((sub) => ({
+          id: sub.workDaySubTaskId,
           isCompleted: sub.isCompleted === true,
         })),
       }))
 
       try {
-        const response = await apiFetch('/task/progress', {
+        const response = await apiFetch(`/work_day/${workDayId}`, {
           method: 'PATCH',
           body: JSON.stringify({ tasks }),
         })
-
         if (!response || response.status !== 200) {
           throw new Error(`HTTP ${response ? response.status : 'erreur'}`)
         }
-
         return true
       } catch (err) {
         console.log(err)
@@ -113,46 +114,25 @@ export const useTaskStore = defineStore('tasks', {
     },
 
     validateSubmission() {
-      let hasIncompleteItems = false
-
       for (const task of this.myTasks) {
-
-        if (!task.isCompleted) {
-          hasIncompleteItems = true
-
-          if (stringVide(task.commentaire)) {
-            return {
-              valid: false,
-              message: `La tâche "${task.title}" doit avoir un commentaire puisqu'elle n'est pas terminée.`,
-            }
+        if (!task.isCompleted && stringVide(task.commentaire)) {
+          return {
+            valid: false,
+            message: `La tâche "${task.title}" doit avoir un commentaire puisqu'elle n'est pas terminée.`,
           }
         }
 
         for (const sub of task.sousTaches || []) {
-          if (!sub.isCompleted) {
-            hasIncompleteItems = true
-
-            if (stringVide(sub.commentaire)) {
-              return {
-                valid: false,
-                message: `La sous-tâche "${sub.titre}" doit avoir un commentaire puisqu'elle n'est pas terminée.`,
-              }
+          if (!sub.isCompleted && stringVide(sub.commentaire)) {
+            return {
+              valid: false,
+              message: `La sous-tâche "${sub.titre}" doit avoir un commentaire puisqu'elle n'est pas terminée.`,
             }
           }
         }
       }
 
-      if (hasIncompleteItems && stringVide(this.dailyComment)) {
-        return {
-          valid: false,
-          message: "Un commentaire global est obligatoire lorsqu'il reste des tâches ou sous-tâches non terminées.",
-        }
-      }
-
-      return {
-        valid: true,
-        message: '',
-      }
+      return { valid: true, message: '' }
     },
 
     async submitDay() {
@@ -165,11 +145,11 @@ export const useTaskStore = defineStore('tasks', {
         }
       }
 
-      const tasks = this.myTasks.map(task => ({
-        id: task.id,
+      const tasks = this.myTasks.map((task) => ({
+        id: task.tacheAFaireId,
         comment: task.commentaire ?? '',
-        subTasks: (task.sousTaches || []).map(sub => ({
-          id: sub.id,
+        subTasks: (task.sousTaches || []).map((sub) => ({
+          id: sub.workDaySubTaskId,
           comment: sub.commentaire ?? '',
         })),
       }))

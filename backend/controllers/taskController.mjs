@@ -364,8 +364,8 @@ async function prepareValidatedTaskInput(req) {
   );
   const occurrences =
     priorities.length > 0 ||
-    req.body.taskPriorityId !== undefined ||
-    rawOccurrences.length > 0
+      req.body.taskPriorityId !== undefined ||
+      rawOccurrences.length > 0
       ? validateOccurrencesForPriority(priorityId, rawOccurrences, priorities)
       : [];
   return { priorityId, occurrences, subTasks, externalLinks };
@@ -545,6 +545,7 @@ export async function getMyTasks(req, res, next) {
         ...wt.task.toJSON(),
         // Le nom tacheAFaireId est conservé pour ne pas casser le frontend
         tacheAFaireId: wt.id,
+        workDayId: wt.workDayId,
         isCompleted: wt.isCompleted,
         commentaire: wt.comment,
         journee: wt.occurrence ? wt.occurrence.journee : null,
@@ -552,9 +553,11 @@ export async function getMyTasks(req, res, next) {
         heureFin: wt.occurrence ? wt.occurrence.heureFin : null,
         sousTaches: subTasks.map((s) => ({
           id: s.subTaskId,
+          workDaySubTaskId: s.id,
           titre: s.subTask ? s.subTask.titre : null,
           description: s.subTask ? s.subTask.description : null,
           isCompleted: s.isCompleted,
+          commentaire: s.comment,
         })),
       };
     });

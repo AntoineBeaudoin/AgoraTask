@@ -5,7 +5,7 @@ import { isConnected } from "../Middleware/IsConnected.mjs";
 const router = express.Router();
 
 router.get("/mine", isConnected, workDayController.getMyDay);
-router.patch("/submit/:id", isConnected, workDayController.saveDay);
+router.post("/submit/:id", isConnected, workDayController.submitDay);
 router.patch("/:id", isConnected, workDayController.saveDay);
 
 export default router;
