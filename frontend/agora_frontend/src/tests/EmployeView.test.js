@@ -5,6 +5,31 @@ import EmployeView from '@/views/EmployeView.vue'
 import { useTaskStore } from '@/stores/taskStore.js'
 import { useModalStore } from '@/stores/modalStore.js'
 
+function mockSubmissionValidation() {
+  const taskStore = useTaskStore();
+  taskStore.validateSubmission.mockImplementation(() => {
+    for (const task of taskStore.myTasks) {
+      if (!task.isCompleted && !task.commentaire?.trim()) {
+        return {
+          valid: false,
+          message: 'Chaque tâche non terminée doit avoir un commentaire.',
+        }
+      }
+
+      for (const sub of task.sousTaches ?? []) {
+        if (!sub.isCompleted && !sub.commentaire?.trim()) {
+          return {
+            valid: false,
+            message: 'Chaque sous-tâche non terminée doit avoir un commentaire.',
+          }
+        }
+      }
+    }
+
+    return { valid: true, message: '' }
+  })
+}
+
 vi.mock('@/stores/taskStore.js', () => ({
   useTaskStore: vi.fn(),
 }))
@@ -69,6 +94,18 @@ describe('EmployeView.vue', () => {
       tasks: [assignedTask],
       myTasks: [assignedTask],
       myTasksLoaded: true,
+      isDaySubmitted: false,
+
+      validateSubmission: vi.fn().mockReturnValue({
+        valid: true,
+        message: '',
+      }),
+
+      submitDay: vi.fn().mockResolvedValue({
+        success: true,
+        message: '',
+      }),
+
       loadTasks: vi.fn().mockResolvedValue(),
       loadMyTasks: vi.fn().mockResolvedValue(),
       loadEmployeeInterface: vi.fn().mockResolvedValue(),
@@ -140,27 +177,27 @@ describe('EmployeView.vue', () => {
   })
 
   test("le bouton Soumettre enregistre le commentaire de fin de journée", async () => {
-  const wrapper = createWrapper()
-  await nextTick()
+    const wrapper = createWrapper()
+    await nextTick()
 
-  const dailyCommentField = wrapper.find('#dailyComment')
-  const soumettreBtn = wrapper.find('#btn-soumettre')
+    const dailyCommentField = wrapper.find('#dailyComment')
+    const soumettreBtn = wrapper.find('#btn-soumettre')
 
-  expect(dailyCommentField.exists()).toBe(true)
-  expect(soumettreBtn.exists()).toBe(true)
+    expect(dailyCommentField.exists()).toBe(true)
+    expect(soumettreBtn.exists()).toBe(true)
 
-  const commentaire = 'Lorem ipsum dolor sit amet'
+    const commentaire = 'Lorem ipsum dolor sit amet'
 
-  await dailyCommentField.setValue(commentaire)
+    await dailyCommentField.setValue(commentaire)
 
-  expect(taskStore.dailyComment).toBe(commentaire)
+    expect(taskStore.dailyComment).toBe(commentaire)
 
-  await soumettreBtn.trigger('click')
-  await nextTick()
+    await soumettreBtn.trigger('click')
+    await nextTick()
 
-  expect(taskStore.saveProgress).toHaveBeenCalledTimes(1)
-  expect(taskStore.dailyComment).toBe(commentaire)
-})
+    expect(taskStore.submitDay).toHaveBeenCalledTimes(1)
+    expect(taskStore.dailyComment).toBe(commentaire)
+  })
 
   test('sauvegarde automatiquement lorsqu’une case de tâche ou de sous-tâche est cochée ou décochée', async () => {
     const savedStates = []
@@ -236,4 +273,71 @@ describe('EmployeView.vue', () => {
 
     expect(wrapper.find('.task-details').exists()).toBe(true)
   })
+
+  test('désactive Soumettre si une tâche non terminée ne possède aucun commentaire et que le commentaire quotidien est vide', async () => {
+    assignedTask.isCompleted = false
+    assignedTask.commentaire = ''
+    assignedTask.sousTaches[0].isCompleted = true
+
+    mockSubmissionValidation()
+
+    const wrapper = createWrapper()
+    await nextTick()
+
+    expect(taskStore.dailyComment).toBe('')
+    expect(wrapper.find('#btn-soumettre').element.disabled).toBe(true)
+  })
+
+  test('désactive Soumettre si une sous-tâche non terminée ne possède aucun commentaire et que le commentaire quotidien est vide', async () => {
+    assignedTask.isCompleted = true
+    assignedTask.sousTaches[0].isCompleted = false
+    assignedTask.sousTaches[0].commentaire = ''
+
+    mockSubmissionValidation()
+
+    const wrapper = createWrapper()
+    await nextTick()
+
+    expect(taskStore.dailyComment).toBe('')
+    expect(wrapper.find('#btn-soumettre').element.disabled).toBe(true)
+  })
+
+  test('autorise Soumettre si une tâche non terminée possède un commentaire même sans commentaire quotidien', async () => {
+    assignedTask.isCompleted = false
+    assignedTask.commentaire = 'Inspection reportée'
+    assignedTask.sousTaches[0].isCompleted = true
+
+    mockSubmissionValidation()
+
+    const wrapper = createWrapper()
+    await nextTick()
+
+    expect(taskStore.dailyComment).toBe('')
+    expect(wrapper.find('#btn-soumettre').element.disabled).toBe(false)
+  })
+
+  test('autorise Soumettre lorsque toutes les tâches et sous-tâches sont terminées sans commentaire quotidien', async () => {
+    assignedTask.isCompleted = true
+    assignedTask.commentaire = ''
+    assignedTask.sousTaches[0].isCompleted = true
+    assignedTask.sousTaches[0].commentaire = ''
+
+    mockSubmissionValidation()
+
+    const wrapper = createWrapper()
+    await nextTick()
+
+    expect(taskStore.dailyComment).toBe('')
+    expect(wrapper.find('#btn-soumettre').element.disabled).toBe(false)
+  })
+
+  test('masque le bouton Soumettre lorsque la journée est déjà soumise', async () => {
+  taskStore.isDaySubmitted = true
+
+  const wrapper = createWrapper()
+  await nextTick()
+
+  expect(wrapper.find('#btn-soumettre').exists()).toBe(false)
+  expect(wrapper.find('#msg-soumission-reussie').exists()).toBe(true)
+})
 })
