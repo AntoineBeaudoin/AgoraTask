@@ -80,8 +80,6 @@
           <textarea class="form-control" rows="2" maxlength="1000" id="dailyComment" name="dailyComment" v-model="taskStore.dailyComment"></textarea>
       </div>
 
-      <p v-if="message" id="msg-erreur" class="text-center">{{ message }}</p>
-
           <div v-if="!taskStore.isDaySubmitted" class="d-flex justify-content-center gap-2 mt-4">
         <button
           type="submit"
