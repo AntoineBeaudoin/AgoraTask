@@ -73,7 +73,7 @@ const router = createRouter({
       meta: {
         title: 'Gestion des postes de travail',
         requireAuth: true,
-        roles: ['administrateur', 'coordonnateur'],
+        roles: 'administrateur/coordonnateur',
       },
     },
     {
