@@ -43,7 +43,7 @@
                   {{ sub.titre }}
                 </label>
               </div>
-              
+
               <button type="button" class="btn btn-link btn-sm p-0"
                 :aria-expanded="isSubCommentOpen(task, sub)" @click="toggleSubComment(task, sub)">
                 <i class="bi" aria-hidden="true"></i>
@@ -82,10 +82,37 @@
 
       <p v-if="message" id="msg-erreur" class="text-center">{{ message }}</p>
 
-      <div class="d-flex justify-content-center gap-2 mt-4">
-        <button type="submit" class="btn btn-primary" id="btn-soumettre" :disabled="saving || !validation.valid">Soumettre</button>
+          <div v-if="!taskStore.isDaySubmitted" class="d-flex justify-content-center gap-2 mt-4">
+        <button
+          type="submit"
+          class="btn btn-primary"
+          id="btn-soumettre"
+          :disabled="saving || !validation.valid"
+        >
+          Soumettre
+        </button>
       </div>
-      <p v-if="!validation.valid && validation.message" class="text-center text-muted small mt-2">
+
+      <p
+        v-if="taskStore.isDaySubmitted"
+        class="text-center text-success fw-bold mt-4"
+        id="msg-soumission-reussie"
+      >
+        Journée soumise avec succès !
+      </p>
+
+      <p
+        v-else-if="message"
+        id="msg-erreur"
+        class="text-center"
+      >
+        {{ message }}
+      </p>
+
+      <p
+        v-if="!taskStore.isDaySubmitted && !validation.valid && validation.message"
+        class="text-center text-muted small mt-2"
+      >
         {{ validation.message }}
       </p>
     </form>
@@ -184,30 +211,39 @@ async function afterPrint() {
 }
 
 async function save() {
+  if (taskStore.isDaySubmitted) return
+
   saving.value = true
   message.value = ''
+
   try {
     const ok = await taskStore.saveProgress()
-    message.value = ok ? 'Progression enregistrée.' : "Échec de l'enregistrement."
+
+    if (!taskStore.isDaySubmitted) {
+      message.value = ok
+        ? 'Progression enregistrée.'
+        : "Échec de l'enregistrement."
+    }
   } finally {
     saving.value = false
   }
 }
 
 async function submit() {
-  if (!validation.value.valid) {
-    message.value = validation.value.message
-    return
-  }
+  if (taskStore.isDaySubmitted || !validation.value.valid) return
+
   saving.value = true
   message.value = ''
+
   try {
     const result = await taskStore.submitDay()
-    message.value = result.message
+    message.value = result.success ? '' : result.message
   } finally {
     saving.value = false
   }
 }
+
+
 
 function handleKeydown(event) {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p') {
