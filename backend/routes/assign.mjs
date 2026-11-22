@@ -12,5 +12,6 @@ router.post("/automatic", controller.assignerAutomatiquement);
 router.post("/manual", controller.assignerManuellement);
 router.post("/occurrences", controller.creerOccurrence);
 router.patch("/tasks/:workDayTaskId/occurrence", controller.changerOccurrence);
+router.delete("/tasks/:workDayTaskId", controller.supprimerAssignation);
 
 export default router;

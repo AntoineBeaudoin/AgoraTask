@@ -29,6 +29,35 @@ export function jourDeSemaine(date) {
   return JOURS[valeur.getUTCDay()];
 }
 
+function secondesDepuisMinuit(heure) {
+  if (
+    typeof heure !== "string" ||
+    !/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?$/.test(heure)
+  )
+    return null;
+  const [h, m, s = "0"] = heure.split(":");
+  return Number(h) * 3600 + Number(m) * 60 + Number(s);
+}
+
+export function plageHoraire(horaire) {
+  const debut = secondesDepuisMinuit(horaire?.heureDebut);
+  const fin = secondesDepuisMinuit(horaire?.heureFin);
+  if (debut === null || fin === null || fin <= debut) {
+    throw new AssignError(
+      400,
+      "Horaire invalide : indiquez un début et une fin, avec la fin après le début.",
+    );
+  }
+  return { debut, fin };
+}
+
+// Deux plages adjacentes (fin de l'une = début de l'autre) ne se chevauchent pas.
+export function horairesSeChevauchent(a, b) {
+  const x = plageHoraire(a);
+  const y = plageHoraire(b);
+  return x.debut < y.fin && y.debut < x.fin;
+}
+
 export function choisirOccurrence(occurrences) {
   return (
     [...occurrences].sort(
@@ -40,7 +69,25 @@ export function choisirOccurrence(occurrences) {
   );
 }
 
-// Injection des dépendances : les modèles peuvent être remplacés par des mocks Vitest.
+// Priorité au jour correspondant ; sinon le premier horaire disponible et complet.
+export function horairesParPriorite(occurrences, jour) {
+  return [...occurrences]
+    .filter((horaire) => {
+      try {
+        plageHoraire(horaire);
+        return true;
+      } catch {
+        return false;
+      }
+    })
+    .sort(
+      (a, b) =>
+        Number(b.journee === jour) - Number(a.journee === jour) ||
+        String(a.heureDebut).localeCompare(String(b.heureDebut)) ||
+        Number(a.id) - Number(b.id),
+    );
+}
+
 export function creerAssignService({ models, bd, Op }) {
   const {
     Compte,
@@ -54,50 +101,80 @@ export function creerAssignService({ models, bd, Op }) {
     work_day_sub_task,
   } = models;
 
+  async function verrouillerJour(jour, transaction) {
+    // Le verrou de ligne sérialise deux assignations concurrentes pour le même employé/jour.
+    if (transaction?.LOCK?.UPDATE) {
+      await work_day.findByPk(jour.id, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+    }
+  }
+
+  async function trouverConflit(
+    jourId,
+    taskId,
+    horaire,
+    transaction,
+    idExclu = null,
+  ) {
+    plageHoraire(horaire);
+    const dejaAssignees = await work_day_task.findAll({
+      where: { workDayId: jourId, taskId },
+      include: [{ model: occurrence_de_tache, as: "occurrence" }],
+      transaction,
+    });
+    for (const affectation of dejaAssignees) {
+      if (idExclu !== null && Number(affectation.id) === Number(idExclu))
+        continue;
+      // Si l'ancien horaire est incomplet, on ne peut garantir l'absence de chevauchement.
+      if (!affectation.occurrence) return affectation;
+      try {
+        if (horairesSeChevauchent(horaire, affectation.occurrence))
+          return affectation;
+      } catch {
+        return affectation;
+      }
+    }
+    return null;
+  }
+
   async function creerAssignation({
     accountId,
     date,
     taskId,
-    occurrenceId,
+    horaire,
     sousTaches,
     comment = null,
     isAutomatic,
     transaction,
   }) {
-    const [workDay] = await work_day.findOrCreate({
+    const [jour] = await work_day.findOrCreate({
       where: { accountId, date },
       defaults: { isSubmitted: false },
       transaction,
     });
-
-    // Une tâche, au maximum, par employé et par jour dans cette page.
-    const existante = await work_day_task.findOne({
-      where: { workDayId: workDay.id, taskId },
-      transaction,
-    });
-    if (existante) {
-      if (!isAutomatic) {
-        throw new AssignError(
-          409,
-          "Cette tâche est déjà assignée à cet employé pour cette date.",
-        );
-      }
-      return null; // Une affectation manuelle existante est conservée.
+    await verrouillerJour(jour, transaction);
+    const conflit = await trouverConflit(jour.id, taskId, horaire, transaction);
+    if (conflit) {
+      if (isAutomatic) return null;
+      throw new AssignError(
+        409,
+        "Cette tâche existe déjà à cet horaire pour cet employé.",
+      );
     }
-
     const affectation = await work_day_task.create(
       {
-        workDayId: workDay.id,
+        workDayId: jour.id,
         taskId,
-        occurrenceId,
+        occurrenceId: horaire.id,
         comment,
         isCompleted: false,
         isAutomatic,
       },
       { transaction },
     );
-
-    if (sousTaches.length > 0) {
+    if (sousTaches.length) {
       await work_day_sub_task.bulkCreate(
         sousTaches.map(({ id }) => ({
           workDayTaskId: affectation.id,
@@ -111,22 +188,20 @@ export function creerAssignService({ models, bd, Op }) {
   }
 
   async function supprimerAnciennesAssignationsAutomatiques(date, transaction) {
-    const workDays = await work_day.findAll({
+    const jours = await work_day.findAll({
       where: { date },
       attributes: ["id"],
       transaction,
     });
-    const workDayIds = workDays.map(({ id }) => id);
-    if (!workDayIds.length) return 0;
-
+    const idsJours = jours.map(({ id }) => id);
+    if (!idsJours.length) return 0;
     const affectations = await work_day_task.findAll({
-      where: { workDayId: { [Op.in]: workDayIds }, isAutomatic: true },
+      where: { workDayId: { [Op.in]: idsJours }, isAutomatic: true },
       attributes: ["id"],
       transaction,
     });
     const ids = affectations.map(({ id }) => id);
     if (!ids.length) return 0;
-
     await work_day_sub_task.destroy({
       where: { workDayTaskId: { [Op.in]: ids } },
       transaction,
@@ -146,7 +221,15 @@ export function creerAssignService({ models, bd, Op }) {
         {
           model: Compte,
           as: "account",
-          attributes: ["id", "prenom", "nom", "role"],
+          attributes: ["id", "prenom", "nom", "role", "posteId"],
+          include: [
+            {
+              model: Poste,
+              as: "poste",
+              attributes: ["id", "nom"],
+              required: false,
+            },
+          ],
         },
         {
           model: work_day_task,
@@ -154,7 +237,11 @@ export function creerAssignService({ models, bd, Op }) {
           required: true,
           include: [
             { model: Task, as: "task" },
-            { model: occurrence_de_tache, as: "occurrence" },
+            {
+              model: occurrence_de_tache,
+              as: "occurrence",
+              include: [{ model: task_priority, as: "priority" }],
+            },
             {
               model: work_day_sub_task,
               as: "subTasks",
@@ -168,11 +255,19 @@ export function creerAssignService({ models, bd, Op }) {
   }
 
   async function listerChoix(date) {
-    const journee = jourDeSemaine(date);
+    jourDeSemaine(date);
     const [employes, taches, priorites] = await Promise.all([
       Compte.findAll({
-        where: { IsArchived: false },
+        where: { IsArchived: false, role: "personnel_de_terrain" },
         attributes: ["id", "prenom", "nom", "role", "posteId"],
+        include: [
+          {
+            model: Poste,
+            as: "poste",
+            attributes: ["id", "nom"],
+            required: false,
+          },
+        ],
       }),
       Task.findAll({
         where: { archived: false },
@@ -181,7 +276,7 @@ export function creerAssignService({ models, bd, Op }) {
             model: occurrence_de_tache,
             as: "occurrences",
             required: false,
-            where: { [Op.or]: [{ journee }, { journee: null }] },
+            include: [{ model: task_priority, as: "priority" }],
           },
         ],
       }),
@@ -191,15 +286,18 @@ export function creerAssignService({ models, bd, Op }) {
   }
 
   async function assignerAutomatiquement(date) {
-    const journee = jourDeSemaine(date);
+    const jour = jourDeSemaine(date);
     return bd.transaction(async (transaction) => {
-      // La régénération détruit uniquement les affectations automatiques de cette date.
       const supprimees = await supprimerAnciennesAssignationsAutomatiques(
         date,
         transaction,
       );
       const employes = await Compte.findAll({
-        where: { IsArchived: false, posteId: { [Op.ne]: null } },
+        where: {
+          IsArchived: false,
+          role: "personnel_de_terrain",
+          posteId: { [Op.ne]: null },
+        },
         include: [
           {
             model: Poste,
@@ -218,7 +316,6 @@ export function creerAssignService({ models, bd, Op }) {
                     model: occurrence_de_tache,
                     as: "occurrences",
                     required: false,
-                    where: { journee },
                   },
                   { model: sous_tache, as: "sous_taches", required: false },
                 ],
@@ -228,27 +325,28 @@ export function creerAssignService({ models, bd, Op }) {
         ],
         transaction,
       });
-
       let creees = 0;
       let ignorees = 0;
       for (const employe of employes) {
         for (const tache of employe.poste?.tasks ?? []) {
-          // Une occurrence sans jour n'est jamais utilisée automatiquement.
-          const occurrencesDuJour = (tache.occurrences ?? []).filter(
-            (occ) => occ.journee === journee,
-          );
-          const occurrence = choisirOccurrence(occurrencesDuJour);
-          if (!occurrence) continue;
-
-          const creee = await creerAssignation({
-            accountId: employe.id,
-            date,
-            taskId: tache.id,
-            occurrenceId: occurrence.id,
-            sousTaches: tache.sous_taches ?? [],
-            isAutomatic: true,
-            transaction,
-          });
+          const horaires = horairesParPriorite(tache.occurrences ?? [], jour);
+          if (!horaires.length) {
+            ignorees++;
+            continue;
+          }
+          let creee = null;
+          for (const horaire of horaires) {
+            creee = await creerAssignation({
+              accountId: employe.id,
+              date,
+              taskId: tache.id,
+              horaire,
+              sousTaches: tache.sous_taches ?? [],
+              isAutomatic: true,
+              transaction,
+            });
+            if (creee) break;
+          }
           if (creee) creees++;
           else ignorees++;
         }
@@ -264,16 +362,15 @@ export function creerAssignService({ models, bd, Op }) {
     occurrenceId,
     comment = null,
   }) {
-    const journee = jourDeSemaine(date);
+    jourDeSemaine(date);
     if (!accountId || !taskId || !occurrenceId) {
       throw new AssignError(
         400,
-        "Employé, tâche et occurrence sont obligatoires.",
+        "Employé, tâche et horaire sont obligatoires.",
       );
     }
-
     return bd.transaction(async (transaction) => {
-      const [employe, tache, occurrence] = await Promise.all([
+      const [employe, tache, horaire] = await Promise.all([
         Compte.findOne({
           where: { id: accountId, IsArchived: false },
           transaction,
@@ -284,16 +381,16 @@ export function creerAssignService({ models, bd, Op }) {
           transaction,
         }),
       ]);
-      if (!employe || !tache || !occurrence) {
-        throw new AssignError(404, "Employé, tâche ou occurrence introuvable.");
+      if (!employe || !tache || !horaire) {
+        throw new AssignError(404, "Employé, tâche ou horaire introuvable.");
       }
-      if (occurrence.journee !== null && occurrence.journee !== journee) {
+      if (employe.role !== "personnel_de_terrain") {
         throw new AssignError(
-          400,
-          "L'occurrence ne correspond pas au jour choisi.",
+          403,
+          "Seul un employé de terrain peut recevoir une tâche.",
         );
       }
-
+      plageHoraire(horaire);
       const sousTaches = await sous_tache.findAll({
         where: { tacheId: taskId },
         transaction,
@@ -302,7 +399,7 @@ export function creerAssignService({ models, bd, Op }) {
         accountId,
         date,
         taskId,
-        occurrenceId,
+        horaire,
         sousTaches,
         comment,
         isAutomatic: false,
@@ -313,16 +410,13 @@ export function creerAssignService({ models, bd, Op }) {
 
   async function creerOccurrence({
     taskId,
-    heureDebut = null,
-    heureFin = null,
-    journee = null,
+    heureDebut,
+    heureFin,
     isRequired = true,
     taskPriorityId,
   }) {
     if (!taskId) throw new AssignError(400, "La tâche est obligatoire.");
-    if (journee !== null && !JOURS.includes(journee)) {
-      throw new AssignError(400, "Jour de semaine invalide.");
-    }
+    plageHoraire({ heureDebut, heureFin });
     const tache = await Task.findOne({
       where: { id: taskId, archived: false },
     });
@@ -331,47 +425,70 @@ export function creerAssignService({ models, bd, Op }) {
     if (!priorite)
       throw new AssignError(
         400,
-        "Une priorité est nécessaire pour créer l'occurrence.",
+        "Une priorité est nécessaire pour créer cet horaire.",
       );
     return occurrence_de_tache.create({
       tacheId: taskId,
       heureDebut,
       heureFin,
-      journee,
+      journee: null,
       isRequired,
       taskPriorityId: priorite,
     });
   }
 
   async function changerOccurrence(workDayTaskId, occurrenceId) {
-    if (!workDayTaskId || !occurrenceId) {
-      throw new AssignError(400, "Assignation et occurrence obligatoires.");
-    }
+    if (!workDayTaskId || !occurrenceId)
+      throw new AssignError(400, "Assignation et horaire obligatoires.");
     return bd.transaction(async (transaction) => {
       const affectation = await work_day_task.findByPk(workDayTaskId, {
         transaction,
       });
       if (!affectation) throw new AssignError(404, "Assignation introuvable.");
-      const [jour, occurrence] = await Promise.all([
+      const [jour, horaire] = await Promise.all([
         work_day.findByPk(affectation.workDayId, { transaction }),
         occurrence_de_tache.findOne({
           where: { id: occurrenceId, tacheId: affectation.taskId },
           transaction,
         }),
       ]);
-      if (!jour || !occurrence)
-        throw new AssignError(404, "Journée ou occurrence introuvable.");
-      if (
-        occurrence.journee !== null &&
-        occurrence.journee !== jourDeSemaine(jour.date)
-      ) {
+      if (!jour || !horaire)
+        throw new AssignError(404, "Journée ou horaire introuvable.");
+      await verrouillerJour(jour, transaction);
+      const conflit = await trouverConflit(
+        jour.id,
+        affectation.taskId,
+        horaire,
+        transaction,
+        affectation.id,
+      );
+      if (conflit)
         throw new AssignError(
-          400,
-          "L'occurrence ne correspond pas au jour de l'assignation.",
+          409,
+          "Cette tâche existe déjà à cet horaire pour cet employé.",
         );
-      }
       await affectation.update({ occurrenceId }, { transaction });
       return affectation;
+    });
+  }
+
+  async function supprimerAssignation(workDayTaskId) {
+    if (!workDayTaskId)
+      throw new AssignError(400, "Une assignation est obligatoire.");
+    return bd.transaction(async (transaction) => {
+      const affectation = await work_day_task.findByPk(workDayTaskId, {
+        transaction,
+      });
+      if (!affectation) throw new AssignError(404, "Assignation introuvable.");
+      await work_day_sub_task.destroy({
+        where: { workDayTaskId: affectation.id },
+        transaction,
+      });
+      await work_day_task.destroy({
+        where: { id: affectation.id },
+        transaction,
+      });
+      return { id: affectation.id };
     });
   }
 
@@ -382,5 +499,6 @@ export function creerAssignService({ models, bd, Op }) {
     assignerManuellement,
     creerOccurrence,
     changerOccurrence,
+    supprimerAssignation,
   };
 }
