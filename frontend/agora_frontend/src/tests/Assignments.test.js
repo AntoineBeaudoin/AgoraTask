@@ -266,13 +266,19 @@ describe('Assignments.vue : API entièrement simulée', () => {
 
   test('refuse de changer vers un horaire chevauchant une autre assignation de la même tâche', async () => {
     const wrapper = await monter()
+
     await wrapper.findAll('.employee-row')[0].trigger('click')
+    await wrapper.get('[aria-label="Tâche suivante"]').trigger('click')
+
     await wrapper.get('.occurrence-toolbar .link-button').trigger('click')
     await flushPromises()
+
     await wrapper.get('.occurrence-editor select').setValue('24')
     await wrapper.get('.occurrence-editor .btn-green').trigger('click')
     await flushPromises()
+
     expect(wrapper.find('#titreChevauchement').exists()).toBe(true)
+
     expect(
       apiFetch.mock.calls.some(
         ([url]) => url.includes('/occurrence') && url.startsWith('/assign/tasks/'),
