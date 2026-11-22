@@ -2,7 +2,7 @@ import { creerAssignService } from "../utils/assignUtils.mjs";
 import { Op } from "sequelize";
 import bd from "../models/bd.mjs";
 import * as models from "../models/bd_index.mjs";
-function creerAssignController(service) {
+export function creerAssignController(service) {
   async function listerJournee(req, res, next) {
     try {
       const data = await service.listerJournee(req.query.date);
