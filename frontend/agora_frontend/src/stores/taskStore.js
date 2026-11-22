@@ -36,7 +36,9 @@ export const useTaskStore = defineStore('tasks', {
     loaded: false,
     myTasks: [],
     myTasksLoaded: false,
-    dailyComment: ''
+    dailyComment: '',
+    isDaySubmitted: false,
+    workDayId: null
   }),
 
   actions: {
@@ -60,6 +62,30 @@ export const useTaskStore = defineStore('tasks', {
     },
 
     async loadEmployeeInterface() {
+      try {
+        this.dailyComment = ''
+        this.isDaySubmitted = false
+        this.workDayId = null
+        this.myTasksLoaded = false
+
+        const response = await apiFetch('/task/mine')
+
+        if (!response || response.status !== 200) {
+          throw new Error(`HTTP ${response ? response.status : 'erreur'}`)
+        }
+
+        this.myTasks = response.data.tasks
+        this.workDayId = response.data.workDayId
+        this.isDaySubmitted = response.data.isDaySubmitted
+        this.dailyComment = response.data.dailyComment ?? ''
+
+        this.myTasksLoaded = true
+      } catch (err) {
+        console.log(`HTTP ${err}`)
+      }
+    },
+
+    async loadEmployeeInterface2() {
       try {
         this.dailyComment = ''
         const response = await apiFetch('/task/mine')
@@ -86,6 +112,7 @@ export const useTaskStore = defineStore('tasks', {
     },
 
     async saveProgress() {
+      if (this.isDaySubmitted) return false
       const workDayId = this.myTasks[0]?.workDayId
       if (!workDayId) return false
 
@@ -136,6 +163,13 @@ export const useTaskStore = defineStore('tasks', {
     },
 
     async submitDay() {
+      if (this.isDaySubmitted) {
+        return {
+          success: false,
+          message: 'Cette journée a déjà été soumise.',
+        }
+      }
+
       const validation = this.validateSubmission()
 
       if (!validation.valid) {
@@ -155,7 +189,7 @@ export const useTaskStore = defineStore('tasks', {
       }))
 
       try {
-        const workDayId = this.myTasks[0]?.workDayId
+        const workDayId = this.workDayId
 
         if (!workDayId) {
           throw new Error("Impossible de déterminer la journée à soumettre.")
@@ -172,6 +206,8 @@ export const useTaskStore = defineStore('tasks', {
         if (!response || response.status !== 200) {
           throw new Error(`HTTP ${response ? response.status : 'erreur'}`)
         }
+
+        this.isDaySubmitted = true;
 
         return {
           success: true,
