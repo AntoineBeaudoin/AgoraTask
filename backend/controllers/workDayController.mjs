@@ -16,6 +16,17 @@ function cleanComment(value) {
   return text === "" ? null : text;
 }
 
+
+/**
+ * Retrouve la journée de travail associée à un employé.
+ *
+ * @export
+ * @async
+ * @param {*} req La requête envoyée par le frontend.
+ * @param {*} res La réponse à retrouner au frontend.
+ * @param {*} next Le prochain middleware à appeler, en cas d'erreur.
+ * @returns {unknown} La journée de travail associée à l'employé, ou bien une erreur 404.
+ */
 export async function getMyDay(req, res, next) {
   try {
     const date = req.query.date;
@@ -131,7 +142,6 @@ export async function submitDay(req, res, next) {
         : [];
 
       for (const task of tasks) {
-        // Une tâche archivée n'est plus visible par l'employé
         if (task.task && task.task.archived) continue;
 
         const submittedTask = submittedTasks.find(
@@ -141,7 +151,7 @@ export async function submitDay(req, res, next) {
           const taskUpdates = {
             comment: cleanComment(submittedTask.comment || ""),
           };
-          // Permet d'envoyer l'état des cases avec la soumission
+         
           if (submittedTask.isCompleted !== undefined) {
             taskUpdates.isCompleted = submittedTask.isCompleted === true;
           }
@@ -196,6 +206,17 @@ export async function submitDay(req, res, next) {
   }
 }
 
+
+/**
+ * Sauvegarde le progrès de la journée de travail d'un employé.
+ *
+ * @export
+ * @async
+ * @param {*} req La requête envoyée par le frontend.
+ * @param {*} res La réponse à retourner au frontend.
+ * @param {*} next Le prochain middleware à appeler, en cas d'erreur.
+ * @returns {unknown} Un message de succès si la journée a été sauvegardée, ou bien une erreur.
+ */
 export async function saveDay(req, res, next) {
   try {
     const day = await work_day.findOne({
