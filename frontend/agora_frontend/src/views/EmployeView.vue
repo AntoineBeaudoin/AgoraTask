@@ -112,6 +112,7 @@
       <p
         v-if="!taskStore.isDaySubmitted && !validation.valid && validation.message"
         class="text-center text-muted small mt-2"
+        id="msg-validation"
       >
         {{ validation.message }}
       </p>
@@ -272,7 +273,7 @@ onUnmounted(() => {
     display: none !important;
   }
 
-  #msg-error{
+  #msg-error, #msg-validation{
     display: none !important;
   }
 
