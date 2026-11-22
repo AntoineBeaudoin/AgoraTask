@@ -1,4 +1,8 @@
-export function creerAssignController(service) {
+import { creerAssignService } from "../Utils/assignUtils.mjs";
+import { Op } from "sequelize";
+import bd from "../models/bd.mjs";
+import * as models from "../models/bd_index.mjs";
+function creerAssignController(service) {
   async function listerJournee(req, res, next) {
     try {
       const data = await service.listerJournee(req.query.date);
@@ -67,3 +71,6 @@ export function creerAssignController(service) {
     changerOccurrence,
   };
 }
+
+const service = creerAssignService({ models, bd, Op });
+export const controller = creerAssignController(service);

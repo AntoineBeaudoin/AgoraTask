@@ -1,14 +1,9 @@
 import express from "express";
-import { Op } from "sequelize";
-import bd from "../models/bd.mjs";
-import * as models from "../models/bd_index.mjs";
 import { isConnected } from "../Middleware/IsConnected.mjs";
-import { creerAssignService } from "../Utils/assignUtils.mjs";
-import { creerAssignController } from "../controllers/assignController.mjs";
+
+import { controller } from "../controllers/assignController.mjs";
 
 const router = express.Router();
-const service = creerAssignService({ models, bd, Op });
-const controller = creerAssignController(service);
 
 router.use(isConnected);
 router.get("/", controller.listerJournee);
