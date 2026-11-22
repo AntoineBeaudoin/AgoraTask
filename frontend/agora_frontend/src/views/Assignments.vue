@@ -2,11 +2,7 @@
   <main class="assign-page">
     <header class="page-header">
       <div>
-        <span class="eyebrow">AGORATASK · ORGANISATION</span>
         <h1>Gestion des assignations</h1>
-        <p>
-          Planifiez les tâches d'une journée, consultez les affectations et ajustez les horaires.
-        </p>
       </div>
       <div class="header-actions">
         <label class="date-box" for="dateAssignation">
@@ -62,27 +58,29 @@
 
     <section class="assign-layout">
       <div class="panel employees-panel">
-        <div class="panel-header">
-          <div>
-            <h2>Employés assignés</h2>
-            <p>{{ journees.length }} employé(s) avec au moins une tâche</p>
-          </div>
-          <span class="subtle-pill">{{ journees.length }} / jour</span>
-        </div>
+        <div class="panel-header"><h2>Employés assignés</h2></div>
+        <label class="sr-only" for="rechercheEmploye">Rechercher un employé</label>
+        <input
+          id="rechercheEmploye"
+          v-model="rechercheEmploye"
+          class="employee-search"
+          type="search"
+          placeholder="Rechercher un employé"
+          autocomplete="off"
+        />
         <div v-if="chargementJournee" class="empty-state" role="status">
           Chargement des assignations…
         </div>
         <div v-else-if="journees.length === 0" class="empty-state">
           <div class="empty-symbol">▤</div>
           <h3>Aucune assignation</h3>
-          <p>
-            Choisissez une assignation manuelle ou utilisez le bouton vert pour attribuer les tâches
-            des postes.
-          </p>
+        </div>
+        <div v-else-if="journeesFiltrees.length === 0" class="empty-state">
+          Aucun employé trouvé.
         </div>
         <div v-else class="employees-list">
           <button
-            v-for="jour in journees"
+            v-for="jour in journeesFiltrees"
             :key="jour.id"
             type="button"
             class="employee-row"
@@ -94,10 +92,20 @@
             <span class="employee-meta">
               <strong>{{ nomEmploye(jour.account) }}</strong>
               <small
-                >{{ libelleRole(jour.account?.role) }} ·
-                {{ jour.tasks?.length ?? 0 }} tâche(s)</small
+                >{{
+                  jour.account?.poste?.nom
+                    ? 'Poste : ' + jour.account.poste.nom
+                    : libelleRole(jour.account?.role)
+                }}
+                · {{ jour.tasks?.length ?? 0 }} tâche(s)</small
               >
             </span>
+            <span
+              v-if="jour.tasks?.some((tache) => tache.isAutomatic)"
+              class="auto-marker"
+              title="Contient des tâches automatiques"
+              >Auto</span
+            >
             <span class="status-pill" :class="toutesTerminees(jour.tasks) ? 'done' : 'pending'">
               {{ toutesTerminees(jour.tasks) ? 'Terminé' : 'À compléter' }}
             </span>
@@ -110,14 +118,20 @@
         <div v-if="!jourSelectionne" class="empty-state no-selection">
           <div class="empty-symbol">☷</div>
           <h2>Sélectionnez un employé</h2>
-          <p>Ses tâches, leur état d'avancement et leurs sous-tâches s'afficheront ici.</p>
         </div>
         <template v-else>
           <div class="selected-header">
             <span class="avatar avatar-large">{{ initiales(jourSelectionne.account) }}</span>
             <div class="selected-name">
               <h2>{{ nomEmploye(jourSelectionne.account) }}</h2>
-              <p>{{ dateSelectionnee }} · {{ tachesSelectionnees.length }} tâche(s) assignée(s)</p>
+              <p>
+                {{ dateSelectionnee }} · {{ tachesSelectionnees.length }} tâche(s) ·
+                {{
+                  jourSelectionne.account?.poste?.nom
+                    ? 'Poste : ' + jourSelectionne.account.poste.nom
+                    : libelleRole(jourSelectionne.account?.role)
+                }}
+              </p>
             </div>
             <span
               class="status-pill"
@@ -159,24 +173,26 @@
             <article v-if="tacheCourante" :key="tacheCourante.id" class="task-card">
               <div class="task-heading">
                 <div>
-                  <span class="task-number">ASSIGNATION N° {{ tacheCourante.id }}</span>
                   <h3>{{ tacheCourante.task?.title || 'Tâche sans titre' }}</h3>
                   <p v-if="tacheCourante.task?.room" class="task-room">
                     {{ tacheCourante.task.room }}
                   </p>
                 </div>
-                <span class="status-pill" :class="tacheCourante.isCompleted ? 'done' : 'pending'">
-                  {{ tacheCourante.isCompleted ? 'Terminée' : 'Non terminée' }}
-                </span>
               </div>
               <div class="task-metadata">
-                <span
-                  >◷ {{ heure(tacheCourante.occurrence?.heureDebut) }} –
-                  {{ heure(tacheCourante.occurrence?.heureFin) }}</span
-                >
-                <span>{{ tacheCourante.isAutomatic ? 'Automatique' : 'Manuelle' }}</span>
-                <span v-if="tacheCourante.occurrence?.journee">{{
-                  capitale(tacheCourante.occurrence.journee)
+                <div class="schedule-main">
+                  <strong>Horaire</strong>
+                  <span
+                    >{{ heure(tacheCourante.occurrence?.heureDebut) }} –
+                    {{ heure(tacheCourante.occurrence?.heureFin) }}</span
+                  >
+                </div>
+                <div class="schedule-priority">
+                  <strong>Priorité</strong>
+                  <span>{{ libellePriorite(tacheCourante.occurrence) }}</span>
+                </div>
+                <span class="task-origin">{{
+                  tacheCourante.isAutomatic ? 'Automatique' : 'Manuelle'
                 }}</span>
               </div>
               <p v-if="tacheCourante.task?.description" class="task-description">
@@ -188,27 +204,26 @@
               </div>
 
               <div class="occurrence-toolbar">
-                <span>Occurrence n° {{ tacheCourante.occurrenceId }}</span>
                 <button
                   class="link-button"
                   type="button"
                   :disabled="enCours"
                   @click="ouvrirModificationOccurrence"
                 >
-                  Modifier l'occurrence
+                  Modifier l'horaire
                 </button>
               </div>
               <div v-if="modifierOccurrenceVisible" class="occurrence-editor">
-                <label :for="'modifier-occurrence-' + tacheCourante.id">Nouvelle occurrence</label>
+                <label :for="'modifier-occurrence-' + tacheCourante.id">Horaire</label>
                 <div class="inline-controls">
                   <select
                     :id="'modifier-occurrence-' + tacheCourante.id"
                     v-model="occurrenceModificationId"
                     :disabled="enCours || chargementChoix"
                   >
-                    <option value="">Choisir une occurrence</option>
+                    <option value="">Choisir un horaire</option>
                     <option
-                      v-for="occurrence in occurrencesPourTache(tacheCourante.taskId)"
+                      v-for="occurrence in occurrencesPourModification(tacheCourante)"
                       :key="occurrence.id"
                       :value="String(occurrence.id)"
                     >
@@ -230,6 +245,60 @@
                     @click="modifierOccurrenceVisible = false"
                   >
                     Annuler
+                  </button>
+                </div>
+                <button
+                  class="link-button create-schedule-trigger"
+                  type="button"
+                  :disabled="enCours"
+                  @click="
+                    formulaireCreationHoraireModification = !formulaireCreationHoraireModification
+                  "
+                >
+                  {{ formulaireCreationHoraireModification ? 'Masquer' : '+ Créer un horaire' }}
+                </button>
+                <div
+                  v-if="formulaireCreationHoraireModification"
+                  class="new-occurrence schedule-modification-form"
+                >
+                  <div class="two-fields">
+                    <label
+                      >Heure de début
+                      <input
+                        v-model="nouvelHoraireModification.heureDebut"
+                        type="time"
+                        required
+                        :disabled="enCours"
+                    /></label>
+                    <label
+                      >Heure de fin
+                      <input
+                        v-model="nouvelHoraireModification.heureFin"
+                        type="time"
+                        required
+                        :disabled="enCours"
+                    /></label>
+                  </div>
+                  <label
+                    >Priorité
+                    <select v-model="nouvelHoraireModification.taskPriorityId" :disabled="enCours">
+                      <option value="">Priorité de la tâche</option>
+                      <option
+                        v-for="priorite in choixPriorites"
+                        :key="priorite.id"
+                        :value="String(priorite.id)"
+                      >
+                        {{ priorite.task_priority }}
+                      </option>
+                    </select>
+                  </label>
+                  <button
+                    class="btn btn-dark-action btn-small"
+                    type="button"
+                    :disabled="enCours"
+                    @click="creerNouvelleOccurrence('modification')"
+                  >
+                    Créer cet horaire
                   </button>
                 </div>
               </div>
@@ -255,6 +324,21 @@
                   <p v-if="sousTache.comment" class="subtask-comment">{{ sousTache.comment }}</p>
                 </div>
               </div>
+              <footer class="task-delete-bar">
+                <button
+                  class="btn btn-delete btn-small"
+                  type="button"
+                  :disabled="enCours"
+                  @click="
+                    assignationASupprimer = {
+                      id: tacheCourante.id,
+                      titre: tacheCourante.task?.title || 'Tâche',
+                    }
+                  "
+                >
+                  Retirer cette assignation
+                </button>
+              </footer>
             </article>
           </template>
         </template>
@@ -280,7 +364,7 @@
           }}
         </h2>
         <p>
-          Les tâches liées aux postes et aux occurrences du
+          Les tâches liées aux postes et aux horaires du
           <strong>{{ dateSelectionnee }}</strong> vont être générées automatiquement.
         </p>
         <p class="warning-text">
@@ -324,9 +408,8 @@
       >
         <header class="modal-top">
           <div>
-            <span class="eyebrow">ASSIGNATION PERSONNALISÉE</span>
             <h2 id="titreManuel">Assigner une tâche</h2>
-            <p>Journée du {{ dateSelectionnee }}</p>
+            <p>{{ dateSelectionnee }}</p>
           </div>
           <button
             type="button"
@@ -343,20 +426,20 @@
         </div>
         <form v-else class="manual-form" @submit.prevent="assignerManuellement">
           <div class="field-row">
-            <label for="employeManuel">1. Employé</label>
+            <label for="employeManuel">Employé</label>
             <select id="employeManuel" v-model="formulaire.accountId" required :disabled="enCours">
               <option value="">Sélectionner un employé</option>
               <option
-                v-for="employe in choixEmployes"
+                v-for="employe in employesDeTerrain"
                 :key="employe.id"
                 :value="String(employe.id)"
               >
-                {{ nomEmploye(employe) }} — {{ libelleRole(employe.role) }}
+                {{ nomEmploye(employe) }}{{ employe.poste?.nom ? ' — ' + employe.poste.nom : '' }}
               </option>
             </select>
           </div>
           <div class="field-row">
-            <label>2. Tâche à assigner</label>
+            <label>Tâche à assigner</label>
             <div v-if="!choixTaches.length" class="muted-empty">Aucune tâche disponible.</div>
             <div v-else class="task-choices" role="radiogroup" aria-label="Tâche à assigner">
               <label
@@ -386,16 +469,14 @@
           </div>
           <div v-if="tacheManuelleSelectionnee" class="field-row">
             <div class="field-heading">
-              <label for="occurrenceManuelle">3. Occurrence</label
+              <label for="occurrenceManuelle">Horaire</label
               ><button
                 class="link-button"
                 type="button"
                 :disabled="enCours"
                 @click="formulaireCreationOccurrence = !formulaireCreationOccurrence"
               >
-                {{
-                  formulaireCreationOccurrence ? 'Masquer le formulaire' : '+ Créer une occurrence'
-                }}
+                {{ formulaireCreationOccurrence ? 'Masquer le formulaire' : '+ Créer un horaire' }}
               </button>
             </div>
             <select
@@ -404,7 +485,7 @@
               :disabled="enCours"
               required
             >
-              <option value="">Sélectionner une occurrence</option>
+              <option value="">Sélectionner un horaire</option>
               <option
                 v-for="occurrence in occurrencesPourTache(tacheManuelleSelectionnee.id)"
                 :key="occurrence.id"
@@ -414,28 +495,28 @@
               </option>
             </select>
             <p v-if="!occurrencesPourTache(tacheManuelleSelectionnee.id).length" class="help-text">
-              Aucune occurrence pour cette date. Créez-en une dans le formulaire ci-dessous.
+              Aucun horaire disponible.
             </p>
             <div v-if="formulaireCreationOccurrence" class="new-occurrence">
-              <h3>Nouvelle occurrence</h3>
+              <h3>Nouvel horaire</h3>
               <div class="two-fields">
                 <label
-                  >Début
-                  <input v-model="nouvelleOccurrence.heureDebut" type="time" :disabled="enCours"
+                  >Heure de début
+                  <input
+                    v-model="nouvelleOccurrence.heureDebut"
+                    type="time"
+                    required
+                    :disabled="enCours"
                 /></label>
                 <label
-                  >Fin <input v-model="nouvelleOccurrence.heureFin" type="time" :disabled="enCours"
+                  >Heure de fin
+                  <input
+                    v-model="nouvelleOccurrence.heureFin"
+                    type="time"
+                    required
+                    :disabled="enCours"
                 /></label>
               </div>
-              <label
-                >Jour de semaine
-                <select v-model="nouvelleOccurrence.journee" :disabled="enCours">
-                  <option value="">Sans jour défini (assignation manuelle)</option>
-                  <option :value="jourSemaineSelectionne">
-                    {{ capitale(jourSemaineSelectionne) }}
-                  </option>
-                </select>
-              </label>
               <label
                 >Priorité
                 <select
@@ -457,9 +538,9 @@
                 class="btn btn-dark-action btn-small"
                 type="button"
                 :disabled="enCours"
-                @click="creerNouvelleOccurrence"
+                @click="creerNouvelleOccurrence('manuel')"
               >
-                {{ enCours ? 'Création…' : 'Créer cette occurrence' }}
+                {{ enCours ? 'Création…' : 'Créer cet horaire' }}
               </button>
             </div>
           </div>
@@ -496,6 +577,65 @@
         </form>
       </section>
     </div>
+
+    <div
+      v-if="alerteChevauchement"
+      class="modal-overlay"
+      role="presentation"
+      @click.self="alerteChevauchement = ''"
+    >
+      <section
+        class="modal-card confirm-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="titreChevauchement"
+      >
+        <div class="warning-icon">!</div>
+        <h2 id="titreChevauchement">Horaire déjà utilisé</h2>
+        <p role="alert">{{ alerteChevauchement }}</p>
+        <div class="modal-actions">
+          <button class="btn btn-dark-action" type="button" @click="alerteChevauchement = ''">
+            Compris
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <div
+      v-if="assignationASupprimer"
+      class="modal-overlay"
+      role="presentation"
+      @click.self="!enCours && (assignationASupprimer = null)"
+    >
+      <section
+        class="modal-card confirm-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="titreSuppression"
+      >
+        <h2 id="titreSuppression">Retirer cette assignation ?</h2>
+        <p>{{ assignationASupprimer.titre }}</p>
+        <p>Ses sous-tâches, commentaires et états seront supprimés.</p>
+        <div class="modal-actions">
+          <button
+            class="btn btn-light"
+            type="button"
+            :disabled="enCours"
+            @click="assignationASupprimer = null"
+          >
+            Annuler
+          </button>
+          <button
+            class="btn btn-delete"
+            type="button"
+            :disabled="enCours"
+            @click="supprimerAssignation"
+          >
+            Confirmer la suppression
+          </button>
+        </div>
+      </section>
+    </div>
   </main>
 </template>
 
@@ -508,8 +648,8 @@ function dateLocale() {
   return `${maintenant.getFullYear()}-${String(maintenant.getMonth() + 1).padStart(2, '0')}-${String(maintenant.getDate()).padStart(2, '0')}`
 }
 
-const JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi']
 const dateSelectionnee = ref(dateLocale())
+const rechercheEmploye = ref('')
 const journees = ref([])
 const employeIdSelectionne = ref(null)
 const indexTache = ref(0)
@@ -522,6 +662,9 @@ const messageSucces = ref('')
 const confirmationAuto = ref(false)
 const modalManuelle = ref(false)
 const formulaireCreationOccurrence = ref(false)
+const formulaireCreationHoraireModification = ref(false)
+const alerteChevauchement = ref('')
+const assignationASupprimer = ref(null)
 const modifierOccurrenceVisible = ref(false)
 const occurrenceModificationId = ref('')
 const choixEmployes = ref([])
@@ -529,12 +672,8 @@ const choixTaches = ref([])
 const choixPriorites = ref([])
 const dateChoixCharges = ref('')
 const formulaire = reactive({ accountId: '', taskId: '', occurrenceId: '', comment: '' })
-const nouvelleOccurrence = reactive({
-  journee: '',
-  heureDebut: '',
-  heureFin: '',
-  taskPriorityId: '',
-})
+const nouvelleOccurrence = reactive({ heureDebut: '', heureFin: '', taskPriorityId: '' })
+const nouvelHoraireModification = reactive({ heureDebut: '', heureFin: '', taskPriorityId: '' })
 let requeteJournee = 0
 let requeteChoix = 0
 
@@ -555,9 +694,6 @@ const nombreTerminees = computed(() =>
 const aDesAutomatiques = computed(() =>
   journees.value.some((jour) => jour.tasks?.some((tache) => tache.isAutomatic)),
 )
-const jourSemaineSelectionne = computed(
-  () => JOURS[new Date(`${dateSelectionnee.value}T12:00:00Z`).getUTCDay()],
-)
 const dateLongue = computed(() => {
   const date = new Date(`${dateSelectionnee.value}T12:00:00Z`)
   return Number.isNaN(date.getTime())
@@ -572,6 +708,25 @@ const dateLongue = computed(() => {
 const tacheManuelleSelectionnee = computed(
   () => choixTaches.value.find((tache) => String(tache.id) === formulaire.taskId) ?? null,
 )
+const employesDeTerrain = computed(() =>
+  choixEmployes.value.filter((employe) => employe.role === 'personnel_de_terrain'),
+)
+const journeesFiltrees = computed(() => {
+  const terme = normaliser(rechercheEmploye.value.trim())
+  if (!terme) return journees.value
+  return journees.value.filter((jour) =>
+    normaliser(
+      [jour.account?.prenom, jour.account?.nom, jour.account?.poste?.nom].filter(Boolean).join(' '),
+    ).includes(terme),
+  )
+})
+
+function normaliser(texte) {
+  return String(texte ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+}
 
 function nomEmploye(employe) {
   return [employe?.prenom, employe?.nom].filter(Boolean).join(' ') || 'Employé inconnu'
@@ -582,22 +737,49 @@ function initiales(employe) {
 function libelleRole(role) {
   return role?.replaceAll('_', ' ') || 'Employé'
 }
-function capitale(valeur) {
-  return valeur ? valeur[0].toUpperCase() + valeur.slice(1) : ''
-}
 function heure(valeur) {
   return valeur ? valeur.slice(0, 5) : '—'
 }
 function toutesTerminees(taches) {
   return !!taches?.length && taches.every((tache) => tache.isCompleted)
 }
-function libelleOccurrence(occurrence) {
-  return `${heure(occurrence.heureDebut)} – ${heure(occurrence.heureFin)} · ${occurrence.journee ? capitale(occurrence.journee) : 'Sans jour'} (n° ${occurrence.id})`
+function libellePriorite(horaire) {
+  return (
+    horaire?.priority?.task_priority ||
+    choixPriorites.value.find((priorite) => Number(priorite.id) === Number(horaire?.taskPriorityId))
+      ?.task_priority ||
+    'Non précisée'
+  )
+}
+function libelleOccurrence(horaire) {
+  return `${heure(horaire.heureDebut)} – ${heure(horaire.heureFin)} · Priorité : ${libellePriorite(horaire)}`
 }
 function occurrencesPourTache(taskId) {
-  const tache = choixTaches.value.find((item) => Number(item.id) === Number(taskId))
-  return (tache?.occurrences ?? []).filter(
-    (item) => item.journee === null || item.journee === jourSemaineSelectionne.value,
+  return choixTaches.value.find((item) => Number(item.id) === Number(taskId))?.occurrences ?? []
+}
+function occurrencesPourModification(affectation) {
+  return occurrencesPourTache(affectation.taskId)
+}
+function secondes(heureSaisie) {
+  if (!/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?$/.test(heureSaisie ?? '')) return null
+  const [h, m, s = '0'] = heureSaisie.split(':')
+  return Number(h) * 3600 + Number(m) * 60 + Number(s)
+}
+function horairesChevauchants(a, b) {
+  const debutA = secondes(a?.heureDebut)
+  const finA = secondes(a?.heureFin)
+  const debutB = secondes(b?.heureDebut)
+  const finB = secondes(b?.heureFin)
+  if ([debutA, finA, debutB, finB].some((valeur) => valeur === null)) return false
+  return debutA < finB && debutB < finA
+}
+function verifierChevauchement(accountId, taskId, horaire, idExclu = null) {
+  const jour = journees.value.find((item) => Number(item.accountId) === Number(accountId))
+  return (jour?.tasks ?? []).some(
+    (affectation) =>
+      Number(affectation.taskId) === Number(taskId) &&
+      Number(affectation.id) !== Number(idExclu) &&
+      horairesChevauchants(horaire, affectation.occurrence),
   )
 }
 function selectionnerEmploye(accountId) {
@@ -605,6 +787,7 @@ function selectionnerEmploye(accountId) {
   indexTache.value = 0
   modifierOccurrenceVisible.value = false
   occurrenceModificationId.value = ''
+  formulaireCreationHoraireModification.value = false
 }
 function changerIndex(direction) {
   indexTache.value = Math.max(
@@ -613,6 +796,7 @@ function changerIndex(direction) {
   )
   modifierOccurrenceVisible.value = false
   occurrenceModificationId.value = ''
+  formulaireCreationHoraireModification.value = false
 }
 function afficherErreur(error) {
   return error?.message || 'Une erreur inattendue est survenue.'
@@ -646,6 +830,8 @@ watch(
   () => {
     confirmationAuto.value = false
     modalManuelle.value = false
+    assignationASupprimer.value = null
+    alerteChevauchement.value = ''
     dateChoixCharges.value = ''
     ++requeteChoix
     void chargerJournee()
@@ -683,7 +869,6 @@ function reinitialiserFormulaire() {
   formulaire.taskId = ''
   formulaire.occurrenceId = ''
   formulaire.comment = ''
-  nouvelleOccurrence.journee = ''
   nouvelleOccurrence.heureDebut = ''
   nouvelleOccurrence.heureFin = ''
   nouvelleOccurrence.taskPriorityId = ''
@@ -706,11 +891,24 @@ function changerTacheManuelle() {
     : ''
   formulaireCreationOccurrence.value = false
 }
-async function creerNouvelleOccurrence() {
-  if (!formulaire.taskId) return
-  erreurModal.value = ''
-  if (!nouvelleOccurrence.taskPriorityId && !tacheManuelleSelectionnee.value?.taskPriorityId) {
-    erreurModal.value = 'Veuillez choisir une priorité pour cette occurrence.'
+async function creerNouvelleOccurrence(destination = 'manuel') {
+  const modification = destination === 'modification'
+  const taskId = modification ? tacheCourante.value?.taskId : formulaire.taskId
+  const valeurs = modification ? nouvelHoraireModification : nouvelleOccurrence
+  const tache = choixTaches.value.find((item) => Number(item.id) === Number(taskId))
+  if (!taskId || !tache) return
+  const debut = secondes(valeurs.heureDebut)
+  const fin = secondes(valeurs.heureFin)
+  if (debut === null || fin === null || fin <= debut) {
+    const message = 'Indiquez un horaire valide : fin après début.'
+    if (modification) erreur.value = message
+    else erreurModal.value = message
+    return
+  }
+  if (!valeurs.taskPriorityId && !tache.taskPriorityId) {
+    const message = 'Choisissez une priorité.'
+    if (modification) erreur.value = message
+    else erreurModal.value = message
     return
   }
   enCours.value = true
@@ -718,24 +916,26 @@ async function creerNouvelleOccurrence() {
     const reponse = await apiFetch('/assign/occurrences', {
       method: 'POST',
       body: JSON.stringify({
-        taskId: Number(formulaire.taskId),
-        heureDebut: nouvelleOccurrence.heureDebut || null,
-        heureFin: nouvelleOccurrence.heureFin || null,
-        journee: nouvelleOccurrence.journee || null,
-        ...(nouvelleOccurrence.taskPriorityId
-          ? { taskPriorityId: Number(nouvelleOccurrence.taskPriorityId) }
-          : {}),
+        taskId: Number(taskId),
+        heureDebut: valeurs.heureDebut,
+        heureFin: valeurs.heureFin,
+        ...(valeurs.taskPriorityId ? { taskPriorityId: Number(valeurs.taskPriorityId) } : {}),
       }),
     })
-    const occurrence = reponse?.data
-    if (!occurrence?.id) throw new Error('Le serveur n’a pas renvoyé l’occurrence créée.')
-    const tache = tacheManuelleSelectionnee.value
+    const horaire = reponse?.data
+    if (!horaire?.id) throw new Error('Le serveur n’a pas renvoyé le nouvel horaire.')
     tache.occurrences ??= []
-    tache.occurrences.push(occurrence)
-    formulaire.occurrenceId = String(occurrence.id)
-    formulaireCreationOccurrence.value = false
+    tache.occurrences.push(horaire)
+    if (modification) {
+      occurrenceModificationId.value = String(horaire.id)
+      formulaireCreationHoraireModification.value = false
+    } else {
+      formulaire.occurrenceId = String(horaire.id)
+      formulaireCreationOccurrence.value = false
+    }
   } catch (error) {
-    erreurModal.value = afficherErreur(error)
+    if (modification) erreur.value = afficherErreur(error)
+    else erreurModal.value = afficherErreur(error)
   } finally {
     enCours.value = false
   }
@@ -743,6 +943,13 @@ async function creerNouvelleOccurrence() {
 async function assignerManuellement() {
   if (!formulaire.accountId || !formulaire.taskId || !formulaire.occurrenceId) return
   erreurModal.value = ''
+  const horaire = occurrencesPourTache(formulaire.taskId).find(
+    (item) => String(item.id) === formulaire.occurrenceId,
+  )
+  if (horaire && verifierChevauchement(formulaire.accountId, formulaire.taskId, horaire)) {
+    alerteChevauchement.value = 'Cette tâche existe déjà à cet horaire pour cet employé.'
+    return
+  }
   enCours.value = true
   const compteId = Number(formulaire.accountId)
   try {
@@ -762,7 +969,15 @@ async function assignerManuellement() {
     if (jour) selectionnerEmploye(compteId)
     messageSucces.value = 'La tâche a été assignée manuellement.'
   } catch (error) {
-    erreurModal.value = afficherErreur(error)
+    if (
+      error?.status === 409 ||
+      error?.statusCode === 409 ||
+      /existe déjà à cet horaire/i.test(afficherErreur(error))
+    ) {
+      alerteChevauchement.value = 'Cette tâche existe déjà à cet horaire pour cet employé.'
+    } else {
+      erreurModal.value = afficherErreur(error)
+    }
   } finally {
     enCours.value = false
   }
@@ -789,10 +1004,26 @@ async function ouvrirModificationOccurrence() {
   modifierOccurrenceVisible.value = !modifierOccurrenceVisible.value
   if (!modifierOccurrenceVisible.value) return
   occurrenceModificationId.value = String(tacheCourante.value?.occurrenceId ?? '')
+  formulaireCreationHoraireModification.value = false
   await chargerChoix()
 }
 async function enregistrerModificationOccurrence() {
   if (!tacheCourante.value || !occurrenceModificationId.value) return
+  const horaire = occurrencesPourModification(tacheCourante.value).find(
+    (item) => String(item.id) === occurrenceModificationId.value,
+  )
+  if (
+    horaire &&
+    verifierChevauchement(
+      employeIdSelectionne.value,
+      tacheCourante.value.taskId,
+      horaire,
+      tacheCourante.value.id,
+    )
+  ) {
+    alerteChevauchement.value = 'Cette tâche existe déjà à cet horaire pour cet employé.'
+    return
+  }
   enCours.value = true
   erreur.value = ''
   try {
@@ -806,7 +1037,31 @@ async function enregistrerModificationOccurrence() {
     if (employeIdSelectionne.value === id)
       indexTache.value = Math.min(index, tachesSelectionnees.value.length - 1)
     modifierOccurrenceVisible.value = false
-    messageSucces.value = 'Occurrence modifiée avec succès.'
+    messageSucces.value = 'Horaire modifié avec succès.'
+  } catch (error) {
+    if (
+      error?.status === 409 ||
+      error?.statusCode === 409 ||
+      /existe déjà à cet horaire/i.test(afficherErreur(error))
+    ) {
+      alerteChevauchement.value = 'Cette tâche existe déjà à cet horaire pour cet employé.'
+    } else erreur.value = afficherErreur(error)
+  } finally {
+    enCours.value = false
+  }
+}
+async function supprimerAssignation() {
+  if (!assignationASupprimer.value) return
+  const identifiant = assignationASupprimer.value.id
+  const index = indexTache.value
+  enCours.value = true
+  erreur.value = ''
+  try {
+    await apiFetch(`/assign/tasks/${identifiant}`, { method: 'DELETE' })
+    assignationASupprimer.value = null
+    await chargerJournee(true)
+    indexTache.value = Math.max(0, Math.min(index, tachesSelectionnees.value.length - 1))
+    messageSucces.value = 'Assignation retirée.'
   } catch (error) {
     erreur.value = afficherErreur(error)
   } finally {
@@ -829,12 +1084,6 @@ async function enregistrerModificationOccurrence() {
   align-items: end;
   margin-bottom: 22px;
   flex-wrap: wrap;
-}
-.eyebrow {
-  letter-spacing: 0.12em;
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: #27805e;
 }
 h1 {
   font-size: 2rem;
@@ -863,7 +1112,8 @@ h1 {
 .manual-form input:not([type='radio']),
 .manual-form select,
 .manual-form textarea,
-.occurrence-editor select {
+.occurrence-editor select,
+.occurrence-editor input[type='time'] {
   padding: 11px 12px;
   background: white;
   border: 1px solid #d8dde2;
@@ -1003,13 +1253,6 @@ h1 {
   font-weight: 700;
   margin: 0 0 4px;
 }
-.subtle-pill {
-  padding: 6px 10px;
-  border-radius: 18px;
-  background: #f0f3f5;
-  color: #6c757d;
-  font-size: 0.75rem;
-}
 .employees-list {
   display: grid;
   gap: 10px;
@@ -1123,12 +1366,6 @@ h1 {
   line-height: 1.3;
   margin: 5px 0 3px;
 }
-.task-number {
-  color: #85909a;
-  font-size: 0.7rem;
-  font-weight: 750;
-  letter-spacing: 0.08em;
-}
 .task-room,
 .task-description {
   color: #707c88;
@@ -1155,6 +1392,7 @@ h1 {
   margin: 5px 0 0;
 }
 .occurrence-toolbar {
+  justify-content: flex-end;
   margin: 18px 0;
   border-top: 1px solid #e9ecef;
   padding-top: 14px;
@@ -1486,5 +1724,90 @@ h1 {
   .modal-actions {
     flex-wrap: wrap;
   }
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.employee-search {
+  width: 100%;
+  border: 1px solid #d8dde2;
+  border-radius: 9px;
+  padding: 10px 12px;
+  margin-bottom: 15px;
+  background: white;
+}
+.employee-search:focus {
+  border-color: #168451;
+  outline: 2px solid #d8f1e1;
+}
+.auto-marker {
+  flex: none;
+  border-radius: 12px;
+  background: #e6f4eb;
+  color: #157047;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 8px;
+}
+.task-metadata {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 18px 0;
+}
+.schedule-main,
+.schedule-priority {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: #edf7f0;
+  border: 1px solid #c6e5d2;
+  border-radius: 10px;
+  padding: 11px 15px;
+}
+.schedule-main strong,
+.schedule-priority strong {
+  color: #47735b;
+  font-size: 0.76rem;
+}
+.schedule-main span {
+  color: #14633e;
+  font-size: 1.2rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.schedule-priority span {
+  color: #1b5239;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+.task-origin {
+  margin-left: auto;
+}
+.create-schedule-trigger {
+  margin: 10px 0 5px;
+}
+.task-delete-bar {
+  margin-top: 25px;
+  padding-top: 14px;
+  border-top: 1px solid #e9ecef;
+  display: flex;
+  justify-content: flex-end;
+}
+.btn-delete {
+  background: #fff1f1;
+  color: #a52a35;
+  border: 1px solid #e9b5bb;
+}
+.btn-delete:hover {
+  background: #ffe4e6;
 }
 </style>
