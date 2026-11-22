@@ -1,4 +1,4 @@
-import { creerAssignService } from "../utils/assignUtils.mjs";
+import { creerAssignService } from "../services/assignService.mjs";
 import { Op } from "sequelize";
 import bd from "../models/bd.mjs";
 import * as models from "../models/bd_index.mjs";
