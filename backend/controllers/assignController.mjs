@@ -1,4 +1,4 @@
-import { creerAssignService } from "../Utils/assignUtils.mjs";
+import { creerAssignService } from "../utils/assignUtils.mjs";
 import { Op } from "sequelize";
 import bd from "../models/bd.mjs";
 import * as models from "../models/bd_index.mjs";
@@ -44,7 +44,7 @@ function creerAssignController(service) {
   async function creerOccurrence(req, res, next) {
     try {
       const data = await service.creerOccurrence(req.body);
-      return res.status(201).json({ message: "Occurrence créée.", data });
+      return res.status(201).json({ message: "Horaire créé.", data });
     } catch (error) {
       return next(error);
     }
@@ -56,7 +56,16 @@ function creerAssignController(service) {
         req.params.workDayTaskId,
         req.body.occurrenceId,
       );
-      return res.status(200).json({ message: "Occurrence modifiée.", data });
+      return res.status(200).json({ message: "Horaire modifié.", data });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  async function supprimerAssignation(req, res, next) {
+    try {
+      const data = await service.supprimerAssignation(req.params.workDayTaskId);
+      return res.status(200).json({ message: "Assignation supprimée.", data });
     } catch (error) {
       return next(error);
     }
@@ -69,8 +78,8 @@ function creerAssignController(service) {
     assignerManuellement,
     creerOccurrence,
     changerOccurrence,
+    supprimerAssignation,
   };
 }
-
 const service = creerAssignService({ models, bd, Op });
 export const controller = creerAssignController(service);
