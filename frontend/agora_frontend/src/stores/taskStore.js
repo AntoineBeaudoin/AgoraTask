@@ -85,20 +85,6 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
 
-    async loadEmployeeInterface2() {
-      try {
-        this.dailyComment = ''
-        const response = await apiFetch('/task/mine')
-        if (!response || response.status !== 200) {
-          throw new Error(`HTTP ${response ? response.status : 'erreur'}`)
-        }
-        this.myTasks = response.data
-        this.myTasksLoaded = true
-      } catch (err) {
-        console.log(`HTTP ${err}`)
-      }
-    },
-
     async getNumberOfTaskOccurrences(id) {
       try {
         const response = await apiFetch(`/task/occurrences/${id}`)
