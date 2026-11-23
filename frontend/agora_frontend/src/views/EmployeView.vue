@@ -1,6 +1,6 @@
 <template>
   <section class="container py-5">
-    <h1 class="mb-4 text-center h3">Tâches pour {{ authStore.getEmail() }} le {{ todayString() }}</h1>
+    <h1 class="mb-4 text-center">Tâches pour {{ authStore.getEmail() }} le {{ todayString() }}</h1>
     <TaskDescriptionModal />
     <button class="btn btn-primary mb-3" @click="printPage()"
       v-if="taskStore.myTasksLoaded && taskStore.myTasks.length > 0">
@@ -58,7 +58,6 @@
             </div>
           </div>
 
-          <!-- Sous-tâches -->
           <div v-for="sub in task.sousTaches" :key="sub.id" class="ms-4 mt-2">
             <div class="d-flex align-items-center gap-2">
               <div class="form-check mb-0">
@@ -86,7 +85,6 @@
             </div>
           </div>
         </div>
-
 
         <div v-if="printing || detailledTasks.has(task.tacheAFaireId)" class="card-footer bg-light task-details">
           <TaskPdfPreview :documents="task.documents ?? []" />
@@ -284,6 +282,10 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+h1 {
+  font-size: 1.7rem;
+}
+
 @media print {
   .btn {
     display: none !important;
