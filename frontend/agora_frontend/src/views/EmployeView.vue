@@ -33,7 +33,7 @@
               </button>
             </div>
           </div>
-          <!-- Le visuel sera changé dans la branche de css -->
+
           <div v-for="sub in task.sousTaches" :key="sub.id" class="ms-4 mt-2">
             <div class="d-flex align-items-center gap-2">
               <div class="form-check mb-0">
@@ -75,7 +75,7 @@
         </div>
       </div>
 
-      <div class="card-footer bg-light">
+      <div class="card-footer">
           <label for="dailyComment" class="form-label">Commentaire de la journée</label>
           <textarea class="form-control" rows="2" maxlength="1000" id="dailyComment" name="dailyComment" v-model="taskStore.dailyComment"></textarea>
       </div>
