@@ -38,23 +38,12 @@
       <button type="button" aria-label="Fermer l'erreur" @click="erreur = ''">×</button>
     </div>
 
-    <section class="summary-strip" aria-label="Résumé des assignations">
-      <div class="summary-item">
-        <span>Employés assignés</span><strong>{{ journees.length }}</strong>
-      </div>
-      <div class="summary-item">
-        <span>Tâches de la journée</span><strong>{{ nombreTaches }}</strong>
-      </div>
-      <div class="summary-item">
-        <span>Tâches terminées</span
-        ><strong
-          >{{ nombreTerminees }} <small>/ {{ nombreTaches }}</small></strong
-        >
-      </div>
-      <div class="summary-item summary-date">
-        <span>Journée consultée</span><strong>{{ dateLongue }}</strong>
-      </div>
-    </section>
+    <AssignmentSummary
+      :nombre-employes="journees.length"
+      :nombre-taches="nombreTaches"
+      :nombre-terminees="nombreTerminees"
+      :date-longue="dateLongue"
+    />
 
     <section class="assign-layout">
       <div class="panel employees-panel">
@@ -106,9 +95,7 @@
               title="Contient des tâches automatiques"
               >Auto</span
             >
-            <span class="status-pill" :class="toutesTerminees(jour.tasks) ? 'done' : 'pending'">
-              {{ toutesTerminees(jour.tasks) ? 'Terminé' : 'À compléter' }}
-            </span>
+            <AssignmentStatusPill :complete="toutesTerminees(jour.tasks)" />
             <span class="chevron">›</span>
           </button>
         </div>
@@ -133,12 +120,10 @@
                 }}
               </p>
             </div>
-            <span
-              class="status-pill"
-              :class="toutesTerminees(tachesSelectionnees) ? 'done' : 'pending'"
-            >
-              {{ toutesTerminees(tachesSelectionnees) ? 'Terminé' : 'En cours' }}
-            </span>
+            <AssignmentStatusPill
+              :complete="toutesTerminees(tachesSelectionnees)"
+              libelle-attente="En cours"
+            />
           </div>
 
           <div v-if="tachesSelectionnees.length === 0" class="empty-state">
@@ -640,190 +625,83 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
-import { apiFetch } from '../utils/api.js'
+import { watch } from 'vue'
+import AssignmentSummary from '../components/assignations/AssignmentSummary.vue'
+import AssignmentStatusPill from '../components/assignations/AssignmentStatusPill.vue'
+import { useAssignmentStore } from '../stores/assignmentStore.js'
+import { useAssignmentUi } from '../composables/assignations/useAssignmentUi.js'
+import { useAssignmentJournee } from '../composables/assignations/useAssignmentJournee.js'
+import { useAssignmentManuelle } from '../composables/assignations/useAssignmentManuelle.js'
+import { useAssignmentHoraires } from '../composables/assignations/useAssignmentHoraires.js'
+import { useAssignmentActions } from '../composables/assignations/useAssignmentActions.js'
+import {
+  nomEmploye,
+  initiales,
+  libelleRole,
+  heure,
+  toutesTerminees,
+} from '../utils/assignmentRules.js'
 
-function dateLocale() {
-  const maintenant = new Date()
-  return `${maintenant.getFullYear()}-${String(maintenant.getMonth() + 1).padStart(2, '0')}-${String(maintenant.getDate()).padStart(2, '0')}`
-}
+const store = useAssignmentStore()
+const ui = useAssignmentUi()
+const journee = useAssignmentJournee(store, ui)
+const manuel = useAssignmentManuelle({ store, journee, ui })
+const horaires = useAssignmentHoraires({ store, journee, manuel, ui })
+const actions = useAssignmentActions({ store, journee, ui })
 
-const dateSelectionnee = ref(dateLocale())
-const rechercheEmploye = ref('')
-const journees = ref([])
-const employeIdSelectionne = ref(null)
-const indexTache = ref(0)
-const chargementJournee = ref(false)
-const chargementChoix = ref(false)
-const enCours = ref(false)
-const erreur = ref('')
-const erreurModal = ref('')
-const messageSucces = ref('')
-const confirmationAuto = ref(false)
-const modalManuelle = ref(false)
-const formulaireCreationOccurrence = ref(false)
-const formulaireCreationHoraireModification = ref(false)
-const alerteChevauchement = ref('')
-const assignationASupprimer = ref(null)
-const modifierOccurrenceVisible = ref(false)
-const occurrenceModificationId = ref('')
-const choixEmployes = ref([])
-const choixTaches = ref([])
-const choixPriorites = ref([])
-const dateChoixCharges = ref('')
-const formulaire = reactive({ accountId: '', taskId: '', occurrenceId: '', comment: '' })
-const nouvelleOccurrence = reactive({ heureDebut: '', heureFin: '', taskPriorityId: '' })
-const nouvelHoraireModification = reactive({ heureDebut: '', heureFin: '', taskPriorityId: '' })
-let requeteJournee = 0
-let requeteChoix = 0
-
-const jourSelectionne = computed(
-  () => journees.value.find((jour) => jour.accountId === employeIdSelectionne.value) ?? null,
-)
-const tachesSelectionnees = computed(() => jourSelectionne.value?.tasks ?? [])
-const tacheCourante = computed(() => tachesSelectionnees.value[indexTache.value] ?? null)
-const nombreTaches = computed(() =>
-  journees.value.reduce((total, jour) => total + (jour.tasks?.length ?? 0), 0),
-)
-const nombreTerminees = computed(() =>
-  journees.value.reduce(
-    (total, jour) => total + (jour.tasks?.filter((tache) => tache.isCompleted).length ?? 0),
-    0,
-  ),
-)
-const aDesAutomatiques = computed(() =>
-  journees.value.some((jour) => jour.tasks?.some((tache) => tache.isAutomatic)),
-)
-const dateLongue = computed(() => {
-  const date = new Date(`${dateSelectionnee.value}T12:00:00Z`)
-  return Number.isNaN(date.getTime())
-    ? dateSelectionnee.value
-    : new Intl.DateTimeFormat('fr-CA', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        timeZone: 'UTC',
-      }).format(date)
-})
-const tacheManuelleSelectionnee = computed(
-  () => choixTaches.value.find((tache) => String(tache.id) === formulaire.taskId) ?? null,
-)
-const employesDeTerrain = computed(() =>
-  choixEmployes.value.filter((employe) => employe.role === 'personnel_de_terrain'),
-)
-const journeesFiltrees = computed(() => {
-  const terme = normaliser(rechercheEmploye.value.trim())
-  if (!terme) return journees.value
-  return journees.value.filter((jour) =>
-    normaliser(
-      [jour.account?.prenom, jour.account?.nom, jour.account?.poste?.nom].filter(Boolean).join(' '),
-    ).includes(terme),
-  )
-})
-
-function normaliser(texte) {
-  return String(texte ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-}
-
-function nomEmploye(employe) {
-  return [employe?.prenom, employe?.nom].filter(Boolean).join(' ') || 'Employé inconnu'
-}
-function initiales(employe) {
-  return `${employe?.prenom?.charAt(0) ?? ''}${employe?.nom?.charAt(0) ?? ''}`.toUpperCase() || '—'
-}
-function libelleRole(role) {
-  return role?.replaceAll('_', ' ') || 'Employé'
-}
-function heure(valeur) {
-  return valeur ? valeur.slice(0, 5) : '—'
-}
-function toutesTerminees(taches) {
-  return !!taches?.length && taches.every((tache) => tache.isCompleted)
-}
-function libellePriorite(horaire) {
-  return (
-    horaire?.priority?.task_priority ||
-    choixPriorites.value.find((priorite) => Number(priorite.id) === Number(horaire?.taskPriorityId))
-      ?.task_priority ||
-    'Non précisée'
-  )
-}
-function libelleOccurrence(horaire) {
-  return `${heure(horaire.heureDebut)} – ${heure(horaire.heureFin)} · Priorité : ${libellePriorite(horaire)}`
-}
-function occurrencesPourTache(taskId) {
-  return choixTaches.value.find((item) => Number(item.id) === Number(taskId))?.occurrences ?? []
-}
-function occurrencesPourModification(affectation) {
-  return occurrencesPourTache(affectation.taskId)
-}
-function secondes(heureSaisie) {
-  if (!/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?$/.test(heureSaisie ?? '')) return null
-  const [h, m, s = '0'] = heureSaisie.split(':')
-  return Number(h) * 3600 + Number(m) * 60 + Number(s)
-}
-function horairesChevauchants(a, b) {
-  const debutA = secondes(a?.heureDebut)
-  const finA = secondes(a?.heureFin)
-  const debutB = secondes(b?.heureDebut)
-  const finB = secondes(b?.heureFin)
-  if ([debutA, finA, debutB, finB].some((valeur) => valeur === null)) return false
-  return debutA < finB && debutB < finA
-}
-function verifierChevauchement(accountId, taskId, horaire, idExclu = null) {
-  const jour = journees.value.find((item) => Number(item.accountId) === Number(accountId))
-  return (jour?.tasks ?? []).some(
-    (affectation) =>
-      Number(affectation.taskId) === Number(taskId) &&
-      Number(affectation.id) !== Number(idExclu) &&
-      horairesChevauchants(horaire, affectation.occurrence),
-  )
-}
-function selectionnerEmploye(accountId) {
-  employeIdSelectionne.value = accountId
-  indexTache.value = 0
-  modifierOccurrenceVisible.value = false
-  occurrenceModificationId.value = ''
-  formulaireCreationHoraireModification.value = false
-}
-function changerIndex(direction) {
-  indexTache.value = Math.max(
-    0,
-    Math.min(indexTache.value + direction, tachesSelectionnees.value.length - 1),
-  )
-  modifierOccurrenceVisible.value = false
-  occurrenceModificationId.value = ''
-  formulaireCreationHoraireModification.value = false
-}
-function afficherErreur(error) {
-  return error?.message || 'Une erreur inattendue est survenue.'
-}
-
-async function chargerJournee(preserverSelection = false) {
-  const id = ++requeteJournee
-  const date = dateSelectionnee.value
-  const selection = preserverSelection ? employeIdSelectionne.value : null
-  chargementJournee.value = true
-  erreur.value = ''
-  if (!preserverSelection) selectionnerEmploye(null)
-  try {
-    const resultat = await apiFetch(`/assign?date=${encodeURIComponent(date)}`, { method: 'GET' })
-    if (id !== requeteJournee) return
-    journees.value = Array.isArray(resultat?.data) ? resultat.data : []
-    const trouve = journees.value.find((jour) => jour.accountId === selection)
-    selectionnerEmploye(trouve ? selection : null)
-  } catch (error) {
-    if (id !== requeteJournee) return
-    journees.value = []
-    selectionnerEmploye(null)
-    erreur.value = afficherErreur(error)
-  } finally {
-    if (id === requeteJournee) chargementJournee.value = false
-  }
-}
+const { journees, choixTaches, choixPriorites, chargementJournee, chargementChoix } = store
+const {
+  enCours,
+  erreur,
+  erreurModal,
+  messageSucces,
+  confirmationAuto,
+  modalManuelle,
+  alerteChevauchement,
+  assignationASupprimer,
+  modifierOccurrenceVisible,
+  occurrenceModificationId,
+  formulaireCreationHoraireModification,
+} = ui
+const {
+  dateSelectionnee,
+  rechercheEmploye,
+  employeIdSelectionne,
+  indexTache,
+  jourSelectionne,
+  tachesSelectionnees,
+  tacheCourante,
+  nombreTaches,
+  nombreTerminees,
+  aDesAutomatiques,
+  dateLongue,
+  journeesFiltrees,
+  selectionnerEmploye,
+  changerIndex,
+  chargerJournee,
+} = journee
+const {
+  formulaire,
+  nouvelleOccurrence,
+  formulaireCreationOccurrence,
+  tacheManuelleSelectionnee,
+  employesDeTerrain,
+  occurrencesPourTache,
+  ouvrirAssignationManuelle,
+  fermerModalManuelle,
+  changerTacheManuelle,
+  assignerManuellement,
+} = manuel
+const {
+  nouvelHoraireModification,
+  libellePriorite,
+  libelleOccurrence,
+  occurrencesPourModification,
+  creerNouvelleOccurrence,
+  ouvrirModificationOccurrence,
+  enregistrerModificationOccurrence,
+} = horaires
+const { assignerAutomatiquement, supprimerAssignation } = actions
 
 watch(
   dateSelectionnee,
@@ -832,242 +710,11 @@ watch(
     modalManuelle.value = false
     assignationASupprimer.value = null
     alerteChevauchement.value = ''
-    dateChoixCharges.value = ''
-    ++requeteChoix
+    store.invaliderChoix()
     void chargerJournee()
   },
   { immediate: true },
 )
-
-async function chargerChoix() {
-  if (dateChoixCharges.value === dateSelectionnee.value) return true
-  const id = ++requeteChoix
-  const date = dateSelectionnee.value
-  chargementChoix.value = true
-  try {
-    const resultat = await apiFetch(`/assign/options?date=${encodeURIComponent(date)}`, {
-      method: 'GET',
-    })
-    if (id !== requeteChoix || date !== dateSelectionnee.value) return false
-    choixEmployes.value = resultat?.data?.employes ?? []
-    choixTaches.value = resultat?.data?.taches ?? []
-    choixPriorites.value = resultat?.data?.priorites ?? []
-    dateChoixCharges.value = date
-    return true
-  } catch (error) {
-    if (id === requeteChoix) {
-      erreurModal.value = afficherErreur(error)
-      erreur.value = afficherErreur(error)
-    }
-    return false
-  } finally {
-    if (id === requeteChoix) chargementChoix.value = false
-  }
-}
-function reinitialiserFormulaire() {
-  formulaire.accountId = ''
-  formulaire.taskId = ''
-  formulaire.occurrenceId = ''
-  formulaire.comment = ''
-  nouvelleOccurrence.heureDebut = ''
-  nouvelleOccurrence.heureFin = ''
-  nouvelleOccurrence.taskPriorityId = ''
-  formulaireCreationOccurrence.value = false
-  erreurModal.value = ''
-}
-async function ouvrirAssignationManuelle() {
-  reinitialiserFormulaire()
-  modalManuelle.value = true
-  await chargerChoix()
-}
-function fermerModalManuelle() {
-  modalManuelle.value = false
-  reinitialiserFormulaire()
-}
-function changerTacheManuelle() {
-  formulaire.occurrenceId = ''
-  nouvelleOccurrence.taskPriorityId = tacheManuelleSelectionnee.value?.taskPriorityId
-    ? String(tacheManuelleSelectionnee.value.taskPriorityId)
-    : ''
-  formulaireCreationOccurrence.value = false
-}
-async function creerNouvelleOccurrence(destination = 'manuel') {
-  const modification = destination === 'modification'
-  const taskId = modification ? tacheCourante.value?.taskId : formulaire.taskId
-  const valeurs = modification ? nouvelHoraireModification : nouvelleOccurrence
-  const tache = choixTaches.value.find((item) => Number(item.id) === Number(taskId))
-  if (!taskId || !tache) return
-  const debut = secondes(valeurs.heureDebut)
-  const fin = secondes(valeurs.heureFin)
-  if (debut === null || fin === null || fin <= debut) {
-    const message = 'Indiquez un horaire valide : fin après début.'
-    if (modification) erreur.value = message
-    else erreurModal.value = message
-    return
-  }
-  if (!valeurs.taskPriorityId && !tache.taskPriorityId) {
-    const message = 'Choisissez une priorité.'
-    if (modification) erreur.value = message
-    else erreurModal.value = message
-    return
-  }
-  enCours.value = true
-  try {
-    const reponse = await apiFetch('/assign/occurrences', {
-      method: 'POST',
-      body: JSON.stringify({
-        taskId: Number(taskId),
-        heureDebut: valeurs.heureDebut,
-        heureFin: valeurs.heureFin,
-        ...(valeurs.taskPriorityId ? { taskPriorityId: Number(valeurs.taskPriorityId) } : {}),
-      }),
-    })
-    const horaire = reponse?.data
-    if (!horaire?.id) throw new Error('Le serveur n’a pas renvoyé le nouvel horaire.')
-    tache.occurrences ??= []
-    tache.occurrences.push(horaire)
-    if (modification) {
-      occurrenceModificationId.value = String(horaire.id)
-      formulaireCreationHoraireModification.value = false
-    } else {
-      formulaire.occurrenceId = String(horaire.id)
-      formulaireCreationOccurrence.value = false
-    }
-  } catch (error) {
-    if (modification) erreur.value = afficherErreur(error)
-    else erreurModal.value = afficherErreur(error)
-  } finally {
-    enCours.value = false
-  }
-}
-async function assignerManuellement() {
-  if (!formulaire.accountId || !formulaire.taskId || !formulaire.occurrenceId) return
-  erreurModal.value = ''
-  const horaire = occurrencesPourTache(formulaire.taskId).find(
-    (item) => String(item.id) === formulaire.occurrenceId,
-  )
-  if (horaire && verifierChevauchement(formulaire.accountId, formulaire.taskId, horaire)) {
-    alerteChevauchement.value = 'Cette tâche existe déjà à cet horaire pour cet employé.'
-    return
-  }
-  enCours.value = true
-  const compteId = Number(formulaire.accountId)
-  try {
-    await apiFetch('/assign/manual', {
-      method: 'POST',
-      body: JSON.stringify({
-        date: dateSelectionnee.value,
-        accountId: compteId,
-        taskId: Number(formulaire.taskId),
-        occurrenceId: Number(formulaire.occurrenceId),
-        comment: formulaire.comment.trim() || null,
-      }),
-    })
-    fermerModalManuelle()
-    await chargerJournee()
-    const jour = journees.value.find((item) => item.accountId === compteId)
-    if (jour) selectionnerEmploye(compteId)
-    messageSucces.value = 'La tâche a été assignée manuellement.'
-  } catch (error) {
-    if (
-      error?.status === 409 ||
-      error?.statusCode === 409 ||
-      /existe déjà à cet horaire/i.test(afficherErreur(error))
-    ) {
-      alerteChevauchement.value = 'Cette tâche existe déjà à cet horaire pour cet employé.'
-    } else {
-      erreurModal.value = afficherErreur(error)
-    }
-  } finally {
-    enCours.value = false
-  }
-}
-async function assignerAutomatiquement() {
-  enCours.value = true
-  erreur.value = ''
-  try {
-    const resultat = await apiFetch('/assign/automatic', {
-      method: 'POST',
-      body: JSON.stringify({ date: dateSelectionnee.value }),
-    })
-    confirmationAuto.value = false
-    await chargerJournee(true)
-    const bilan = resultat?.data ?? {}
-    messageSucces.value = `${bilan.creees ?? 0} tâche(s) créée(s), ${bilan.supprimees ?? 0} remplacée(s), ${bilan.ignorees ?? 0} ignorée(s).`
-  } catch (error) {
-    erreur.value = afficherErreur(error)
-  } finally {
-    enCours.value = false
-  }
-}
-async function ouvrirModificationOccurrence() {
-  modifierOccurrenceVisible.value = !modifierOccurrenceVisible.value
-  if (!modifierOccurrenceVisible.value) return
-  occurrenceModificationId.value = String(tacheCourante.value?.occurrenceId ?? '')
-  formulaireCreationHoraireModification.value = false
-  await chargerChoix()
-}
-async function enregistrerModificationOccurrence() {
-  if (!tacheCourante.value || !occurrenceModificationId.value) return
-  const horaire = occurrencesPourModification(tacheCourante.value).find(
-    (item) => String(item.id) === occurrenceModificationId.value,
-  )
-  if (
-    horaire &&
-    verifierChevauchement(
-      employeIdSelectionne.value,
-      tacheCourante.value.taskId,
-      horaire,
-      tacheCourante.value.id,
-    )
-  ) {
-    alerteChevauchement.value = 'Cette tâche existe déjà à cet horaire pour cet employé.'
-    return
-  }
-  enCours.value = true
-  erreur.value = ''
-  try {
-    await apiFetch(`/assign/tasks/${tacheCourante.value.id}/occurrence`, {
-      method: 'PATCH',
-      body: JSON.stringify({ occurrenceId: Number(occurrenceModificationId.value) }),
-    })
-    const id = employeIdSelectionne.value
-    const index = indexTache.value
-    await chargerJournee(true)
-    if (employeIdSelectionne.value === id)
-      indexTache.value = Math.min(index, tachesSelectionnees.value.length - 1)
-    modifierOccurrenceVisible.value = false
-    messageSucces.value = 'Horaire modifié avec succès.'
-  } catch (error) {
-    if (
-      error?.status === 409 ||
-      error?.statusCode === 409 ||
-      /existe déjà à cet horaire/i.test(afficherErreur(error))
-    ) {
-      alerteChevauchement.value = 'Cette tâche existe déjà à cet horaire pour cet employé.'
-    } else erreur.value = afficherErreur(error)
-  } finally {
-    enCours.value = false
-  }
-}
-async function supprimerAssignation() {
-  if (!assignationASupprimer.value) return
-  const identifiant = assignationASupprimer.value.id
-  const index = indexTache.value
-  enCours.value = true
-  erreur.value = ''
-  try {
-    await apiFetch(`/assign/tasks/${identifiant}`, { method: 'DELETE' })
-    assignationASupprimer.value = null
-    await chargerJournee(true)
-    indexTache.value = Math.max(0, Math.min(index, tachesSelectionnees.value.length - 1))
-    messageSucces.value = 'Assignation retirée.'
-  } catch (error) {
-    erreur.value = afficherErreur(error)
-  } finally {
-    enCours.value = false
-  }
-}
 </script>
 
-<style scoped src="../assets/assignments.css"></style>
+<style scoped src="../assets/assignment.css"></style>
