@@ -2,7 +2,7 @@
   <section class="container py-5">
     <h1 class="mb-4 text-center">Tâches pour {{ authStore.getEmail() }} le {{ todayString() }}</h1>
     <TaskDescriptionModal />
-    <button class="btn btn-primary mb-3" @click="printPage()"
+    <button class="btn btn-success mb-3" @click="printPage()"
       v-if="taskStore.myTasksLoaded && taskStore.myTasks.length > 0">
       <i class="bi bi-printer" aria-hidden="true"></i> Imprimer l'horaire</button>
     <link rel="stylesheet" href="">
@@ -18,7 +18,7 @@
           <div class="d-flex justify-content-between align-items-center">
             <div class="form-check d-flex align-items-center gap-2">
               <input class="form-check-input" type="checkbox" :id="'task-' + task.tacheAFaireId"
-                v-model="task.isCompleted" @change="save" />
+                v-model="task.isCompleted" @change="toggleTaskCompletion(task)" />
 
               <label class="form-check-label" :for="'task-' + task.tacheAFaireId">
                 {{ task.title }}
@@ -32,7 +32,7 @@
                 <span v-if="task.room" class="badge bg-secondary ms-2">
                   Local : {{ task.room }}
                 </span>
-                <button type="button" class="d-inline-block btn btn-link btn-sm p-0 ms-2"
+                <button type="button" class="d-inline-block btn btn-outline-success btn-sm ms-2"
                   :aria-expanded="isTaskCommentOpen(task)" @click="toggleTaskComment(task)">
                   {{ isTaskCommentOpen(task) ? 'Masquer' : 'Commenter' }}
                 </button>
@@ -40,7 +40,7 @@
             </div>
 
             <div class="d-flex gap-2">
-              <button type="button" class="btn btn-info btn-sm task-details-btn" @click="openTaskDetails(task)">
+              <button type="button" class="btn btn-outline-success btn-sm task-details-btn" @click="openTaskDetails(task)">
                 Détails
               </button>
             </div>
@@ -68,7 +68,7 @@
                 </label>
               </div>
 
-              <button type="button" class="btn btn-link btn-sm p-0" :aria-expanded="isSubCommentOpen(task, sub)"
+              <button type="button" class="btn btn-outline-success btn-sm" :aria-expanded="isSubCommentOpen(task, sub)"
                 @click="toggleSubComment(task, sub)">
                 {{ isSubCommentOpen(task, sub) ? 'Masquer' : 'Commenter' }}
               </button>
@@ -100,7 +100,7 @@
       </div>
 
       <div v-if="!taskStore.isDaySubmitted" class="d-flex justify-content-center gap-2 mt-4">
-        <button type="submit" class="btn btn-primary" id="btn-soumettre" :disabled="saving || !validation.valid">
+        <button type="submit" class="btn btn-success" id="btn-soumettre" :disabled="saving || !validation.valid">
           Soumettre
         </button>
       </div>
@@ -168,6 +168,18 @@ async function printPage() {
 
 function isTaskCommentOpen(task) {
   return printing.value || openTaskComments.has(task.tacheAFaireId)
+}
+
+async function toggleTaskCompletion(task) {
+  if (taskStore.isDaySubmitted) return
+
+  if (task.isCompleted) {
+    for (const sub of task.sousTaches ?? []) {
+      sub.isCompleted = true
+    }
+  }
+
+  await save()
 }
 
 function toggleTaskComment(task) {
@@ -284,6 +296,48 @@ onUnmounted(() => {
 <style scoped>
 h1 {
   font-size: 1.7rem;
+}
+
+.form-check-input {
+  width: 1.25em;
+  height: 1.25em;
+  margin-top: 0;
+  border: 2px solid #198754;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.form-check-input:checked {
+  background-color: #198754;
+  border-color: #198754;
+}
+
+.form-check-input:focus {
+  border-color: #198754;
+  box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.2);
+}
+
+.form-check-label {
+  cursor: pointer;
+}
+
+.btn-success {
+  background-color: #198754;
+  border-color: #198754;
+}
+
+.btn-success:hover {
+  background-color: #157347;
+  border-color: #146c43;
+}
+
+.btn-outline-success:hover {
+  background-color: #198754;
+  border-color: #198754;
+}
+
+.btn {
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
 @media print {
