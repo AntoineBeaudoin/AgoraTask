@@ -226,7 +226,7 @@ describe('EmployeView.vue', () => {
     const wrapper = createWrapper()
     await nextTick()
 
-    const commentBtn = wrapper.find('button.btn-link')
+    const commentBtn = wrapper.find('button.btn-outline-success.ms-2')
 
     expect(commentBtn.text()).toContain('Commenter')
     expect(wrapper.find('#comment-101').exists()).toBe(false)
@@ -272,7 +272,6 @@ describe('EmployeView.vue', () => {
     expect(wrapper.find('#sub-comment-101-1').exists()).toBe(true)
   })
 
-
   test('sauvegarde automatiquement les modifications des tâches et sous-tâches', async () => {
     const savedStates = []
 
@@ -292,15 +291,15 @@ describe('EmployeView.vue', () => {
     const subCheckbox = wrapper.find('#sub-101-1')
 
     await taskCheckbox.setValue(true)
+
     await taskCheckbox.setValue(false)
-    await subCheckbox.setValue(true)
+
     await subCheckbox.setValue(false)
 
-    expect(taskStore.saveProgress).toHaveBeenCalledTimes(4)
+    expect(taskStore.saveProgress).toHaveBeenCalledTimes(3)
 
     expect(savedStates).toEqual([
-      { taskCompleted: true, subTaskCompleted: false },
-      { taskCompleted: false, subTaskCompleted: false },
+      { taskCompleted: true, subTaskCompleted: true },
       { taskCompleted: false, subTaskCompleted: true },
       { taskCompleted: false, subTaskCompleted: false },
     ])
@@ -310,7 +309,7 @@ describe('EmployeView.vue', () => {
     const wrapper = createWrapper()
     await nextTick()
 
-    expect(wrapper.find('button.btn-primary.mb-3').exists()).toBe(true)
+    expect(wrapper.find('button.btn-success.mb-3').exists()).toBe(true)
   })
 
   test('masque le bouton d’impression lorsqu’il n’existe aucune tâche', async () => {
@@ -319,7 +318,7 @@ describe('EmployeView.vue', () => {
     const wrapper = createWrapper()
     await nextTick()
 
-    expect(wrapper.find('button.btn-primary.mb-3').exists()).toBe(false)
+    expect(wrapper.find('button.btn-success.mb-3').exists()).toBe(false)
   })
 
   test('affiche les détails des tâches pendant la préparation de l’impression', async () => {
@@ -328,7 +327,7 @@ describe('EmployeView.vue', () => {
 
     expect(wrapper.find('.task-details').exists()).toBe(false)
 
-    await wrapper.find('button.btn-primary.mb-3').trigger('click')
+    await wrapper.find('button.btn-success.mb-3').trigger('click')
     await nextTick()
     await waitForPrint()
 
@@ -339,7 +338,7 @@ describe('EmployeView.vue', () => {
     const wrapper = createWrapper()
     await nextTick()
 
-    await wrapper.find('button.btn-primary.mb-3').trigger('click')
+    await wrapper.find('button.btn-success.mb-3').trigger('click')
 
     await vi.waitFor(() => {
       expect(window.print).toHaveBeenCalledTimes(1)
@@ -350,7 +349,7 @@ describe('EmployeView.vue', () => {
     const wrapper = createWrapper()
     await nextTick()
 
-    await wrapper.find('button.btn-primary.mb-3').trigger('click')
+    await wrapper.find('button.btn-success.mb-3').trigger('click')
     await nextTick()
 
     expect(wrapper.find('#comment-101').exists()).toBe(true)
@@ -361,7 +360,7 @@ describe('EmployeView.vue', () => {
     const wrapper = createWrapper()
     await nextTick()
 
-    await wrapper.find('button.btn-primary.mb-3').trigger('click')
+    await wrapper.find('button.btn-success.mb-3').trigger('click')
     await nextTick()
 
     expect(wrapper.find('#comment-101').exists()).toBe(true)
@@ -453,4 +452,43 @@ describe('EmployeView.vue', () => {
       wrapper.find('#msg-soumission-reussie').exists()
     ).toBe(true)
   })
+
+
+  test('coche automatiquement toutes les sous-tâches lorsqu’une tâche générale est cochée', async () => {
+    assignedTask.sousTaches.push(
+      {
+        id: 2,
+        titre: 'Vérifier les pompes',
+        isCompleted: false,
+        commentaire: '',
+      },
+      {
+        id: 3,
+        titre: 'Vérifier les alarmes',
+        isCompleted: false,
+        commentaire: '',
+      },
+    )
+
+    const wrapper = createWrapper()
+    await nextTick()
+
+    const taskCheckbox = wrapper.find('#task-101')
+
+    await taskCheckbox.setValue(true)
+    await nextTick()
+
+    expect(assignedTask.isCompleted).toBe(true)
+
+    expect(
+      assignedTask.sousTaches.every(sub => sub.isCompleted)
+    ).toBe(true)
+
+    expect(wrapper.find('#sub-101-1').element.checked).toBe(true)
+    expect(wrapper.find('#sub-101-2').element.checked).toBe(true)
+    expect(wrapper.find('#sub-101-3').element.checked).toBe(true)
+
+    expect(taskStore.saveProgress).toHaveBeenCalledTimes(1)
+  })
+
 })
