@@ -717,4 +717,4 @@ watch(
 )
 </script>
 
-<style scoped src="../assets/assignment.css"></style>
+<style scoped src="../assets/assignments.css"></style>
