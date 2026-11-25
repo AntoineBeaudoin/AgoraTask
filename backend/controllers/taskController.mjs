@@ -22,6 +22,7 @@ import {
   normalizeEmbeddedDocuments,
   resolveTaskPriorityId,
   validateOccurrencesForPriority,
+  isLowestPriorityId,
 } from "../utils/taskHelpers.mjs";
 import { todayString, validerDate } from "../utils/dateHelpers.mjs";
 
@@ -138,15 +139,18 @@ async function createSubTasks(taskId, subTasks) {
   );
 }
 
-async function createExternalLinks(taskId, links) {
+async function createExternalLinks(taskId, links, transaction) {
   if (!links || links.length < 1) return;
   await Promise.all(
     links.map((link) =>
-      TaskLink.create({
-        taskId,
-        title: link.title || link.url,
-        url: link.url,
-      }),
+      TaskLink.create(
+        {
+          taskId,
+          title: link.title || link.url,
+          url: link.url,
+        },
+        { transaction },
+      ),
     ),
   );
 }
@@ -269,9 +273,42 @@ async function syncExistingDocuments(req, taskId) {
   }
 }
 
-async function syncTaskOccurrences(taskId, occurrences) {
+function parsePositiveIntId(rawId, label = "tâche") {
+  const numericId = Number(rawId);
+  if (!Number.isInteger(numericId) || numericId <= 0) {
+    throw createHttpError(`L'identifiant de ${label} est invalide.`, 400);
+  }
+  return numericId;
+}
+
+async function deleteRemovedOccurrences(taskId, removedIds, transaction) {
+  if (removedIds.length === 0) return;
+  const linkedWorkTasks = await work_day_task.findAll({
+    where: { occurrenceId: removedIds },
+    attributes: ["id"],
+    transaction,
+  });
+  const workDayTaskIds = linkedWorkTasks.map((wt) => wt.id);
+  if (workDayTaskIds.length > 0) {
+    await work_day_sub_task.destroy({
+      where: { workDayTaskId: workDayTaskIds },
+      transaction,
+    });
+    await work_day_task.destroy({
+      where: { id: workDayTaskIds },
+      transaction,
+    });
+  }
+  await occurrence_de_tache.destroy({
+    where: { id: removedIds, tacheId: taskId },
+    transaction,
+  });
+}
+
+async function syncTaskOccurrences(taskId, occurrences, transaction) {
   const existingOccurrences = await occurrence_de_tache.findAll({
     where: { tacheId: taskId },
+    transaction,
   });
   const existingById = new Map(
     existingOccurrences.map((occ) => [Number(occ.id), occ]),
@@ -287,36 +324,42 @@ async function syncTaskOccurrences(taskId, occurrences) {
       isRequired: occ.isRequired ?? true,
     };
     if (existing) {
-      await existing.update(payload);
+      await existing.update(payload, { transaction });
       retainedIds.push(existing.id);
     } else {
-      const created = await occurrence_de_tache.create({
-        tacheId: taskId,
-        ...payload,
-      });
+      const created = await occurrence_de_tache.create(
+        { tacheId: taskId, ...payload },
+        { transaction },
+      );
       retainedIds.push(created.id);
     }
   }
-  const removed = existingOccurrences.filter(
-    (occ) => !retainedIds.includes(occ.id),
-  );
-  for (const occ of removed) {
-    // Une occurrence déjà utilisée dans une journée de travail est conservée
-    const refCount = await work_day_task.count({
-      where: { occurrenceId: occ.id },
-    });
-    if (refCount === 0) await occ.destroy();
-  }
+  const removedIds = existingOccurrences
+    .filter((occ) => !retainedIds.includes(occ.id))
+    .map((occ) => occ.id);
+  await deleteRemovedOccurrences(taskId, removedIds, transaction);
+}
+
+async function deleteRemovedSubTasks(taskId, removedIds, transaction) {
+  if (removedIds.length === 0) return;
+  await work_day_sub_task.destroy({
+    where: { subTaskId: removedIds },
+    transaction,
+  });
+  await sous_tache.destroy({
+    where: { id: removedIds, tacheId: taskId },
+    transaction,
+  });
 }
 
 /**
  * Synchronise les sous-tâches d'une tâche en les mettant à jour sur place
- * (comme pour les occurrences) afin de ne pas perdre l'historique des
- * journées de travail.
+ * et en supprimant proprement les sous-tâches retirées et leurs références.
  */
-async function syncTaskSubTasks(taskId, subTasks) {
+async function syncTaskSubTasks(taskId, subTasks, transaction) {
   const existingSubTasks = await sous_tache.findAll({
     where: { tacheId: taskId },
+    transaction,
   });
   const existingById = new Map(
     existingSubTasks.map((st) => [Number(st.id), st]),
@@ -325,28 +368,23 @@ async function syncTaskSubTasks(taskId, subTasks) {
   for (const st of subTasks) {
     const existing = existingById.get(Number(st.id));
     if (existing) {
-      await existing.update({
-        titre: st.titre,
-        description: st.description || null,
-      });
+      await existing.update(
+        { titre: st.titre, description: st.description || null },
+        { transaction },
+      );
       retainedIds.push(existing.id);
     } else {
-      const created = await sous_tache.create({
-        tacheId: taskId,
-        titre: st.titre,
-        description: st.description || null,
-      });
+      const created = await sous_tache.create(
+        { tacheId: taskId, titre: st.titre, description: st.description || null },
+        { transaction },
+      );
       retainedIds.push(created.id);
     }
   }
-  const removed = existingSubTasks.filter((st) => !retainedIds.includes(st.id));
-  for (const st of removed) {
-    // Une sous-tâche déjà utilisée dans une journée de travail est conservée
-    const refCount = await work_day_sub_task.count({
-      where: { subTaskId: st.id },
-    });
-    if (refCount === 0) await st.destroy();
-  }
+  const removedIds = existingSubTasks
+    .filter((st) => !retainedIds.includes(st.id))
+    .map((st) => st.id);
+  await deleteRemovedSubTasks(taskId, removedIds, transaction);
 }
 
 async function prepareValidatedTaskInput(req) {
@@ -364,8 +402,8 @@ async function prepareValidatedTaskInput(req) {
   );
   const occurrences =
     priorities.length > 0 ||
-    req.body.taskPriorityId !== undefined ||
-    rawOccurrences.length > 0
+      req.body.taskPriorityId !== undefined ||
+      rawOccurrences.length > 0
       ? validateOccurrencesForPriority(priorityId, rawOccurrences, priorities)
       : [];
   return { priorityId, occurrences, subTasks, externalLinks };
@@ -646,48 +684,63 @@ export async function saveProgress(req, res, next) {
   }
 }
 
-async function applyTaskUpdates(req, task) {
+async function applyTaskUpdates(req, task, transaction) {
   const { title, room, description, recurring, automaticAssignment } = req.body;
   validateTaskRequiredFields(title, room);
   validatePdfFiles(getDocumentFiles(req));
   await validateTaskDoesNotAlreadyExist(title, room, task.id);
-  const priorities = await task_priority.findAll();
-  const hasOccOrPrio =
-    req.body.occurrences !== undefined || req.body.taskPriorityId !== undefined;
+  const priorities = await task_priority.findAll({ transaction });
   const rawOccurrences = parseJsonField(req.body.occurrences, []);
   const priorityId = resolveTaskPriorityId(
     req.body.taskPriorityId ?? task.taskPriorityId,
     rawOccurrences,
   );
-  await task.update({
-    title,
-    room,
-    description: description ?? null,
-    recurring,
-    automaticAssignment,
-    taskPriorityId: priorityId,
-  });
-  if (hasOccOrPrio) {
+  await task.update(
+    {
+      title,
+      room,
+      description: description ?? null,
+      recurring,
+      automaticAssignment,
+      taskPriorityId: priorityId,
+    },
+    { transaction },
+  );
+  if (req.body.occurrences !== undefined) {
     const occurrences = validateOccurrencesForPriority(
       priorityId,
       rawOccurrences,
       priorities,
     );
-    await syncTaskOccurrences(task.id, occurrences);
+    await syncTaskOccurrences(task.id, occurrences, transaction);
+  } else if (
+    req.body.taskPriorityId !== undefined &&
+    !isLowestPriorityId(priorityId, priorities)
+  ) {
+    const existingCount = await occurrence_de_tache.count({
+      where: { tacheId: task.id },
+      transaction,
+    });
+    if (existingCount === 0) {
+      throw createHttpError(
+        "Au moins une occurrence est requise pour cette priorité.",
+        400,
+      );
+    }
   }
 }
 
-async function applyTaskCollectionsUpdate(req, task) {
+async function applyTaskCollectionsUpdate(req, task, transaction) {
   if (req.body.subTasks !== undefined) {
     const subTasks = parseJsonField(req.body.subTasks, []);
-    await syncTaskSubTasks(task.id, subTasks);
+    await syncTaskSubTasks(task.id, subTasks, transaction);
   }
   if (req.body.externalLinks !== undefined || req.body.links !== undefined) {
     const links = normalizeExternalLinks(
       parseJsonField(req.body.externalLinks ?? req.body.links, []),
     );
-    await TaskLink.destroy({ where: { taskId: task.id } });
-    await createExternalLinks(task.id, links);
+    await TaskLink.destroy({ where: { taskId: task.id }, transaction });
+    await createExternalLinks(task.id, links, transaction);
   }
   await syncExistingImages(req, task.id);
   await addTaskImages(req, task);
@@ -696,16 +749,18 @@ async function applyTaskCollectionsUpdate(req, task) {
 }
 
 export async function replaceTask(req, res, next) {
-  const id = req.params.id;
   try {
+    const id = parsePositiveIntId(req.params.id);
     const task = await Task.findOne({ where: { id, archived: false } });
     if (!task) {
       return res
         .status(404)
         .json({ status: 404, message: "Tâche introuvable." });
     }
-    await applyTaskUpdates(req, task);
-    await applyTaskCollectionsUpdate(req, task);
+    await bd.transaction(async (transaction) => {
+      await applyTaskUpdates(req, task, transaction);
+      await applyTaskCollectionsUpdate(req, task, transaction);
+    });
     const updatedTask = await Task.findOne({
       where: { id: task.id },
       include: TASK_RELATIONS_INCLUDE,

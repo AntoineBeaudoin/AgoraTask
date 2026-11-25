@@ -143,14 +143,16 @@ function normalizeSingleOccurrence(occ, fallbackPriorityId) {
 }
 
 /**
- * Valide et filtre les occurrences selon la priorité sélectionnée.
+ * Valide et normalise les occurrences selon la priorité sélectionnée.
+ * La priorité la plus faible n'exige pas d'occurrence
  */
 export function validateOccurrencesForPriority(priorityId, occurrences = [], priorities = []) {
-  if (isLowestPriorityId(priorityId, priorities)) {
-    return [];
-  }
-  if (!Array.isArray(occurrences) || occurrences.length === 0) {
+  const list = Array.isArray(occurrences) ? occurrences : [];
+  if (list.length === 0) {
+    if (isLowestPriorityId(priorityId, priorities)) {
+      return [];
+    }
     throw createHttpError("Au moins une occurrence est requise pour cette priorité.", 400);
   }
-  return occurrences.map((occ) => normalizeSingleOccurrence(occ, priorityId));
+  return list.map((occ) => normalizeSingleOccurrence(occ, priorityId));
 }
