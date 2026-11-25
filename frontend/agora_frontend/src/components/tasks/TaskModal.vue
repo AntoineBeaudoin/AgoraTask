@@ -110,7 +110,7 @@
               </div>
 
               <div class="col-lg-6">
-                <div v-if="!isLowestPrioritySelected" id="occurrencesSection">
+                <div id="occurrencesSection">
                   <div class="d-flex justify-content-between align-items-center mb-2">
                     <h3 class="fs-5 text-primary m-0">2. Horaires & Fréquence (Occurrences)</h3>
                     <button id="addOccurrenceBtn" type="button" class="btn btn-sm btn-outline-success"
@@ -369,14 +369,8 @@ watch(
 
 function handleTaskPriorityChange() {
   showMissingOccurrencesError.value = false
-  if (isLowestPrioritySelected.value) {
-    occurrences.value = []
-    previousPriorityId.value = selectedPriorityId.value
-    return
-  }
   occurrences.value.forEach((occ) => {
-    const matchesPrevious = Number(occ.taskPriorityId) === Number(previousPriorityId.value)
-    if (!occ.taskPriorityId || matchesPrevious) {
+    if (!occ.taskPriorityId && selectedPriorityId.value) {
       occ.taskPriorityId = selectedPriorityId.value
     }
   })
@@ -449,13 +443,13 @@ function removeExternalLink(index) {
 }
 
 function areOccurrencesValid() {
-  if (isLowestPrioritySelected.value) {
-    return true
-  }
-  return (
-    occurrences.value.length > 0 &&
-    occurrences.value.every((occ) => Boolean(occ.taskPriorityId) && Boolean(occ.journee))
+  const allEntriesValid = occurrences.value.every(
+    (occ) => Boolean(occ.taskPriorityId) && Boolean(occ.journee)
   )
+  if (isLowestPrioritySelected.value) {
+    return allEntriesValid
+  }
+  return occurrences.value.length > 0 && allEntriesValid
 }
 
 function formIsValid() {
@@ -501,7 +495,7 @@ function buildTaskPayload() {
     recurring: recurring.value,
     automaticAssignment: automaticAssignment.value,
     taskPriorityId: selectedPriorityId.value || null,
-    occurrences: isLowestPrioritySelected.value ? [] : occurrences.value,
+    occurrences: occurrences.value,
     subTasks: subTasks.value,
     images: images.value,
     documents: documents.value,
