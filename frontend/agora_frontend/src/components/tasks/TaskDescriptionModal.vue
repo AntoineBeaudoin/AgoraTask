@@ -45,11 +45,6 @@
                       occ.journee.slice(1) : 'Non définie' }}</p>
                     <div class="d-flex justify-content-between">
                       <p><strong>Priorité:</strong> {{ occ.priority?.task_priority ?? 'Non définie' }}</p>
-                      <i class="ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                        title="Indique le niveau de priorité : 1 = très élevée, 2 = élevé, 3 = moyenne, 4 = basse, 5 = très basse."
-                        style="cursor: help;">
-                        <img src="../../assets/images/info-circle.svg" alt="">
-                      </i>
                     </div>
                   </div>
                   <div class="col-sm-6 border-1 border-dark border-start">
