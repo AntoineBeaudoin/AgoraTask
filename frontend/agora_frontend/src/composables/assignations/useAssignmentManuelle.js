@@ -7,8 +7,12 @@ export function useAssignmentManuelle({ store, journee, ui }) {
   const formulaire = reactive({ accountId: '', taskId: '', occurrenceId: '', comment: '' })
   const nouvelleOccurrence = reactive({ heureDebut: '', heureFin: '', taskPriorityId: '' })
   const formulaireCreationOccurrence = ref(false)
-  const tacheManuelleSelectionnee = computed(() => store.choixTaches.value.find((tache) => String(tache.id) === formulaire.taskId) ?? null)
-  const employesDeTerrain = computed(() => store.choixEmployes.value.filter((employe) => employe.role === 'personnel_de_terrain'))
+  const tacheManuelleSelectionnee = computed(
+    () => store.choixTaches.value.find((tache) => String(tache.id) === formulaire.taskId) ?? null,
+  )
+  const employesDeTerrain = computed(() =>
+    store.choixEmployes.value.filter((employe) => employe.role === 'personnel_de_terrain'),
+  )
 
   function reinitialiserFormulaire() {
     formulaire.accountId = ''
@@ -36,19 +40,41 @@ export function useAssignmentManuelle({ store, journee, ui }) {
   function changerTacheManuelle() {
     formulaire.occurrenceId = ''
     nouvelleOccurrence.taskPriorityId = tacheManuelleSelectionnee.value?.taskPriorityId
-      ? String(tacheManuelleSelectionnee.value.taskPriorityId) : ''
+      ? String(tacheManuelleSelectionnee.value.taskPriorityId)
+      : ''
     formulaireCreationOccurrence.value = false
   }
 
   function occurrencesPourTache(taskId) {
-    return store.choixTaches.value.find((item) => Number(item.id) === Number(taskId))?.occurrences ?? []
+    const occurrences =
+      store.choixTaches.value.find((item) => Number(item.id) === Number(taskId))?.occurrences ?? []
+
+    const horairesVus = new Set()
+
+    return occurrences.filter((occurrence) => {
+      const cle = [
+        String(occurrence.heureDebut).slice(0, 5),
+        String(occurrence.heureFin).slice(0, 5),
+        occurrence.taskPriorityId,
+      ].join('|')
+
+      if (horairesVus.has(cle)) return false
+
+      horairesVus.add(cle)
+      return true
+    })
   }
 
   async function assignerManuellement() {
     if (!formulaire.accountId || !formulaire.taskId || !formulaire.occurrenceId) return
     ui.erreurModal.value = ''
-    const horaire = occurrencesPourTache(formulaire.taskId).find((item) => String(item.id) === formulaire.occurrenceId)
-    if (horaire && verifierChevauchement(store.journees.value, formulaire.accountId, formulaire.taskId, horaire)) {
+    const horaire = occurrencesPourTache(formulaire.taskId).find(
+      (item) => String(item.id) === formulaire.occurrenceId,
+    )
+    if (
+      horaire &&
+      verifierChevauchement(store.journees.value, formulaire.accountId, formulaire.taskId, horaire)
+    ) {
       ui.alerteChevauchement.value = MESSAGE_CHEVAUCHEMENT
       return
     }
@@ -68,7 +94,11 @@ export function useAssignmentManuelle({ store, journee, ui }) {
       if (jour) journee.selectionnerEmploye(compteId)
       ui.messageSucces.value = 'La tâche a été assignée manuellement.'
     } catch (error) {
-      if (error?.status === 409 || error?.statusCode === 409 || /existe déjà à cet horaire/i.test(afficherErreur(error))) {
+      if (
+        error?.status === 409 ||
+        error?.statusCode === 409 ||
+        /existe déjà à cet horaire/i.test(afficherErreur(error))
+      ) {
         ui.alerteChevauchement.value = MESSAGE_CHEVAUCHEMENT
       } else {
         ui.erreurModal.value = afficherErreur(error)
@@ -79,9 +109,16 @@ export function useAssignmentManuelle({ store, journee, ui }) {
   }
 
   return {
-    formulaire, nouvelleOccurrence, formulaireCreationOccurrence,
-    tacheManuelleSelectionnee, employesDeTerrain, occurrencesPourTache,
-    reinitialiserFormulaire, ouvrirAssignationManuelle,
-    fermerModalManuelle, changerTacheManuelle, assignerManuellement,
+    formulaire,
+    nouvelleOccurrence,
+    formulaireCreationOccurrence,
+    tacheManuelleSelectionnee,
+    employesDeTerrain,
+    occurrencesPourTache,
+    reinitialiserFormulaire,
+    ouvrirAssignationManuelle,
+    fermerModalManuelle,
+    changerTacheManuelle,
+    assignerManuellement,
   }
 }
