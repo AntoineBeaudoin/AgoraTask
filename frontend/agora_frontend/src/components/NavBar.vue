@@ -33,7 +33,7 @@ const fullName = ref('')
 
 const { token, isAuthenticated } = storeToRefs(store)
 
-const { isUserAdmin } = storeToRefs(store);
+const { isUserAdmin } = storeToRefs(store)
 
 const role = computed(() => store.getRole())
 
