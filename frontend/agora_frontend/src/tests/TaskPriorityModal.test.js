@@ -113,4 +113,43 @@ describe('TaskPriorityModal.vue', () => {
       'Impossible de supprimer cette priorité car elle est utilisée par au moins une occurrence de tâche.'
     )
   })
+
+  test('devrait afficher un avertissement lors de la création d’une priorité en double', async () => {
+    taskPriorityStore.addTaskPriority.mockImplementation(async () => {
+      taskPriorityStore.lastErrorMessage = 'Une priorité identique existe déjà.'
+      return false
+    })
+
+    createWrapper()
+    await nextTick()
+
+    const modal = document.body.querySelector('#taskPriorityModal')
+    const nameInput = modal.querySelector('#priorityName')
+    nameInput.value = 'Important'
+    nameInput.dispatchEvent(new Event('input'))
+    await nextTick()
+
+    modal.querySelector('form').dispatchEvent(new Event('submit'))
+    await nextTick()
+    await Promise.resolve()
+    await nextTick()
+
+    const warningAlert = document.body.querySelector('#priorityWarningAlert')
+    expect(warningAlert).not.toBeNull()
+    expect(warningAlert.textContent).toContain('Une priorité identique existe déjà.')
+  })
+
+  test('devrait supprimer une priorité avec succès lorsqu’elle n’est pas utilisée par des tâches actives', async () => {
+    createWrapper()
+    await nextTick()
+
+    const deleteButtons = document.body.querySelectorAll('#taskPriorityModal .btn-sm.btn-danger')
+    deleteButtons[0].click()
+    await nextTick()
+    await Promise.resolve()
+    await nextTick()
+
+    expect(taskPriorityStore.deleteTaskPriority).toHaveBeenCalledWith(1)
+    expect(document.body.querySelector('#priorityWarningAlert')).toBeNull()
+  })
 })
