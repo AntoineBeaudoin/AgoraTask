@@ -178,9 +178,13 @@ describe("Tests des tâches de l'employé", function () {
       const response = await mesTaches();
 
       expect(response.status).toBe(200);
-      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data.tasks).toHaveLength(1);
+      expect(response.body.data.workDayId).toBe(journee.id);
+      expect(response.body.data.isDaySubmitted).toBe(false);
+      expect(response.body.data.dailyComment).toBe("");
 
-      const item = response.body.data[0];
+      const item = response.body.data.tasks[0];
+
       expect(item.tacheAFaireId).toBe(assignation.id);
       expect(item.title).toBe("Vitest tâche");
       expect(item.isCompleted).toBe(false);
@@ -192,11 +196,14 @@ describe("Tests des tâches de l'employé", function () {
       });
     });
 
-    it("ne retourne rien pour une date sans journée de travail", async function () {
+    it("ne retourne aucune tâche pour une date sans journée de travail", async function () {
       const response = await mesTaches("2030-01-16");
 
       expect(response.status).toBe(200);
-      expect(response.body.data).toHaveLength(0);
+      expect(response.body.data.tasks).toHaveLength(0);
+      expect(response.body.data.workDayId).toBeNull();
+      expect(response.body.data.isDaySubmitted).toBe(false);
+      expect(response.body.data.dailyComment).toBe("");
     });
 
     it("ignore les tâches archivées", async function () {
@@ -205,7 +212,7 @@ describe("Tests des tâches de l'employé", function () {
       const response = await mesTaches();
 
       expect(response.status).toBe(200);
-      expect(response.body.data).toHaveLength(0);
+      expect(response.body.data.tasks).toHaveLength(0);
     });
   });
 
@@ -279,7 +286,8 @@ describe("Tests des tâches de l'employé", function () {
 
       const response = await mesTaches();
 
-      expect(response.body.data[0].sousTaches[0].isCompleted).toBe(true);
+      expect(response.status).toBe(200);
+      expect(response.body.data.tasks[0].sousTaches[0].isCompleted).toBe(true);
     });
 
     it("ne modifie pas la tâche assignée à un autre compte", async function () {

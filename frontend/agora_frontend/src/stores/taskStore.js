@@ -1,7 +1,7 @@
 /** @file Fichier qui définit la logique pour la gestion des tâches */
 import { defineStore } from 'pinia'
 import { apiFetch, apiFetchFormData } from '@/utils/api'
-import { isNumber } from '@/utils/checks'
+import { isNumber, stringVide } from '@/utils/checks'
 import { appendFilesToFormData } from '@/utils/fileHelper'
 
 function buildTaskFormData(task, isUpdate = false) {
@@ -36,6 +36,9 @@ export const useTaskStore = defineStore('tasks', {
     loaded: false,
     myTasks: [],
     myTasksLoaded: false,
+    dailyComment: '',
+    isDaySubmitted: false,
+    workDayId: null
   }),
 
   actions: {
@@ -58,13 +61,24 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
 
-    async loadMyTasks() {
+    async loadEmployeeInterface() {
       try {
+        this.dailyComment = ''
+        this.isDaySubmitted = false
+        this.workDayId = null
+        this.myTasksLoaded = false
+
         const response = await apiFetch('/task/mine')
+
         if (!response || response.status !== 200) {
           throw new Error(`HTTP ${response ? response.status : 'erreur'}`)
         }
-        this.myTasks = response.data
+
+        this.myTasks = response.data.tasks
+        this.workDayId = response.data.workDayId
+        this.isDaySubmitted = response.data.isDaySubmitted
+        this.dailyComment = response.data.dailyComment ?? ''
+
         this.myTasksLoaded = true
       } catch (err) {
         console.log(`HTTP ${err}`)
@@ -84,34 +98,115 @@ export const useTaskStore = defineStore('tasks', {
     },
 
     async saveProgress() {
-      const tasks = []
-      for (let i = 0; i < this.myTasks.length; i++) {
-        const task = this.myTasks[i]
-        const sousTaches = []
-        const subs = task.sousTaches || []
-        for (let j = 0; j < subs.length; j++) {
-          sousTaches.push({ id: subs[j].id, isCompleted: subs[j].isCompleted })
-        }
-        tasks.push({
-          tacheAFaireId: task.tacheAFaireId,
-          isCompleted: task.isCompleted,
-          commentaire: task.commentaire,
-          sousTaches: sousTaches,
-        })
-      }
+      if (this.isDaySubmitted) return false
+      const workDayId = this.myTasks[0]?.workDayId
+      if (!workDayId) return false
+
+      const tasks = this.myTasks.map((task) => ({
+        id: task.tacheAFaireId,
+        isCompleted: task.isCompleted === true,
+        subTasks: (task.sousTaches || []).map((sub) => ({
+          id: sub.workDaySubTaskId,
+          isCompleted: sub.isCompleted === true,
+        })),
+      }))
 
       try {
-        const response = await apiFetch('/task/progress', {
+        const response = await apiFetch(`/work_day/${workDayId}`, {
           method: 'PATCH',
-          body: JSON.stringify({ tasks: tasks }),
+          body: JSON.stringify({ tasks }),
         })
         if (!response || response.status !== 200) {
           throw new Error(`HTTP ${response ? response.status : 'erreur'}`)
         }
         return true
       } catch (err) {
-        console.log(`HTTP ${err}`)
+        console.log(err)
         return false
+      }
+    },
+
+    validateSubmission() {
+      for (const task of this.myTasks) {
+        if (!task.isCompleted && stringVide(task.commentaire)) {
+          return {
+            valid: false,
+            message: `La tâche "${task.title}" doit avoir un commentaire puisqu'elle n'est pas terminée.`,
+          }
+        }
+
+        for (const sub of task.sousTaches || []) {
+          if (!sub.isCompleted && stringVide(sub.commentaire)) {
+            return {
+              valid: false,
+              message: `La sous-tâche "${sub.titre}" doit avoir un commentaire puisqu'elle n'est pas terminée.`,
+            }
+          }
+        }
+      }
+
+      return { valid: true, message: '' }
+    },
+
+    async submitDay() {
+      if (this.isDaySubmitted) {
+        return {
+          success: false,
+          message: 'Cette journée a déjà été soumise.',
+        }
+      }
+
+      const validation = this.validateSubmission()
+
+      if (!validation.valid) {
+        return {
+          success: false,
+          message: validation.message,
+        }
+      }
+
+      const tasks = this.myTasks.map((task) => ({
+        id: task.tacheAFaireId,
+        comment: task.commentaire ?? '',
+        subTasks: (task.sousTaches || []).map((sub) => ({
+          id: sub.workDaySubTaskId,
+          comment: sub.commentaire ?? '',
+        })),
+      }))
+
+      try {
+        const workDayId = this.workDayId
+
+        if (!workDayId) {
+          throw new Error("Impossible de déterminer la journée à soumettre.")
+        }
+
+        const response = await apiFetch(`/work_day/submit/${workDayId}`, {
+          method: 'POST',
+          body: JSON.stringify({
+            comment: this.dailyComment,
+            tasks,
+          }),
+        })
+
+        if (!response || response.status !== 200) {
+          throw new Error(`HTTP ${response ? response.status : 'erreur'}`)
+        }
+
+        this.isDaySubmitted = true;
+
+        return {
+          success: true,
+          message: 'Journée soumise avec succès.',
+        }
+
+      } catch (err) {
+        console.log(err)
+
+        return {
+          success: false,
+          message: "Une erreur est survenue lors de la soumission de la journée.",
+        }
       }
     },
 

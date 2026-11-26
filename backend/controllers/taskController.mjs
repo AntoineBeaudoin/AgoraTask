@@ -541,7 +541,8 @@ function buildEmployeeTaskItem(assignment, task, subTasks, progressMap) {
 }
 
 /**
- * Retourne les tâches de la journée de travail du compte connecté.
+ * Retourne les tâches de la journée de travail du compte connecté,
+ * ainsi que son état de soumission.
  * La date peut être précisée avec ?date=YYYY-MM-DD (aujourd'hui par défaut).
  */
 export async function getMyTasks(req, res, next) {
@@ -549,14 +550,37 @@ export async function getMyTasks(req, res, next) {
     const date = req.query.date ?? todayString();
     if (!validerDate(date, next)) return;
 
-    const workTasks = await work_day_task.findAll({
-      include: [
-        {
-          model: work_day,
-          as: "workDay",
-          where: { accountId: req.user.id, date },
-          attributes: [],
+    // Récupérer la journée de travail, même si elle ne contient aucune tâche.
+    const currentWorkDay = await work_day.findOne({
+      where: {
+        accountId: req.user.id,
+        date,
+      },
+      attributes: ["id", "isSubmitted", "comment"],
+    });
+
+    // Aucune journée de travail pour cette date.
+    if (!currentWorkDay) {
+      return res.status(200).json({
+        status: 200,
+        message: "Aucune journée de travail trouvée.",
+        data: {
+          tasks: [],
+          workDayId: null,
+          isDaySubmitted: false,
+          dailyComment: '',
         },
+        path: "/api/task/mine",
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Récupérer les tâches associées à cette journée.
+    const workTasks = await work_day_task.findAll({
+      where: {
+        workDayId: currentWorkDay.id,
+      },
+      include: [
         {
           model: Task,
           as: "task",
@@ -577,12 +601,13 @@ export async function getMyTasks(req, res, next) {
       ],
     });
 
-    const data = workTasks.map((wt) => {
+    const tasks = workTasks.map((wt) => {
       const subTasks = [...wt.subTasks].sort((a, b) => a.id - b.id);
+
       return {
         ...wt.task.toJSON(),
-        // Le nom tacheAFaireId est conservé pour ne pas casser le frontend
         tacheAFaireId: wt.id,
+        workDayId: wt.workDayId,
         isCompleted: wt.isCompleted,
         commentaire: wt.comment,
         journee: wt.occurrence ? wt.occurrence.journee : null,
@@ -590,19 +615,28 @@ export async function getMyTasks(req, res, next) {
         heureFin: wt.occurrence ? wt.occurrence.heureFin : null,
         sousTaches: subTasks.map((s) => ({
           id: s.subTaskId,
+          workDaySubTaskId: s.id,
           titre: s.subTask ? s.subTask.titre : null,
           description: s.subTask ? s.subTask.description : null,
           isCompleted: s.isCompleted,
+          commentaire: s.comment,
         })),
       };
     });
 
-    data.sort((a, b) => (a.heureDebut ?? "").localeCompare(b.heureDebut ?? ""));
+    tasks.sort((a, b) =>
+      (a.heureDebut ?? "").localeCompare(b.heureDebut ?? "")
+    );
 
     return res.status(200).json({
       status: 200,
       message: "Tâches récupérées avec succès.",
-      data,
+      data: {
+        tasks,
+        workDayId: currentWorkDay.id,
+        isDaySubmitted: currentWorkDay.isSubmitted,
+        dailyComment: currentWorkDay.comment ?? ''
+      },
       path: "/api/task/mine",
       timestamp: new Date().toISOString(),
     });
