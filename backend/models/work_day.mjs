@@ -26,6 +26,10 @@ const work_day = bd.define(
       allowNull: false,
       defaultValue: false,
     },
+    workWeekId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+  },
   },
   { indexes: [{ unique: true, fields: ["accountId", "date"] }] },
 );
