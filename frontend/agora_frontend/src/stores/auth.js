@@ -138,6 +138,16 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+   function getEmail() {
+    if (!token.value) return null
+
+    try {
+      return jwtDecode(token.value).email
+    } catch {
+      return null
+    }
+  }
+
   async function loadEmployes()
   {
       try {
@@ -242,6 +252,7 @@ export const useAuthStore = defineStore('auth', () => {
     isUserEmploye,
     isUserEnAttente,
     getRole,
+    getEmail,
     getUserById,
     getEmployes,
     changePassword,

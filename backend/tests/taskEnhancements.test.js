@@ -212,11 +212,14 @@ describe("Tests des améliorations des tâches (PDF, liens externes et priorité
         .set("Authorization", `Bearer ${token}`);
 
       expect(mineResponse.status).toBe(200);
-      expect(mineResponse.body.data).toHaveLength(1);
-      expect(mineResponse.body.data[0].documents).toHaveLength(1);
-      expect(mineResponse.body.data[0].documents[0].filename).toBe("doc1.pdf");
-      expect(mineResponse.body.data[0].externalLinks).toHaveLength(1);
-      expect(mineResponse.body.data[0].externalLinks[0].url).toBe("https://example.com/lien1");
+      expect(mineResponse.body.data.tasks).toHaveLength(1);
+
+      const employeeTask = mineResponse.body.data.tasks[0];
+
+      expect(employeeTask.documents).toHaveLength(1);
+      expect(employeeTask.documents[0].filename).toBe("doc1.pdf");
+      expect(employeeTask.externalLinks).toHaveLength(1);
+      expect(employeeTask.externalLinks[0].url).toBe("https://example.com/lien1");
     });
 
     it("permet de modifier les documents PDF et les liens externes d'une tâche existante", async () => {
