@@ -300,11 +300,11 @@ describe("Tests des améliorations des tâches (PDF, liens externes et priorité
       expect(response.body.data.occurrences).toHaveLength(0);
     });
 
-    it("ne persiste aucune occurrence inutile si la priorité la plus faible est sélectionnée", async () => {
+    it("conserve les occurrences fournies si la priorité la plus faible est sélectionnée et hérite de la priorité globale par défaut", async () => {
       const response = await request(app)
         .post("/api/task/add")
         .send({
-          title: "Tâche libre avec occurrences parasites",
+          title: "Tâche libre avec occurrences",
           room: "Entrepôt B",
           taskPriorityId: prioriteLibre.id,
           occurrences: JSON.stringify([
@@ -312,18 +312,18 @@ describe("Tests des améliorations des tâches (PDF, liens externes et priorité
               journee: "jeudi",
               heureDebut: "10:00",
               heureFin: "11:00",
-              taskPriorityId: prioriteLibre.id,
             },
           ]),
         });
 
       expect(response.status).toBe(201);
-      expect(response.body.data.occurrences).toHaveLength(0);
+      expect(response.body.data.occurrences).toHaveLength(1);
+      expect(response.body.data.occurrences[0].taskPriorityId).toBe(prioriteLibre.id);
 
       const dbCount = await occurrence_de_tache.count({
         where: { tacheId: response.body.data.id },
       });
-      expect(dbCount).toBe(0);
+      expect(dbCount).toBe(1);
     });
 
     it("exige au moins une occurrence lorsque la priorité n'est pas la plus faible", async () => {
@@ -388,7 +388,7 @@ describe("Tests des améliorations des tâches (PDF, liens externes et priorité
       expect(normaleWithoutOcc.body.data.occurrences).toHaveLength(0);
     });
 
-    it("supprime les occurrences existantes non référencées lorsqu'une tâche passe à la priorité la plus faible", async () => {
+    it("conserve les occurrences existantes et leurs priorités lorsqu'une tâche passe à la priorité la plus faible", async () => {
       const createRes = await request(app)
         .post("/api/task/add")
         .send({
@@ -407,6 +407,7 @@ describe("Tests des améliorations des tâches (PDF, liens externes et priorité
 
       expect(createRes.status).toBe(201);
       const taskId = createRes.body.data.id;
+      const occId = createRes.body.data.occurrences[0].id;
       expect(createRes.body.data.occurrences).toHaveLength(1);
 
       const updateToLowestRes = await request(app)
@@ -417,19 +418,24 @@ describe("Tests des améliorations des tâches (PDF, liens externes et priorité
           taskPriorityId: prioriteLibre.id,
           occurrences: JSON.stringify([
             {
+              id: occId,
               journee: "lundi",
               heureDebut: "09:00",
               heureFin: "10:00",
-              taskPriorityId: prioriteLibre.id,
+              taskPriorityId: prioriteImportante.id,
             },
           ]),
         });
 
       expect(updateToLowestRes.status).toBe(200);
-      expect(updateToLowestRes.body.data.occurrences).toHaveLength(0);
+      expect(updateToLowestRes.body.data.taskPriorityId).toBe(prioriteLibre.id);
+      expect(updateToLowestRes.body.data.occurrences).toHaveLength(1);
+      expect(updateToLowestRes.body.data.occurrences[0].taskPriorityId).toBe(
+        prioriteImportante.id,
+      );
 
       const remainingCount = await occurrence_de_tache.count({ where: { tacheId: taskId } });
-      expect(remainingCount).toBe(0);
+      expect(remainingCount).toBe(1);
     });
   });
 });
