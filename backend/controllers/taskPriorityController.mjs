@@ -1,5 +1,8 @@
-import { task_priority, occurrence_de_tache } from "../models/bd_index.mjs";
+import { col, fn, where } from "sequelize";
+import bd from "../models/bd.mjs";
+import { Task, task_priority, occurrence_de_tache } from "../models/bd_index.mjs";
 import { emptyString } from "../utils/checks.mjs";
+import { createHttpError } from "../utils/taskHelpers.mjs";
 
 /**
  * Valide les champs d'une priorité de tâche. Lance une erreur 400 si invalide.
@@ -33,16 +36,13 @@ function validateTaskPriorityInput(priorityName, weigth) {
  * @returns {Promise<boolean>}
  */
 async function validateTaskPriorityDoesNotAlreadyExist(priorityName, priorityId = -1) {
+    const normalizedName = priorityName.trim().toLowerCase();
     const anotherPriority = await task_priority.findOne({
-        where: {
-            task_priority: priorityName.trim(),
-        },
+        where: where(fn("LOWER", col("task_priority")), normalizedName),
     });
 
     if (anotherPriority && Number(anotherPriority.id) !== Number(priorityId)) {
-        const error = new Error("Une priorité identique existe déjà.");
-        error.statusCode = 409;
-        throw error;
+        throw createHttpError("Une priorité identique existe déjà.", 409);
     }
 
     return true;
@@ -122,10 +122,10 @@ export async function createTaskPriority(req, res, next) {
  * @param {*} next Le prochain middleware à appeler, en cas d'erreur.
  */
 export async function replaceTaskPriority(req, res, next) {
-    const id = req.params.id;
     const { task_priority: priorityName, weigth } = req.body;
 
     try {
+        const id = parsePriorityId(req.params.id);
         const priority = await task_priority.findByPk(id);
         if (!priority) {
             return res.status(404).json({
@@ -154,41 +154,77 @@ export async function replaceTaskPriority(req, res, next) {
     }
 }
 
+function parsePriorityId(rawId) {
+    const numericId = Number(rawId);
+    if (!Number.isInteger(numericId) || numericId <= 0) {
+        throw createHttpError("L'identifiant de la priorité est invalide.", 400);
+    }
+    return numericId;
+}
+
+async function isPriorityUsedByActiveTasks(priorityId, transaction) {
+    const activeTaskCount = await Task.count({
+        where: { taskPriorityId: priorityId, archived: false },
+        transaction,
+    });
+    if (activeTaskCount > 0) return true;
+
+    const activeOccurrenceCount = await occurrence_de_tache.count({
+        where: { taskPriorityId: priorityId },
+        include: [
+            {
+                model: Task,
+                as: "task",
+                where: { archived: false },
+                required: true,
+                attributes: [],
+            },
+        ],
+        transaction,
+    });
+    return activeOccurrenceCount > 0;
+}
+
+async function clearPriorityFromArchivedTasks(priorityId, transaction) {
+    const archivedTasks = await Task.findAll({
+        where: { archived: true },
+        attributes: ["id"],
+        transaction,
+    });
+    const archivedTaskIds = archivedTasks.map((task) => task.id);
+    if (archivedTaskIds.length === 0) return;
+
+    await Task.update(
+        { taskPriorityId: null },
+        { where: { id: archivedTaskIds, taskPriorityId: priorityId }, transaction },
+    );
+    await occurrence_de_tache.update(
+        { taskPriorityId: null },
+        { where: { tacheId: archivedTaskIds, taskPriorityId: priorityId }, transaction },
+    );
+}
+
 /**
- * Supprime une priorité de tâche si aucune occurrence de tâche n'y est liée.
- *
- * @export
- * @async
- * @param {*} req La requête envoyée par le frontend.
- * @param {*} res La réponse à retourner au frontend.
- * @param {*} next Le prochain middleware à appeler, en cas d'erreur.
+ * Supprime une priorité de tâche si aucune tâche active ni aucune occurrence
+ * d'une tâche active n'y est liée. Met à null les références des tâches archivées.
  */
 export async function deleteTaskPriority(req, res, next) {
-    const id = req.params.id;
-
     try {
-        const priority = await task_priority.findByPk(id);
-        if (!priority) {
-            return res.status(404).json({
-                status: 404,
-                message: "Priorité introuvable.",
-            });
-        }
-
-        const linkedOccurrencesCount = await occurrence_de_tache.count({
-            where: { taskPriorityId: id },
+        const id = parsePriorityId(req.params.id);
+        await bd.transaction(async (transaction) => {
+            const priority = await task_priority.findByPk(id, { transaction });
+            if (!priority) {
+                throw createHttpError("Priorité introuvable.", 404);
+            }
+            if (await isPriorityUsedByActiveTasks(id, transaction)) {
+                throw createHttpError(
+                    "Impossible de supprimer cette priorité car elle est utilisée par au moins une tâche active ou l'une de ses occurrences.",
+                    409,
+                );
+            }
+            await clearPriorityFromArchivedTasks(id, transaction);
+            await priority.destroy({ transaction });
         });
-
-        if (linkedOccurrencesCount > 0) {
-            return res.status(409).json({
-                status: 409,
-                message: "Impossible de supprimer cette priorité car elle est utilisée par au moins une occurrence de tâche.",
-                path: `/api/task_priority/${id}`,
-                timestamp: new Date().toISOString(),
-            });
-        }
-
-        await priority.destroy();
         return res.status(204).json({});
     } catch (err) {
         next(err);
