@@ -13,6 +13,7 @@ import { task_priority } from "./task_priority.mjs";
 import { work_day } from "./work_day.mjs";
 import { work_day_task } from "./work_day_task.mjs";
 import { work_day_sub_task } from "./work_day_sub_task.mjs";
+import { work_week } from "./work_week.mjs";
 
 Task.hasMany(TaskImage, {
   foreignKey: "taskId",
@@ -127,6 +128,31 @@ work_day.belongsTo(Compte, {
   as: "account",
 });
 
+// Relation between compte and workweek
+Compte.hasMany(work_week, {
+  foreignKey: "accountId",
+  as: "workWeeks",
+  onDelete: "CASCADE",
+});
+
+work_week.belongsTo(Compte, {
+  foreignKey: "accountId",
+  as: "account",
+});
+
+// Relation between workweek and workday
+work_week.hasMany(work_day, {
+  foreignKey: "workWeekId",
+  as: "workDays",
+  onDelete: "CASCADE",
+});
+
+work_day.belongsTo(work_week, {
+  foreignKey: "workWeekId",
+  as: "workWeek",
+});
+
+
 //Relation between workday and task/subtask
 work_day.hasMany(work_day_task, {
   foreignKey: "workDayId",
@@ -213,4 +239,5 @@ export {
   work_day,
   work_day_task,
   work_day_sub_task,
+  work_week
 };
