@@ -482,31 +482,6 @@ const seedDatabase = async (req, res) => {
       sousTaches = [],
     ) => addToWorkDay(compte, tache, occurrenceId, commentaire, sousTaches);
 
-    if (comptes["Romain"]) {
-      await creerAffectation(
-        comptes["Romain"],
-        tachePiscine,
-        idOccurrence.tachePiscine_id,
-        null,
-        [st1, st2],
-      );
-
-      await creerAffectation(
-        comptes["Romain"],
-        tacheEntretienGeneral,
-        idOccurrence.tacheEntretienGeneral_id,
-        null,
-        [st4, st5, st6],
-      );
-
-      await creerAffectation(
-        comptes["Romain"],
-        tacheAppariteur,
-        idOccurrence.tacheAppariteur_id,
-        null,
-      );
-    }
-
     if (comptes["Clara"]) {
       await creerAffectation(
         comptes["Clara"],

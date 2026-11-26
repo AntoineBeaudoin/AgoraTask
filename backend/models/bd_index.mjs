@@ -105,14 +105,14 @@ Task.belongsToMany(Poste, {
 task_priority.hasMany(occurrence_de_tache, {
   foreignKey: "taskPriorityId",
   as: "occurrences",
-  onDelete: "RESTRICT",
+  onDelete: "SET NULL",
   onUpdate: "CASCADE",
 });
 
 occurrence_de_tache.belongsTo(task_priority, {
   foreignKey: "taskPriorityId",
   as: "priority",
-  onDelete: "RESTRICT",
+  onDelete: "SET NULL",
   onUpdate: "CASCADE",
 });
 
@@ -183,6 +183,9 @@ const originalAuthenticate = bd.authenticate.bind(bd);
 async function ensureTaskSchema() {
   await bd.query(
     'ALTER TABLE IF EXISTS "Tasks" ADD COLUMN IF NOT EXISTS "taskPriorityId" INTEGER REFERENCES "task_priorities" ("id") ON UPDATE CASCADE ON DELETE SET NULL;',
+  );
+  await bd.query(
+    'ALTER TABLE IF EXISTS "occurrence_de_taches" ALTER COLUMN "taskPriorityId" DROP NOT NULL;',
   );
   await TaskDocument.sync();
   await TaskLink.sync();
