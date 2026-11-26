@@ -187,8 +187,7 @@ export const useAuthStore = defineStore('auth', () => {
       })
 
       if (response.status !== 200 && response.status !== 201) {
-        errorMessage.value =
-          response.status + ': ' + response.message || 'Erreur lors de la connexion'
+        errorMessage.value = response.message || 'Erreur lors de la connexion'
       } else {
         const decodedToken = jwtDecode(response.data.token)
 
