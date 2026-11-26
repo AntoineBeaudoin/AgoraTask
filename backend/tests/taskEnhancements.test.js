@@ -438,4 +438,105 @@ describe("Tests des améliorations des tâches (PDF, liens externes et priorité
       expect(remainingCount).toBe(1);
     });
   });
+
+  describe("3. Suppression des sous-tâches et occurrences liées à des journées de travail", () => {
+    it("supprime une ou plusieurs sous-tâches et occurrences sans erreur 500 ni duplication et sans affecter les autres tâches", async () => {
+      const resT1 = await request(app)
+        .post("/api/task/add")
+        .send({
+          title: "Tâche avec suppressions",
+          room: "Salle D",
+          taskPriorityId: prioriteImportante.id,
+          occurrences: JSON.stringify([
+            { journee: "lundi", heureDebut: "08:00", heureFin: "09:00", taskPriorityId: prioriteImportante.id },
+            { journee: "mardi", heureDebut: "10:00", heureFin: "11:00", taskPriorityId: prioriteImportante.id },
+            { journee: "mercredi", heureDebut: "12:00", heureFin: "13:00", taskPriorityId: prioriteImportante.id },
+          ]),
+          subTasks: JSON.stringify([
+            { titre: "Sous-tâche 1" },
+            { titre: "Sous-tâche 2" },
+            { titre: "Sous-tâche 3" },
+          ]),
+        });
+      expect(resT1.status).toBe(201);
+      const t1 = resT1.body.data;
+
+      const resOther = await request(app)
+        .post("/api/task/add")
+        .send({
+          title: "Tâche non liée",
+          room: "Salle E",
+          taskPriorityId: prioriteNormale.id,
+          occurrences: JSON.stringify([
+            { journee: "jeudi", taskPriorityId: prioriteNormale.id },
+          ]),
+          subTasks: JSON.stringify([{ titre: "Sous-tâche intacte" }]),
+        });
+      expect(resOther.status).toBe(201);
+      const otherTask = resOther.body.data;
+
+      const wd = await work_day.create({ accountId: employe.id, date: todayString() });
+      const wdt1 = await work_day_task.create({
+        workDayId: wd.id,
+        taskId: t1.id,
+        occurrenceId: t1.occurrences[0].id,
+      });
+      const wdt2 = await work_day_task.create({
+        workDayId: wd.id,
+        taskId: t1.id,
+        occurrenceId: t1.occurrences[1].id,
+      });
+      await work_day_sub_task.create({ workDayTaskId: wdt1.id, subTaskId: t1.sous_taches[0].id });
+      await work_day_sub_task.create({ workDayTaskId: wdt2.id, subTaskId: t1.sous_taches[1].id });
+
+      // Suppression d'une sous-tâche et d'une occurrence référencées
+      const singleDeleteRes = await request(app)
+        .put(`/api/task/${t1.id}`)
+        .send({
+          title: t1.title,
+          room: t1.room,
+          taskPriorityId: prioriteImportante.id,
+          occurrences: JSON.stringify(t1.occurrences.slice(1)),
+          subTasks: JSON.stringify(t1.sous_taches.slice(1)),
+        });
+
+      expect(singleDeleteRes.status).toBe(200);
+      expect(singleDeleteRes.body.data.occurrences).toHaveLength(2);
+      expect(singleDeleteRes.body.data.sous_taches).toHaveLength(2);
+      expect(await work_day_task.findByPk(wdt1.id)).toBeNull();
+
+      // Suppression multiple des occurrences et sous-tâches restantes (passage à Libre)
+      const multiDeleteRes = await request(app)
+        .put(`/api/task/${t1.id}`)
+        .send({
+          title: t1.title,
+          room: t1.room,
+          taskPriorityId: prioriteLibre.id,
+          occurrences: JSON.stringify([]),
+          subTasks: JSON.stringify([]),
+        });
+
+      expect(multiDeleteRes.status).toBe(200);
+      expect(multiDeleteRes.body.data.occurrences).toHaveLength(0);
+      expect(multiDeleteRes.body.data.sous_taches).toHaveLength(0);
+      expect(await work_day_task.count({ where: { taskId: t1.id } })).toBe(0);
+      expect(await work_day_sub_task.count({ where: { workDayTaskId: [wdt1.id, wdt2.id] } })).toBe(0);
+
+      // La tâche non liée reste intacte
+      expect(await occurrence_de_tache.count({ where: { tacheId: otherTask.id } })).toBe(1);
+      expect(await sous_tache.count({ where: { tacheId: otherTask.id } })).toBe(1);
+    });
+
+    it("retourne 400 ou 404 pour un identifiant de tâche invalide ou inexistant lors de la mise à jour", async () => {
+      const invalidRes = await request(app)
+        .put("/api/task/abc")
+        .send({ title: "X", room: "Y" });
+      expect(invalidRes.status).toBe(400);
+
+      const notFoundRes = await request(app)
+        .put("/api/task/999999")
+        .send({ title: "X", room: "Y" });
+      expect(notFoundRes.status).toBe(404);
+    });
+  });
 });
