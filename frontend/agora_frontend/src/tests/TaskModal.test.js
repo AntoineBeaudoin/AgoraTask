@@ -72,7 +72,7 @@ describe('TaskModal.vue', () => {
     vi.clearAllMocks()
   })
 
-  test('masque automatiquement la section des occurrences lorsque la priorité globale au poids le plus faible est sélectionnée', async () => {
+  test('conserve la section des occurrences visible lorsque la priorité globale au poids le plus faible est sélectionnée', async () => {
     createWrapper()
     await nextTick()
     await Promise.resolve()
@@ -86,7 +86,7 @@ describe('TaskModal.vue', () => {
     prioritySelect.dispatchEvent(new Event('change'))
     await nextTick()
 
-    expect(modal.querySelector('#occurrencesSection')).toBeNull()
+    expect(modal.querySelector('#occurrencesSection')).not.toBeNull()
 
     prioritySelect.value = '2'
     prioritySelect.dispatchEvent(new Event('change'))
@@ -95,7 +95,7 @@ describe('TaskModal.vue', () => {
     expect(modal.querySelector('#occurrencesSection')).not.toBeNull()
   })
 
-  test('utilise la priorité globale comme valeur par défaut des occurrences lorsqu’elle n’est pas la plus faible', async () => {
+  test('utilise la priorité globale comme valeur par défaut des nouvelles occurrences sans écraser les occurrences existantes', async () => {
     createWrapper()
     await nextTick()
     await Promise.resolve()
@@ -117,15 +117,28 @@ describe('TaskModal.vue', () => {
     expect(occPrioritySelect).not.toBeNull()
     expect(Number(occPrioritySelect.value)).toBe(2)
 
-    // Change la priorité globale vers 'Important' (id: 1) -> met à jour l'occurrence qui utilisait la valeur par défaut
+    // Change la priorité globale vers 'Important' (id: 1) -> l'occurrence existante conserve sa priorité (2)
     globalPrioritySelect.value = '1'
     globalPrioritySelect.dispatchEvent(new Event('change'))
     await nextTick()
 
-    expect(Number(occPrioritySelect.value)).toBe(1)
+    expect(Number(occPrioritySelect.value)).toBe(2)
+
+    // Sélectionne 'Libre' (id: 3) et ajoute une nouvelle occurrence -> elle hérite de 'Libre' (3)
+    globalPrioritySelect.value = '3'
+    globalPrioritySelect.dispatchEvent(new Event('change'))
+    await nextTick()
+
+    modal.querySelector('#addOccurrenceBtn').click()
+    await nextTick()
+
+    const occSelects = modal.querySelectorAll('.occurrence-priority-select')
+    expect(occSelects).toHaveLength(2)
+    expect(Number(occSelects[0].value)).toBe(2)
+    expect(Number(occSelects[1].value)).toBe(3)
   })
 
-  test('identifie dynamiquement la priorité la plus faible selon le poids sans coder en dur le nom libre', async () => {
+  test('identifie dynamiquement la priorité la plus faible selon le poids pour exiger ou non des occurrences', async () => {
     taskPriorityStore.taskPriorities = [
       { id: 10, task_priority: 'Libre', weigth: 1 },
       { id: 20, task_priority: ' Différée ', weigth: 99 },
@@ -137,22 +150,35 @@ describe('TaskModal.vue', () => {
     await nextTick()
 
     const modal = document.body.querySelector('#taskModal')
+    const titleInput = modal.querySelector('#title')
+    const roomInput = modal.querySelector('#room')
+    titleInput.value = 'Tâche test'
+    titleInput.dispatchEvent(new Event('input'))
+    roomInput.value = 'Local 101'
+    roomInput.dispatchEvent(new Event('input'))
+
     const prioritySelect = modal.querySelector('#taskPriority')
 
-    // 'Libre' a maintenant un poids de 1 (plus haute priorité) -> section visible
+    // 'Libre' a maintenant un poids de 1 (plus haute priorité) -> occurrence requise
     prioritySelect.value = '10'
     prioritySelect.dispatchEvent(new Event('change'))
     await nextTick()
-    expect(modal.querySelector('#occurrencesSection')).not.toBeNull()
+    modal.querySelector('form').dispatchEvent(new Event('submit'))
+    await nextTick()
+    expect(modal.querySelector('#occurrencesError')).not.toBeNull()
+    expect(taskStore.addTask).not.toHaveBeenCalled()
 
-    // 'Différée' a le poids 99 (priorité la plus faible) -> section masquée
+    // 'Différée' a le poids 99 (priorité la plus faible) -> section visible mais occurrence non requise
     prioritySelect.value = '20'
     prioritySelect.dispatchEvent(new Event('change'))
     await nextTick()
-    expect(modal.querySelector('#occurrencesSection')).toBeNull()
+    expect(modal.querySelector('#occurrencesSection')).not.toBeNull()
+    modal.querySelector('form').dispatchEvent(new Event('submit'))
+    await nextTick()
+    expect(taskStore.addTask).toHaveBeenCalledTimes(1)
   })
 
-  test('nettoie les occurrences saisies lors du passage à la priorité la plus faible et soumet sans occurrences', async () => {
+  test('conserve les occurrences saisies lors du passage à la priorité la plus faible et les soumet', async () => {
     createWrapper()
     await nextTick()
     await Promise.resolve()
@@ -177,18 +203,8 @@ describe('TaskModal.vue', () => {
     prioritySelect.dispatchEvent(new Event('change'))
     await nextTick()
 
-    expect(modal.querySelector('#occurrencesSection')).toBeNull()
-
-    // Revient vers Normale -> l'ancienne occurrence a été nettoyée
-    prioritySelect.value = '2'
-    prioritySelect.dispatchEvent(new Event('change'))
-    await nextTick()
-    expect(modal.querySelectorAll('.occurrence-card')).toHaveLength(0)
-
-    // Rebascule vers Libre et soumet le formulaire
-    prioritySelect.value = '3'
-    prioritySelect.dispatchEvent(new Event('change'))
-    await nextTick()
+    expect(modal.querySelector('#occurrencesSection')).not.toBeNull()
+    expect(modal.querySelectorAll('.occurrence-card')).toHaveLength(1)
 
     modal.querySelector('form').dispatchEvent(new Event('submit'))
     await nextTick()
@@ -199,7 +215,57 @@ describe('TaskModal.vue', () => {
         title: 'Tâche flexible',
         room: 'Local 102',
         taskPriorityId: 3,
-        occurrences: [],
+        occurrences: [
+          expect.objectContaining({
+            journee: 'lundi',
+            taskPriorityId: 1,
+          }),
+        ],
+      })
+    )
+  })
+
+  test('permet de supprimer des sous-tâches et des occurrences lors de la modification', async () => {
+    modalStore.editingTask = {
+      id: 42,
+      title: 'Tâche éditable',
+      room: 'Local 105',
+      taskPriorityId: 1,
+      occurrences: [
+        { id: 10, journee: 'lundi', taskPriorityId: 1, isRequired: true },
+        { id: 11, journee: 'mardi', taskPriorityId: 1, isRequired: true },
+      ],
+      sous_taches: [
+        { id: 20, titre: 'Étape 1', description: '' },
+        { id: 21, titre: 'Étape 2', description: '' },
+      ],
+    }
+
+    createWrapper()
+    await nextTick()
+    await Promise.resolve()
+    await nextTick()
+
+    const modal = document.body.querySelector('#taskModal')
+    expect(modal.querySelectorAll('.occurrence-card')).toHaveLength(2)
+    expect(modal.querySelectorAll('.subtask-card')).toHaveLength(2)
+
+    // Supprime la première occurrence et la première sous-tâche
+    modal.querySelector('.occurrence-card .btn-close').click()
+    modal.querySelector('.subtask-card .btn-close').click()
+    await nextTick()
+
+    expect(modal.querySelectorAll('.occurrence-card')).toHaveLength(1)
+    expect(modal.querySelectorAll('.subtask-card')).toHaveLength(1)
+
+    modal.querySelector('form').dispatchEvent(new Event('submit'))
+    await nextTick()
+
+    expect(taskStore.updateTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 42,
+        occurrences: [expect.objectContaining({ id: 11 })],
+        subTasks: [expect.objectContaining({ id: 21 })],
       })
     )
   })
