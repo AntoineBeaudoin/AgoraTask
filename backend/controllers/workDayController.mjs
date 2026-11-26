@@ -8,6 +8,7 @@ import {
   work_day_sub_task,
 } from "../models/bd_index.mjs";
 import { validerDate } from "../utils/dateHelpers.mjs";
+import { createHttpError } from "../utils/taskHelpers.mjs";
 
 function cleanComment(value) {
   if (typeof value !== "string") return null;
@@ -15,6 +16,17 @@ function cleanComment(value) {
   return text === "" ? null : text;
 }
 
+
+/**
+ * Retrouve la journée de travail associée à un employé.
+ *
+ * @export
+ * @async
+ * @param {*} req La requête envoyée par le frontend.
+ * @param {*} res La réponse à retrouner au frontend.
+ * @param {*} next Le prochain middleware à appeler, en cas d'erreur.
+ * @returns {unknown} La journée de travail associée à l'employé, ou bien une erreur 404.
+ */
 export async function getMyDay(req, res, next) {
   try {
     const date = req.query.date;
@@ -78,6 +90,133 @@ export async function getMyDay(req, res, next) {
   }
 }
 
+/**
+ * Soumet la journée de travail du compte connecté.
+ * Règles : une tâche ou une sous-tâche non terminée doit avoir un commentaire.
+ * Le commentaire global de la journée est optionnel.
+ */
+export async function submitDay(req, res, next) {
+  try {
+    const day = await work_day.findOne({
+      where: {
+        id: req.params.id,
+        accountId: req.user.id,
+      },
+    });
+
+    if (!day) {
+      return res.status(404).json({
+        status: 404,
+        message: "Journée introuvable.",
+      });
+    }
+
+    if (day.isSubmitted) {
+      return res.status(409).json({
+        status: 409,
+        message: "La journée est déjà soumise.",
+      });
+    }
+
+    await bd.transaction(async function (t) {
+      const dailyComment = cleanComment(req.body.comment || "");
+
+      await day.update(
+        {
+          comment: dailyComment,
+        },
+        { transaction: t },
+      );
+
+      const tasks = await work_day_task.findAll({
+        where: { workDayId: day.id },
+        include: [
+          { model: Task, as: "task" },
+          { model: work_day_sub_task, as: "subTasks" },
+        ],
+        transaction: t,
+      });
+
+      const submittedTasks = Array.isArray(req.body.tasks)
+        ? req.body.tasks
+        : [];
+
+      for (const task of tasks) {
+        if (task.task && task.task.archived) continue;
+
+        const submittedTask = submittedTasks.find(
+          (item) => item.id === task.id,
+        );
+        if (submittedTask) {
+          const taskUpdates = {
+            comment: cleanComment(submittedTask.comment || ""),
+          };
+         
+          if (submittedTask.isCompleted !== undefined) {
+            taskUpdates.isCompleted = submittedTask.isCompleted === true;
+          }
+          await task.update(taskUpdates, { transaction: t });
+        }
+
+        if (!task.isCompleted && !cleanComment(task.comment || "")) {
+          throw createHttpError(
+            `La tâche "${task.task?.title ?? ""}" doit avoir un commentaire puisqu'elle n'est pas terminée.`,
+            422,
+          );
+        }
+
+        const submittedSubs = submittedTask?.subTasks || [];
+        for (const sub of task.subTasks) {
+          const submittedSub = submittedSubs.find((item) => item.id === sub.id);
+          if (submittedSub) {
+            const subUpdates = {
+              comment: cleanComment(submittedSub.comment || ""),
+            };
+            if (submittedSub.isCompleted !== undefined) {
+              subUpdates.isCompleted = submittedSub.isCompleted === true;
+            }
+            await sub.update(subUpdates, { transaction: t });
+          }
+
+          if (!sub.isCompleted && !cleanComment(sub.comment || "")) {
+            throw createHttpError(
+              "Chaque sous-tâche non terminée doit avoir un commentaire.",
+              422,
+            );
+          }
+        }
+      }
+
+      await day.update(
+        {
+          isSubmitted: true,
+        },
+        { transaction: t },
+      );
+    });
+
+    return res.status(200).json({
+      status: 200,
+      message: "Journée soumise avec succès.",
+      path: "/api/work_day/submit/" + day.id,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+
+/**
+ * Sauvegarde le progrès de la journée de travail d'un employé.
+ *
+ * @export
+ * @async
+ * @param {*} req La requête envoyée par le frontend.
+ * @param {*} res La réponse à retourner au frontend.
+ * @param {*} next Le prochain middleware à appeler, en cas d'erreur.
+ * @returns {unknown} Un message de succès si la journée a été sauvegardée, ou bien une erreur.
+ */
 export async function saveDay(req, res, next) {
   try {
     const day = await work_day.findOne({
@@ -95,7 +234,7 @@ export async function saveDay(req, res, next) {
     }
 
     await bd.transaction(async function (t) {
-      const dayUpdates = { isSubmitted: req.body.submit === true };
+      const dayUpdates = {};
       if (req.body.comment !== undefined) {
         dayUpdates.comment = cleanComment(req.body.comment);
       }
