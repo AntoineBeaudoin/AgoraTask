@@ -1,8 +1,9 @@
 <template>
   <section class="container py-5">
-    <h1 class="mb-4 text-center">Vos tâches</h1>
+    <h1 class="mb-4 text-center">Tâches pour {{ authStore.getEmail() }} le {{ todayString() }}</h1>
     <TaskDescriptionModal />
-    <button class="btn btn-primary mb-3" @click="printPage()" v-if="taskStore.myTasksLoaded && taskStore.myTasks.length > 0">
+    <button class="btn btn-success mb-3" @click="printPage()"
+      v-if="taskStore.myTasksLoaded && taskStore.myTasks.length > 0">
       <i class="bi bi-printer" aria-hidden="true"></i> Imprimer l'horaire</button>
     <link rel="stylesheet" href="">
 
@@ -10,79 +11,142 @@
       Aucune tâche ne vous est assignée.
     </p>
 
-    <form v-else class="mx-auto" @submit.prevent="save" @reset.prevent="taskStore.loadMyTasks()">
+    <form v-else class="mx-auto" @submit.prevent="submit" @reset.prevent="taskStore.loadEmployeeInterface()">
       <div v-for="task in taskStore.myTasks" :key="task.tacheAFaireId" class="card mb-3">
+
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center">
             <div class="form-check d-flex align-items-center gap-2">
               <input class="form-check-input" type="checkbox" :id="'task-' + task.tacheAFaireId"
-                v-model="task.isCompleted" @change="save" />
+                v-model="task.isCompleted" @change="toggleTaskCompletion(task)" />
+
               <label class="form-check-label" :for="'task-' + task.tacheAFaireId">
                 {{ task.title }}
-                <span class="badge bg-secondary ms-2">Début : {{ task.heureDebut }}</span>
-                <span class="badge bg-secondary ms-2">Fin : {{ task.heureFin }}</span>
+
+                <span class="badge bg-secondary ms-2">
+                  Début : {{ task.heureDebut }}
+                </span>
+                <span class="badge bg-secondary ms-2">
+                  Fin : {{ task.heureFin }}
+                </span>
+                <span v-if="task.room" class="badge bg-secondary ms-2">
+                  Local : {{ task.room }}
+                </span>
+                <button type="button" class="d-inline-block btn btn-outline-success btn-sm ms-2"
+                  :aria-expanded="isTaskCommentOpen(task)" @click="toggleTaskComment(task)">
+                  {{ isTaskCommentOpen(task) ? 'Masquer' : 'Commenter' }}
+                </button>
               </label>
             </div>
+
             <div class="d-flex gap-2">
-              <button type="button" class="btn btn-info btn-sm task-details-btn" @click="openTaskDetails(task)">
+              <button type="button" class="btn btn-outline-success btn-sm task-details-btn" @click="openTaskDetails(task)">
                 Détails
-              </button>
-              <button type="button" class="btn btn-outline-primary btn-sm toggle-details-btn"
-                @click="toggleDetails(task.tacheAFaireId)">
-                {{ detailledTasks.has(task.tacheAFaireId) ? 'Moins de détails' : 'Plus de détails' }}
               </button>
             </div>
           </div>
 
-          <div v-for="sub in task.sousTaches" :key="sub.id" class="form-check ms-4 mt-2">
-            <input class="form-check-input" type="checkbox" :id="'sub-' + task.tacheAFaireId + '-' + sub.id"
-              v-model="sub.isCompleted" @change="save" />
-            <label class="form-check-label" :for="'sub-' + task.tacheAFaireId + '-' + sub.id">
-              {{ sub.titre }}
-            </label>
+          <div class="mt-2">
+            <div v-if="isTaskCommentOpen(task)" class="mt-1">
+              <label class="form-label small fw-bold mb-1">
+                Commentaire – {{ task.title }}
+              </label>
+
+              <textarea class="form-control form-control-sm" rows="2" maxlength="1000"
+                placeholder="Commentaire sur cette tâche" :id="'comment-' + task.tacheAFaireId"
+                v-model="task.commentaire"></textarea>
+            </div>
+          </div>
+
+          <div v-for="sub in task.sousTaches" :key="sub.id" class="ms-4 mt-2">
+            <div class="d-flex align-items-center gap-2">
+              <div class="form-check mb-0">
+                <input class="form-check-input" type="checkbox" :id="'sub-' + subKey(task, sub)"
+                  v-model="sub.isCompleted" @change="save" />
+                <label class="form-check-label" :for="'sub-' + subKey(task, sub)">
+                  {{ sub.titre }}
+                </label>
+              </div>
+
+              <button type="button" class="btn btn-outline-success btn-sm" :aria-expanded="isSubCommentOpen(task, sub)"
+                @click="toggleSubComment(task, sub)">
+                {{ isSubCommentOpen(task, sub) ? 'Masquer' : 'Commenter' }}
+              </button>
+            </div>
+
+            <div v-if="isSubCommentOpen(task, sub)" class="mt-1">
+              <label class="form-label small fw-bold mb-1">
+                Commentaire – {{ sub.titre }}
+              </label>
+
+              <textarea class="form-control form-control-sm" rows="2" maxlength="1000"
+                placeholder="Commentaire sur cette sous-tâche" :id="'sub-comment-' + subKey(task, sub)"
+                v-model="sub.commentaire"></textarea>
+            </div>
           </div>
         </div>
 
         <div v-if="printing || detailledTasks.has(task.tacheAFaireId)" class="card-footer bg-light task-details">
-          <p class="mb-1"><strong>Local :</strong> {{ task.room }}</p>
-          <p class="mb-2"><strong>Description :</strong> {{ task.description }}</p>
           <TaskPdfPreview :documents="task.documents ?? []" />
           <TaskExternalLinks :links="task.externalLinks ?? []" />
-          <label :for="'comment-' + task.tacheAFaireId" class="form-label">
-            <strong>Commentaire :</strong>
-          </label>
-          <textarea class="form-control" rows="2" maxlength="1000" :id="'comment-' + task.tacheAFaireId"
-            v-model="task.commentaire"></textarea>
         </div>
+
       </div>
 
-      <p v-if="message" class="text-center">{{ message }}</p>
-
-      <div class="d-flex justify-content-center gap-2 mt-4">
-        <button type="submit" class="btn btn-primary" :disabled="saving">Sauvegarder</button>
-        <button type="reset" class="btn btn-danger">Réinitialiser</button>
+      <div class="card-footer">
+        <label for="dailyComment" class="form-label">Commentaire de la journée</label>
+        <textarea class="form-control" rows="2" maxlength="1000" id="dailyComment" name="dailyComment"
+          v-model="taskStore.dailyComment"></textarea>
       </div>
+
+      <div v-if="!taskStore.isDaySubmitted" class="d-flex justify-content-center gap-2 mt-4">
+        <button type="submit" class="btn btn-success" id="btn-soumettre" :disabled="saving || !validation.valid">
+          Soumettre
+        </button>
+      </div>
+
+      <p v-if="taskStore.isDaySubmitted" class="text-center text-success fw-bold mt-4" id="msg-soumission-reussie">
+        Journée soumise avec succès !
+      </p>
+
+      <p v-else-if="message" id="msg-erreur" class="text-center">
+        {{ message }}
+      </p>
+
+      <p v-if="!taskStore.isDaySubmitted && !validation.valid && validation.message"
+        class="text-center text-muted small mt-2" id="msg-validation">
+        {{ validation.message }}
+      </p>
     </form>
   </section>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useTaskStore } from '@/stores/taskStore.js'
+import { useAuthStore } from '@/stores/auth'
 import { useModalStore } from '@/stores/modalStore.js'
+import { todayString } from '@/utils/dateHelpers'
 import TaskDescriptionModal from '@/components/tasks/TaskDescriptionModal.vue'
 import TaskPdfPreview from '@/components/tasks/TaskPdfPreview.vue'
 import TaskExternalLinks from '@/components/tasks/TaskExternalLinks.vue'
-import { nextTick } from 'vue'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 
 const taskStore = useTaskStore()
+const authStore = useAuthStore()
 const modalStore = useModalStore()
 const detailledTasks = reactive(new Set())
-const checkedIds = ref([])
+const openSubComments = reactive(new Set())
+const openTaskComments = reactive(new Set())
 const saving = ref(false)
 const message = ref('')
 const printing = ref(false)
+
+const validation = computed(() =>
+  taskStore.myTasks.length > 0
+    ? taskStore.validateSubmission()
+    : { valid: false, message: '' },
+)
 
 async function printPage() {
   printing.value = true
@@ -93,16 +157,69 @@ async function printPage() {
     requestAnimationFrame(resolve)
   }))
 
+  await new Promise(resolve => setTimeout(resolve, 250))
+
+  if (document.fonts?.ready) {
+    await document.fonts.ready
+  }
+
   window.print()
 }
 
-function toggleDetails(id) {
-  if (detailledTasks.has(id)) {
-    detailledTasks.delete(id)
+function isTaskCommentOpen(task) {
+  return printing.value || openTaskComments.has(task.tacheAFaireId)
+}
+
+async function toggleTaskCompletion(task) {
+  if (taskStore.isDaySubmitted) return
+
+  if (task.isCompleted) {
+    for (const sub of task.sousTaches ?? []) {
+      sub.isCompleted = true
+    }
+  }
+
+  await save()
+}
+
+function toggleTaskComment(task) {
+  const id = task.tacheAFaireId
+
+  if (openTaskComments.has(id)) {
+    openTaskComments.delete(id)
   } else {
-    detailledTasks.add(id)
+    openTaskComments.add(id)
   }
 }
+
+function subKey(task, sub) {
+  return task.tacheAFaireId + '-' + sub.id
+}
+
+function isSubCommentOpen(task, sub) {
+  return printing.value || openSubComments.has(subKey(task, sub))
+}
+
+function toggleSubComment(task, sub) {
+  const key = subKey(task, sub)
+  if (openSubComments.has(key)) {
+    openSubComments.delete(key)
+  } else {
+    openSubComments.add(key)
+  }
+}
+
+watch(
+  () => taskStore.myTasks,
+  (tasks) => {
+    for (const task of tasks ?? []) {
+      for (const sub of task.sousTaches ?? []) {
+        if (sub.commentaire) openSubComments.add(subKey(task, sub))
+      }
+    }
+  },
+  { immediate: true },
+)
 
 async function openTaskDetails(task) {
   const fullTask = (await taskStore.getTaskById(task.id)) || {}
@@ -123,11 +240,33 @@ async function afterPrint() {
 }
 
 async function save() {
+  if (taskStore.isDaySubmitted) return
+
   saving.value = true
   message.value = ''
+
   try {
-    const ok = await taskStore.saveProgress(checkedIds.value)
-    message.value = ok ? 'Progression enregistrée.' : "Échec de l'enregeistrement."
+    const ok = await taskStore.saveProgress()
+
+    if (!taskStore.isDaySubmitted) {
+      message.value = ok
+        ? 'Progression enregistrée.'
+        : "Échec de l'enregistrement."
+    }
+  } finally {
+    saving.value = false
+  }
+}
+
+async function submit() {
+  if (taskStore.isDaySubmitted || !validation.value.valid) return
+
+  saving.value = true
+  message.value = ''
+
+  try {
+    const result = await taskStore.submitDay()
+    message.value = result.success ? '' : result.message
   } finally {
     saving.value = false
   }
@@ -140,23 +279,75 @@ function handleKeydown(event) {
   }
 }
 
-onMounted(() => {
-  taskStore.loadTasks()
-  taskStore.loadMyTasks()
+onMounted(async () => {
+  await taskStore.loadTasks()
+  await taskStore.loadEmployeeInterface()
 
   window.addEventListener('keydown', handleKeydown)
   window.addEventListener('afterprint', afterPrint)
 })
 
 onUnmounted(() => {
-  window.addEventListener('keydown', handleKeydown)
+  window.removeEventListener('keydown', handleKeydown)
   window.removeEventListener('afterprint', afterPrint)
 })
 </script>
 
 <style scoped>
+h1 {
+  font-size: 1.7rem;
+}
+
+.form-check-input {
+  width: 1.25em;
+  height: 1.25em;
+  margin-top: 0;
+  border: 2px solid #198754;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.form-check-input:checked {
+  background-color: #198754;
+  border-color: #198754;
+}
+
+.form-check-input:focus {
+  border-color: #198754;
+  box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.2);
+}
+
+.form-check-label {
+  cursor: pointer;
+}
+
+.btn-success {
+  background-color: #198754;
+  border-color: #198754;
+}
+
+.btn-success:hover {
+  background-color: #157347;
+  border-color: #146c43;
+}
+
+.btn-outline-success:hover {
+  background-color: #198754;
+  border-color: #198754;
+}
+
+.btn {
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
 @media print {
   .btn {
+    display: none !important;
+  }
+
+  #msg-erreur,
+  #msg-validation,
+  #msg-soumission-reussie {
     display: none !important;
   }
 
@@ -165,14 +356,20 @@ onUnmounted(() => {
     break-inside: avoid;
   }
 
-  textarea {
-    border: none;
-    resize: none;
-  }
-
   .task-details {
     display: block !important;
     break-inside: avoid;
+  }
+
+  textarea::placeholder {
+    color: transparent !important;
+    opacity: 0 !important;
+  }
+
+  .form-label {
+    display: block !important;
+    font-weight: bold !important;
+    color: black !important;
   }
 
   textarea {

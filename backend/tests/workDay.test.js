@@ -37,6 +37,13 @@ describe("Tests en lien avec les journées de travail", function () {
       .set("Authorization", "Bearer " + token);
   }
 
+  async function submit(id, body = {}) {
+    return request(app)
+      .post(`/api/work_day/submit/${id}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send(body);
+  }
+
   function save(id, body) {
     return request(app)
       .patch("/api/work_day/" + id)
@@ -207,13 +214,30 @@ describe("Tests en lien avec les journées de travail", function () {
   });
 
   it("refuse les modifications après la soumission", async function () {
-    const submitted = await save(day.id, { submit: true });
+    const submitted = await submit(day.id, {
+      tasks: [
+        {
+          id: dayTask.id,
+          isCompleted: true,
+          subTasks: [
+            {
+              id: daySubTask.id,
+              isCompleted: true,
+            },
+          ],
+        },
+      ],
+    });
+
     expect(submitted.status).toBe(200);
+
     await day.reload();
     expect(day.isSubmitted).toBe(true);
 
     const late = await save(day.id, { comment: "Trop tard" });
+
     expect(late.status).toBe(409);
+
     await day.reload();
     expect(day.comment).toBeNull();
   });
