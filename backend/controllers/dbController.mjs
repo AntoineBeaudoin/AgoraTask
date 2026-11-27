@@ -10,6 +10,7 @@ import {
   sous_tache,
   TaskPoste,
   task_priority,
+  work_week,
   work_day,
   work_day_task,
   work_day_sub_task,
@@ -24,6 +25,8 @@ async function deleteTables() {
   await work_day_sub_task.destroy({ where: {} });
   await work_day_task.destroy({ where: {} });
   await work_day.destroy({ where: {} });
+  await work_week.destroy({ where: {} });
+
   await TaskPoste.destroy({ where: {} });
   await occurrence_de_tache.destroy({ where: {} });
   await sous_tache.destroy({ where: {} });
@@ -48,19 +51,70 @@ async function seedTaskPriorities() {
   });
 }
 
-function dateString(daysAgo) {
-  const date = new Date();
-  date.setDate(date.getDate() - daysAgo);
+/**
+ * Retourne une date au format YYYY-MM-DD.
+ */
+function dateString(date) {
+  const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
-  const dayOfMonth = String(date.getDate()).padStart(2, "0");
-  return date.getFullYear() + "-" + month + "-" + dayOfMonth;
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 let workDaysByAccount = {};
 
 /**
- * Ajoute une tâche (et ses sous-tâches) à la journée de travail d'un compte.
- * La journée de travail est créée au besoin.
+ * Retourne le lundi de la semaine courante.
+ */
+function getMonday() {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+
+  const day = date.getDay();
+  date.setDate(date.getDate() - (day === 0 ? 6 : day - 1));
+
+  return date;
+}
+
+/**
+ * Crée une semaine et ses sept journées pour un compte.
+ * Les journées sont toutes associées à leur semaine.
+ */
+async function createWorkWeek(compte) {
+  const monday = getMonday();
+  const sunday = new Date(monday);
+  sunday.setDate(sunday.getDate() + 6);
+
+  const week = await work_week.create({
+    accountId: compte.id,
+    beginningDate: dateString(monday),
+    endDate: dateString(sunday),
+  });
+
+  const days = {};
+
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(monday);
+    date.setDate(date.getDate() + i);
+
+    const formattedDate = dateString(date);
+
+    days[formattedDate] = await work_day.create({
+      accountId: compte.id,
+      date: formattedDate,
+      workWeekId: week.id,
+    });
+  }
+
+  workDaysByAccount[compte.id] = days;
+
+  return days;
+}
+
+/**
+ * Ajoute une tâche et ses sous-tâches à la journée courante
+ * du compte. La semaine et ses journées sont créées au besoin.
  */
 async function addToWorkDay(
   compte,
@@ -69,11 +123,14 @@ async function addToWorkDay(
   commentaire,
   sousTaches,
 ) {
-  let day = workDaysByAccount[compte.id];
-  if (!day) {
-    day = await work_day.create({ accountId: compte.id, date: dateString(0) });
-    workDaysByAccount[compte.id] = day;
+  let days = workDaysByAccount[compte.id];
+
+  if (!days) {
+    days = await createWorkWeek(compte);
   }
+
+  const today = dateString(new Date());
+  const day = days[today];
 
   const dayTask = await work_day_task.create({
     workDayId: day.id,
@@ -304,6 +361,18 @@ const seedDatabase = async (req, res) => {
       IsArchived: false,
       posteId: posteEntretien.id,
     });
+
+    // Crée une semaine complète pour chaque employé,
+    // même si certaines journées ne contiennent aucune tâche.
+    const employes = await Compte.findAll({
+      where: {
+        role: "personnel_de_terrain",
+      },
+    });
+
+    for (const employe of employes) {
+      await createWorkWeek(employe);
+    }
 
     const tachePiscine = await Task.create({
       title: "Entretien de la piscine",
