@@ -43,7 +43,7 @@
           </div>
           <TaskPdfPreview :documents="task.documents ?? []" />
           <TaskExternalLinks :links="task.externalLinks ?? []" />
-          <div v-if="(task.occurrences ?? []).length > 0">
+          <div v-if="sortedOccurrences.length > 0">
             <h3 class="fs-5 text-primary m-0">Horaires</h3>
             <p class="text-muted small mb-3">Fréquence et occurrences de la tâche.</p>
             <div class="d-flex gap-2 mb-3">
