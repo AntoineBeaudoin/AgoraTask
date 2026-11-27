@@ -70,7 +70,11 @@ const router = createRouter({
       path: '/GestionPostes',
       name: 'GestionPostes',
       component: PosteAdminView,
-      meta: { title: 'Gestion des postes de travail', requireAuth: true, roles: ['administrateur', 'coordonnateur'] },
+      meta: {
+        title: 'Gestion des postes de travail',
+        requireAuth: true,
+        roles: 'administrateur/coordonnateur',
+      },
     },
     {
       path: '/error',
@@ -83,6 +87,16 @@ const router = createRouter({
       component: () => import('../views/Historique.vue'),
       meta: {
         title: 'Historique des tâches',
+        requireAuth: true,
+        role: 'administrateur/coordonnateur',
+      },
+    },
+    {
+      path: '/assignments',
+      name: 'assignments',
+      component: () => import('../views/Assignments.vue'),
+      meta: {
+        title: 'Gestion des assignations',
         requireAuth: true,
         role: 'administrateur/coordonnateur',
       },

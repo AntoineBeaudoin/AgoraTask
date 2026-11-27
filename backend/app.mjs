@@ -13,6 +13,7 @@ import { get404, getErrors } from "./controllers/errorController.mjs";
 import adminRoutes from "./routes/admin.mjs";
 import "./models/bd_index.mjs";
 import histRoutes from "./routes/hist.mjs";
+import assignRoutes from "./routes/assign.mjs";
 import workDayRoutes from "./routes/work_day.mjs";
 
 const app = express();
@@ -36,6 +37,7 @@ app.use("/api/task_priority", taskPriorityRoutes);
 app.use("/api/task", taskRoutes);
 app.use("/api/poste", posteRoutes);
 app.use("/api/historique", histRoutes);
+app.use("/api/assign", assignRoutes);
 app.use("/api/work_day", workDayRoutes);
 app.get("/", (req, res) => {
   res.status(200).json({

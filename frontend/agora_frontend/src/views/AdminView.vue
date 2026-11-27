@@ -44,13 +44,25 @@
           </div>
         </div>
       </div>
+      <div class="col-md-3">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body d-flex flex-column">
+            <h3 class="card-title">Gestion des Assignations</h3>
 
-      <PortalPosteOption :col-md="3"/>
+            <p class="card-text">Consulter et gérer les assignations des tâches.</p>
+
+            <RouterLink :to="{ name: 'assignments' }" class="btn btn-primary mt-auto">
+              Gérer les assignations
+            </RouterLink>
+          </div>
+        </div>
+      </div>
+      <PortalPosteOption :col-md="3" />
     </div>
   </main>
 </template>
 
 <script setup>
-import PortalPosteOption from '@/components/postes/PortalPosteOption.vue';
-import { RouterLink } from 'vue-router';
+import PortalPosteOption from '@/components/postes/PortalPosteOption.vue'
+import { RouterLink } from 'vue-router'
 </script>
