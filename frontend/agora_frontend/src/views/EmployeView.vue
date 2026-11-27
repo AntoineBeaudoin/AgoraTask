@@ -1,6 +1,35 @@
 <template>
   <section class="container py-5">
-    <h1 class="mb-4 text-center">Tâches pour {{ authStore.getEmail() }} le {{ todayString() }}</h1>
+
+    <div class="employee-calendar mb-4">
+      <div class="calendar-controls d-flex align-items-center justify-content-center gap-3">
+
+        <button type="button" class="btn btn-outline-success calendar-nav" aria-label="Jour précédent"
+          @click="changeDate(-1)">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+
+        <div class="text-center">
+          <label for="selectedDate" class="form-label small fw-bold mb-1">
+            Calendrier
+          </label>
+
+          <input id="selectedDate" type="date" class="form-control text-center" :min="today" :value="selectedDate"
+            :max="maxSelectableDate" @change="selectDate($event.target.value)" />
+        </div>
+
+        <button type="button" class="btn btn-outline-success calendar-nav" aria-label="Jour suivant"
+          :disabled="selectedDate >= maxSelectableDate" @click="changeDate(1)">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+
+      </div>
+
+      <h1 class="mt-4 mb-0 text-center">
+        Tâches pour {{ authStore.getEmail() }} le {{ formattedSelectedDate }}
+      </h1>
+    </div>
+
     <TaskDescriptionModal />
     <button class="btn btn-success mb-3" @click="printPage()"
       v-if="taskStore.myTasksLoaded && taskStore.myTasks.length > 0">
@@ -11,7 +40,7 @@
       Aucune tâche ne vous est assignée.
     </p>
 
-    <form v-else class="mx-auto" @submit.prevent="submit" @reset.prevent="taskStore.loadEmployeeInterface()">
+    <form v-else class="mx-auto" @submit.prevent="submit" @reset.prevent="taskStore.loadEmployeeInterface(selectedDate)">
       <div v-for="task in taskStore.myTasks" :key="task.tacheAFaireId" class="card mb-3">
 
         <div class="card-body">
@@ -40,7 +69,8 @@
             </div>
 
             <div class="d-flex gap-2">
-              <button type="button" class="btn btn-outline-success btn-sm task-details-btn" @click="openTaskDetails(task)">
+              <button type="button" class="btn btn-outline-success btn-sm task-details-btn"
+                @click="openTaskDetails(task)">
                 Détails
               </button>
             </div>
@@ -142,6 +172,51 @@ const saving = ref(false)
 const message = ref('')
 const printing = ref(false)
 
+const today = todayString()
+const selectedDate = ref(today)
+
+const maxSelectableDate = addDays(today, 7)
+
+const formattedSelectedDate = computed(() => {
+  const [year, month, day] = selectedDate.value.split('-')
+  const date = new Date(Number(year), Number(month) - 1, Number(day))
+
+  const formatted = new Intl.DateTimeFormat('fr-CA', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date)
+
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1)
+})
+
+function addDays(dateString, amount) {
+  const [year, month, day] = dateString.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+
+  date.setDate(date.getDate() + amount)
+
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+
+  return `${y}-${m}-${d}`
+}
+
+function changeDate(amount) {
+  const newDate = addDays(selectedDate.value, amount)
+  if ( newDate < today || newDate > maxSelectableDate) return
+
+  selectedDate.value = newDate
+}
+
+function selectDate(date) {
+  if (!date || date < today || date > maxSelectableDate) return
+
+  selectedDate.value = date
+}
+
 const validation = computed(() =>
   taskStore.myTasks.length > 0
     ? taskStore.validateSubmission()
@@ -208,6 +283,18 @@ function toggleSubComment(task, sub) {
     openSubComments.add(key)
   }
 }
+
+watch(selectedDate, async (newDate, oldDate) => {
+  if (newDate === oldDate) return
+
+  message.value = ''
+
+  detailledTasks.clear()
+  openSubComments.clear()
+  openTaskComments.clear()
+
+  await taskStore.loadEmployeeInterface(newDate)
+})
 
 watch(
   () => taskStore.myTasks,
@@ -281,7 +368,7 @@ function handleKeydown(event) {
 
 onMounted(async () => {
   await taskStore.loadTasks()
-  await taskStore.loadEmployeeInterface()
+  await taskStore.loadEmployeeInterface(selectedDate.value)
 
   window.addEventListener('keydown', handleKeydown)
   window.addEventListener('afterprint', afterPrint)
@@ -296,6 +383,35 @@ onUnmounted(() => {
 <style scoped>
 h1 {
   font-size: 1.7rem;
+}
+
+.employee-calendar {
+  max-width: 850px;
+  margin: 0 auto 2rem;
+}
+
+.calendar-nav {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+#selectedDate {
+  width: 190px;
+  cursor: pointer;
+}
+
+@media (max-width: 576px) {
+  .employee-calendar h1 {
+    font-size: 1.35rem;
+  }
+
+  #selectedDate {
+    width: 165px;
+  }
 }
 
 .form-check-input {
@@ -342,6 +458,10 @@ h1 {
 
 @media print {
   .btn {
+    display: none !important;
+  }
+
+   .calendar-controls {
     display: none !important;
   }
 

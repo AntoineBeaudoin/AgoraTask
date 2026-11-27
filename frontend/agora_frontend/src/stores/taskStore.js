@@ -61,14 +61,14 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
 
-    async loadEmployeeInterface() {
+    async loadEmployeeInterface(date) {
       try {
         this.dailyComment = ''
         this.isDaySubmitted = false
         this.workDayId = null
         this.myTasksLoaded = false
 
-        const response = await apiFetch('/task/mine')
+        const response = await apiFetch(`/task/mine?date=${encodeURIComponent(date)}`)
 
         if (!response || response.status !== 200) {
           throw new Error(`HTTP ${response ? response.status : 'erreur'}`)
@@ -78,8 +78,8 @@ export const useTaskStore = defineStore('tasks', {
         this.workDayId = response.data.workDayId
         this.isDaySubmitted = response.data.isDaySubmitted
         this.dailyComment = response.data.dailyComment ?? ''
-
         this.myTasksLoaded = true
+
       } catch (err) {
         console.log(`HTTP ${err}`)
       }
