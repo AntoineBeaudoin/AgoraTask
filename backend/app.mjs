@@ -14,6 +14,7 @@ import adminRoutes from "./routes/admin.mjs";
 import "./models/bd_index.mjs";
 import histRoutes from "./routes/hist.mjs";
 import workDayRoutes from "./routes/work_day.mjs";
+import workWeekRoutes from "./routes/work_week.mjs";
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use("/api/task", taskRoutes);
 app.use("/api/poste", posteRoutes);
 app.use("/api/historique", histRoutes);
 app.use("/api/work_day", workDayRoutes);
+app.use("/api/work_week", workWeekRoutes);
 app.get("/", (req, res) => {
   res.status(200).json({
     message: "Agora API disponible",
@@ -54,7 +56,7 @@ bd.authenticate()
     console.log("Connected to PostgreSQL");
 
     // mettre force à true pour réinitialiser la structure de la BD.
-    return bd.sync({ force: false });
+    return bd.sync({ force: true });
   })
   .then(async () => {
     app.listen(PORT, () => {
